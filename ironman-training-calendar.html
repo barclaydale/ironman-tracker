@@ -384,16 +384,19 @@ function calcStats(){
     else if(s.type==='run') runMi+=c.distance||0;
   });
   Object.values(customWorkouts).forEach(w=>{
-    if(!w.done) return;
-    totalMin+=w.duration||0;
-    if(w.type==='swim') swimYds+=w.distance||0;
-    else if(w.type==='bike'||w.type==='brick') bikeMi+=w.distance||0;
-    else if(w.type==='run') runMi+=w.distance||0;
+    if(w.done){
+      done++;
+      totalMin+=w.duration||0;
+      if(w.type==='swim') swimYds+=w.distance||0;
+      else if(w.type==='bike'||w.type==='brick') bikeMi+=w.distance||0;
+      else if(w.type==='run') runMi+=w.distance||0;
+    }
   });
   const hrs=Math.floor(totalMin/60),mins=totalMin%60;
+  const total=activePlan().length+Object.keys(customWorkouts).length;
   return{swimYds,bikeMi:bikeMi.toFixed(1),runMi:runMi.toFixed(1),
          totalTime:`${hrs}:${String(mins).padStart(2,'0')}`,
-         done,total:activePlan().length};
+         done,total};
 }
 
 function renderStats(){
