@@ -372,7 +372,19 @@ function localDate(offset=0){
   return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
 }
 
+// Always use local noon so timezone offsets never cross a date boundary
+function addDays(dateStr,n){
+  const d=new Date(dateStr+'T12:00:00');
+  d.setDate(d.getDate()+n);
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+
 function effectiveDate(s){ return positions[s.id]||s.date; }
+
+function effectiveDayName(s){
+  if(!positions[s.id]) return s.dayName;
+  return['SUN','MON','TUE','WED','THU','FRI','SAT'][new Date(effectiveDate(s)+'T12:00:00').getDay()];
+}
 
 function activePlan(){ return PLAN.filter(s=>!deletedSessions.has(s.id)); }
 
@@ -544,7 +556,7 @@ function openModal(sid){
   const isDeleted=deletedSessions.has(sid);
   document.getElementById('modal-badge').innerHTML=badge(s.type);
   document.getElementById('modal-title').textContent=s.title;
-  document.getElementById('modal-meta').textContent=`${s.dayName} · Wk ${s.week} · ${s.phaseName} · ${new Date(effectiveDate(s)+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'})}`;
+  document.getElementById('modal-meta').textContent=`${effectiveDayName(s)} · Wk ${s.week} · ${s.phaseName} · ${new Date(effectiveDate(s)+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'})}`;
   document.getElementById('modal-body').innerHTML=getDetail(s);
   const logDiv=document.getElementById('modal-log');
   const actionBtn=isDeleted
@@ -730,22 +742,20 @@ const PHASE_CONFIG=[
 const DAYS=['SAT','SUN','MON','TUE','WED','THU','FRI'];
 
 function getWeekSessions(wk){
-  const wkStart=new Date('2026-05-23');wkStart.setDate(wkStart.getDate()+(wk-1)*7);
-  const wkEnd=new Date(wkStart);wkEnd.setDate(wkEnd.getDate()+7);
+  const wkStartStr=addDays('2026-05-23',(wk-1)*7);
+  const wkEndStr=addDays(wkStartStr,7);
   const sessions={};
   DAYS.forEach(d=>sessions[d]=[]);
   PLAN.forEach(s=>{
     const movedTo=positions[s.id];
     if(movedTo){
-      // Moved session: only show at its new location, never at original
-      const d=new Date(movedTo+'T12:00:00');
-      if(d>=wkStart&&d<wkEnd){
-        const dayOff=Math.round((d-wkStart)/864e5);
+      // Moved: only show at new location, never original
+      if(movedTo>=wkStartStr&&movedTo<wkEndStr){
+        const dayOff=Math.round((new Date(movedTo+'T12:00:00')-new Date(wkStartStr+'T12:00:00'))/864e5);
         const dayName=DAYS[dayOff];
         if(sessions[dayName]) sessions[dayName].push(s);
       }
     } else {
-      // Unmoved: show at original week/day only
       if(s.week===wk&&sessions[s.dayName]) sessions[s.dayName].push(s);
     }
   });
@@ -753,10 +763,10 @@ function getWeekSessions(wk){
 }
 
 function weekDateRange(wk){
-  const s=new Date('2026-05-23');s.setDate(s.getDate()+(wk-1)*7);
-  const e=new Date(s);e.setDate(e.getDate()+6);
-  const fmt=d=>d.toLocaleDateString('en-US',{month:'short',day:'numeric'});
-  return`${fmt(s)} – ${fmt(e)}`;
+  const sStr=addDays('2026-05-23',(wk-1)*7);
+  const eStr=addDays(sStr,6);
+  const fmt=str=>new Date(str+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'});
+  return`${fmt(sStr)} – ${fmt(eStr)}`;
 }
 
 let dragId=null,dragoverCol=null;
@@ -886,7 +896,7 @@ function renderCalendar(){
         </div>
         <div class="week-grid">`;
       DAYS.forEach((day,di)=>{
-        const dateStr=new Date(new Date('2026-05-23').getTime()+((wk-1)*7+di)*864e5).toISOString().split('T')[0];
+        const dateStr=addDays('2026-05-23',(wk-1)*7+di);
         const daySessions=sessions[day]||[];
         const customDay=Object.values(customWorkouts).filter(w=>w.date===dateStr);
         const isEmpty=daySessions.length===0&&customDay.length===0;
