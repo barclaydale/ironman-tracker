@@ -33,6 +33,11 @@ body{font-family:var(--body);background:var(--bg);color:var(--text);font-size:16
 .sn-workouts{display:flex;align-items:center;gap:14px;flex-shrink:0}
 .sn-slot{display:flex;align-items:center;gap:5px}
 .sn-label{font-size:10px;color:var(--dim);text-transform:uppercase;letter-spacing:.08em}
+.sn-totals{display:flex;align-items:center;gap:12px;flex-shrink:0;border-left:1px solid var(--border);padding-left:16px}
+.sn-stat{display:flex;align-items:baseline;gap:3px}
+.sn-stat-val{font-family:var(--mono);font-size:14px;font-weight:500}
+.sn-stat-lbl{font-size:10px;color:var(--muted)}
+.sn-stat.swim .sn-stat-val{color:var(--swim)}.sn-stat.bike .sn-stat-val{color:var(--bike)}.sn-stat.run .sn-stat-val{color:var(--run)}
 
 /* ── Top panel ── */
 .top-panel{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;padding:16px;background:var(--s1);border-bottom:2px solid var(--red);margin-bottom:0}
@@ -221,6 +226,11 @@ body{font-family:var(--body);background:var(--bg);color:var(--text);font-size:16
   <div class="sn-workouts">
     <div class="sn-slot" id="sn-today"></div>
     <div class="sn-slot" id="sn-tomorrow"></div>
+  </div>
+  <div class="sn-totals">
+    <span class="sn-stat swim"><span class="sn-stat-val" id="sn-swim">0</span><span class="sn-stat-lbl">&nbsp;yds</span></span>
+    <span class="sn-stat bike"><span class="sn-stat-val" id="sn-bike">0</span><span class="sn-stat-lbl">&nbsp;mi bike</span></span>
+    <span class="sn-stat run"><span class="sn-stat-val" id="sn-run">0</span><span class="sn-stat-lbl">&nbsp;mi run</span></span>
   </div>
 </div>
 
@@ -445,8 +455,7 @@ function sessionCardHTML(s,draggable=true){
          ondragstart="onDragStart(event,'${s.id}')"
          ondragend="onDragEnd(event,'${s.id}')">
       <div class="sc-top">${badge(s.type)}<span class="sc-title">${esc(s.title)}</span></div>
-      <div class="sc-s1">${esc(s.summary1)}</div>
-      <div class="sc-s2">${esc(s.summary2)}</div>
+      ${s.type!=='cf'?`<div class="sc-s1">${esc(s.summary1)}</div><div class="sc-s2">${esc(s.summary2)}</div>`:''}
     </div>`;
 }
 
@@ -669,6 +678,9 @@ function renderStickyNav(){
   if(tomSession){
     tr.innerHTML=`<span class="sn-label">Tmw</span>`+badge(tomSession.type);
   }else tr.innerHTML='';
+  document.getElementById('sn-swim').textContent=st.swimYds.toLocaleString();
+  document.getElementById('sn-bike').textContent=st.bikeMi;
+  document.getElementById('sn-run').textContent=st.runMi;
 }
 
 function updateStickyVisibility(){
@@ -734,6 +746,9 @@ function renderCalendar(){
   let html='';
   PHASE_CONFIG.forEach(ph=>{
     const nw=ph.weeks.filter(w=>w!=='race');
+    // Each phase wrapped in its own section so the sticky banner
+    // unsticks naturally when the section scrolls out of view
+    html+=`<div class="phase-section">`;
     html+=`<div class="phase-banner" style="background:${ph.color}18;border:1px solid ${ph.color}44">
       <div class="phase-bar" style="background:${ph.color}44"></div>
       <div class="phase-name" style="color:${ph.color}">${ph.name}</div>
@@ -763,6 +778,7 @@ function renderCalendar(){
       });
       html+='</div></div>';
     });
+    html+=`</div>`; // close .phase-section
   });
   cal.innerHTML=html;
 }
