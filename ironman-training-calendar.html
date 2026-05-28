@@ -86,14 +86,23 @@ body{font-family:var(--body);background:var(--bg);color:var(--text);font-size:16
 .main-wrap{max-width:1400px;margin:0 auto;padding:0 12px 40px}
 
 /* ── Phase banner — sticky below nav ── */
-.phase-banner{padding:12px 16px;display:flex;align-items:center;gap:12px;margin:20px 0 8px;border-radius:8px;position:sticky;top:var(--ph-top,0px);z-index:100;background:var(--bg)}
+.phase-banner{padding:12px 16px;display:flex;align-items:center;gap:12px;margin:20px 0 8px;border-radius:8px;position:sticky;top:var(--ph-top,0px);z-index:100;background:var(--bg);cursor:pointer;user-select:none}
+.phase-banner:hover{filter:brightness(1.08)}
 .phase-name{font-family:var(--oswald);font-size:25px;font-weight:700;letter-spacing:.04em}
 .phase-weeks{font-size:14px;color:rgba(255,255,255,.7);font-weight:500}
 .phase-bar{flex:1;height:2px;background:rgba(255,255,255,.2);border-radius:99px}
+.ph-done{font-size:11px;color:#4ADE80;background:rgba(74,222,128,.1);border:1px solid rgba(74,222,128,.3);border-radius:3px;padding:2px 8px;font-weight:700;flex-shrink:0}
+.ph-icon{font-size:11px;flex-shrink:0;opacity:.6}
+.phase-section.collapsed>.week-row,.phase-section.collapsed>.race-day-wrapper{display:none}
 
 /* ── Week row ── */
 .week-row{margin-bottom:8px}
-.week-label{font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;padding:4px 8px;margin-bottom:4px}
+.week-row.collapsed .week-grid{display:none}
+.week-label{font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;padding:4px 8px;margin-bottom:4px;display:flex;align-items:center;gap:6px;cursor:pointer;user-select:none}
+.week-label:hover{color:var(--text)}
+.week-row.complete>.week-label{color:rgba(74,222,128,.55)}
+.wk-icon{font-size:9px;opacity:.55;flex-shrink:0}
+.wk-done{font-size:10px;color:#4ADE80;background:rgba(74,222,128,.1);border:1px solid rgba(74,222,128,.3);border-radius:3px;padding:1px 6px;font-weight:700;text-transform:none;letter-spacing:0}
 .week-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
 .day-col{display:flex;flex-direction:column;gap:4px;min-height:80px;min-width:0;overflow:hidden;position:relative;padding-bottom:30px}
 .day-header{font-size:10px;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:.08em;padding:2px 0;text-align:center}
@@ -337,11 +346,21 @@ let completions    = JSON.parse(localStorage.getItem('imfl-completions')||'{}');
 let positions      = JSON.parse(localStorage.getItem('imfl-positions')||'{}');
 let customWorkouts = JSON.parse(localStorage.getItem('imfl-custom')||'{}');
 let deletedSessions= new Set(JSON.parse(localStorage.getItem('imfl-deleted')||'[]'));
+let collapsedWeeks = new Set(JSON.parse(localStorage.getItem('imfl-collapsed-weeks')||'[]'));
+let expandedWeeks  = new Set(JSON.parse(localStorage.getItem('imfl-expanded-weeks')||'[]'));
+let collapsedPhases= new Set(JSON.parse(localStorage.getItem('imfl-collapsed-phases')||'[]'));
+let expandedPhases = new Set(JSON.parse(localStorage.getItem('imfl-expanded-phases')||'[]'));
 
 function saveCompletions(){ localStorage.setItem('imfl-completions',JSON.stringify(completions)); }
 function savePositions(){   localStorage.setItem('imfl-positions',JSON.stringify(positions)); }
 function saveCustom(){      localStorage.setItem('imfl-custom',JSON.stringify(customWorkouts)); }
 function saveDeleted(){     localStorage.setItem('imfl-deleted',JSON.stringify([...deletedSessions])); }
+function saveCollapsed(){
+  localStorage.setItem('imfl-collapsed-weeks',JSON.stringify([...collapsedWeeks]));
+  localStorage.setItem('imfl-expanded-weeks',JSON.stringify([...expandedWeeks]));
+  localStorage.setItem('imfl-collapsed-phases',JSON.stringify([...collapsedPhases]));
+  localStorage.setItem('imfl-expanded-phases',JSON.stringify([...expandedPhases]));
+}
 
 function esc(s){
   return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -711,20 +730,23 @@ const PHASE_CONFIG=[
 const DAYS=['SAT','SUN','MON','TUE','WED','THU','FRI'];
 
 function getWeekSessions(wk){
+  const wkStart=new Date('2026-05-23');wkStart.setDate(wkStart.getDate()+(wk-1)*7);
+  const wkEnd=new Date(wkStart);wkEnd.setDate(wkEnd.getDate()+7);
   const sessions={};
   DAYS.forEach(d=>sessions[d]=[]);
   PLAN.forEach(s=>{
-    if(s.week===wk){if(sessions[s.dayName]) sessions[s.dayName].push(s);}
-    const ed=positions[s.id];
-    if(ed){
-      const d=new Date(ed+'T12:00:00');
-      const wkStart=new Date('2026-05-23');wkStart.setDate(wkStart.getDate()+(wk-1)*7);
-      const wkEnd=new Date(wkStart);wkEnd.setDate(wkEnd.getDate()+7);
-      if(d>=wkStart&&d<wkEnd&&s.week!==wk){
+    const movedTo=positions[s.id];
+    if(movedTo){
+      // Moved session: only show at its new location, never at original
+      const d=new Date(movedTo+'T12:00:00');
+      if(d>=wkStart&&d<wkEnd){
         const dayOff=Math.round((d-wkStart)/864e5);
         const dayName=DAYS[dayOff];
-        if(sessions[dayName]&&!sessions[dayName].find(x=>x.id===s.id)) sessions[dayName].push(s);
+        if(sessions[dayName]) sessions[dayName].push(s);
       }
+    } else {
+      // Unmoved: show at original week/day only
+      if(s.week===wk&&sessions[s.dayName]) sessions[s.dayName].push(s);
     }
   });
   return sessions;
@@ -737,35 +759,132 @@ function weekDateRange(wk){
   return`${fmt(s)} – ${fmt(e)}`;
 }
 
-let dragId=null;
-function onDragStart(ev,sid){dragId=sid;ev.dataTransfer.effectAllowed='move';setTimeout(()=>{document.getElementById('card-'+sid)?.classList.add('dragging');},0);}
-function onDragEnd(ev,sid){document.getElementById('card-'+sid)?.classList.remove('dragging');dragId=null;document.querySelectorAll('.drop-placeholder,.day-col').forEach(el=>el.classList.remove('active','drag-over'));}
-function onDragOver(ev,colEl){ev.preventDefault();ev.dataTransfer.dropEffect='move';colEl.classList.add('drag-over');}
-function onDragLeave(ev,colEl){colEl.classList.remove('drag-over');}
-function onDrop(ev,dateStr,colEl){ev.preventDefault();colEl.classList.remove('drag-over');if(!dragId) return;positions[dragId]=dateStr;savePositions();renderCalendar();renderTodayTomorrow();dragId=null;}
+let dragId=null,dragoverCol=null;
+
+function clearDragOver(){
+  if(!dragoverCol) return;
+  dragoverCol.classList.remove('drag-over');
+  const staticPh=dragoverCol.querySelector('.drop-placeholder:not(.drag-injected)');
+  if(staticPh) staticPh.classList.remove('active');
+  const injected=dragoverCol.querySelector('.drag-injected');
+  if(injected) injected.remove();
+  dragoverCol=null;
+}
+
+function onDragStart(ev,sid){
+  dragId=sid;
+  ev.dataTransfer.effectAllowed='move';
+  setTimeout(()=>document.getElementById('card-'+sid)?.classList.add('dragging'),0);
+}
+
+function onDragEnd(ev,sid){
+  document.getElementById('card-'+sid)?.classList.remove('dragging');
+  dragId=null;
+  clearDragOver();
+}
+
+function onDragOver(ev,colEl){
+  ev.preventDefault();
+  ev.dataTransfer.dropEffect='move';
+  if(dragoverCol===colEl) return;
+  clearDragOver();
+  dragoverCol=colEl;
+  colEl.classList.add('drag-over');
+  const staticPh=colEl.querySelector('.drop-placeholder');
+  if(staticPh){
+    staticPh.classList.add('active');
+  } else {
+    const ph=document.createElement('div');
+    ph.className='drop-placeholder active drag-injected';
+    ph.textContent='Drop here';
+    const addBtn=colEl.querySelector('.day-add-btn');
+    colEl.insertBefore(ph,addBtn||null);
+  }
+}
+
+function onDragLeave(ev,colEl){
+  if(colEl.contains(ev.relatedTarget)) return;
+  clearDragOver();
+}
+
+function onDrop(ev,dateStr,colEl){
+  ev.preventDefault();
+  clearDragOver();
+  if(!dragId) return;
+  const orig=PLAN.find(s=>s.id===dragId);
+  if(orig&&orig.date===dateStr) delete positions[dragId];
+  else positions[dragId]=dateStr;
+  savePositions();
+  renderCalendar();
+  renderTodayTomorrow();
+  dragId=null;
+}
+
+function isWeekComplete(wk){
+  const all=Object.values(getWeekSessions(wk)).flat().filter(s=>!deletedSessions.has(s.id));
+  return all.length>0 && all.every(s=>!!completions[s.id]);
+}
+function isPhaseComplete(ph){
+  const weeks=ph.weeks.filter(w=>w!=='race');
+  return weeks.length>0 && weeks.every(w=>isWeekComplete(w));
+}
+function isWeekCollapsed(wk){
+  return isWeekComplete(wk) ? !expandedWeeks.has(wk) : collapsedWeeks.has(wk);
+}
+function isPhaseCollapsed(phNum){
+  const ph=PHASE_CONFIG.find(p=>p.phase===phNum);
+  return isPhaseComplete(ph) ? !expandedPhases.has(phNum) : collapsedPhases.has(phNum);
+}
+function toggleWeek(wk){
+  if(isWeekComplete(wk)){
+    expandedWeeks.has(wk)?expandedWeeks.delete(wk):expandedWeeks.add(wk);
+  } else {
+    collapsedWeeks.has(wk)?collapsedWeeks.delete(wk):collapsedWeeks.add(wk);
+  }
+  saveCollapsed(); renderCalendar();
+}
+function togglePhase(phNum){
+  const ph=PHASE_CONFIG.find(p=>p.phase===phNum);
+  if(isPhaseComplete(ph)){
+    expandedPhases.has(phNum)?expandedPhases.delete(phNum):expandedPhases.add(phNum);
+  } else {
+    collapsedPhases.has(phNum)?collapsedPhases.delete(phNum):collapsedPhases.add(phNum);
+  }
+  saveCollapsed(); renderCalendar();
+}
 
 function renderCalendar(){
   const cal=document.getElementById('calendar');
   let html='';
   PHASE_CONFIG.forEach(ph=>{
     const nw=ph.weeks.filter(w=>w!=='race');
-    // Each phase wrapped in its own section so the sticky banner
-    // unsticks naturally when the section scrolls out of view
-    html+=`<div class="phase-section">`;
-    html+=`<div class="phase-banner" style="background:${ph.color}18;border:1px solid ${ph.color}44">
+    const phComplete=isPhaseComplete(ph);
+    const phCollapsed=isPhaseCollapsed(ph.phase);
+    html+=`<div class="phase-section${phCollapsed?' collapsed':''}">`;
+    html+=`<div class="phase-banner" onclick="togglePhase(${ph.phase})" style="background:${ph.color}18;border:1px solid ${ph.color}44">
       <div class="phase-bar" style="background:${ph.color}44"></div>
       <div class="phase-name" style="color:${ph.color}">${ph.name}</div>
       <div class="phase-weeks" style="color:${ph.color}aa">Phase ${ph.phase} &middot; Weeks ${nw[0]}&ndash;${nw[nw.length-1]}</div>
+      ${phComplete?'<span class="ph-done">&#x2713; Complete</span>':''}
       <div class="phase-bar" style="background:${ph.color}44"></div>
+      <span class="ph-icon" style="color:${ph.color}">${phCollapsed?'&#9654;':'&#9660;'}</span>
     </div>`;
     ph.weeks.forEach(wk=>{
       if(wk==='race'){
         const rs=PLAN.find(s=>s.id==='race-day');
-        if(rs) html+=`<div style="margin-bottom:12px">${sessionCardHTML(rs,false)}</div>`;
+        if(rs) html+=`<div class="race-day-wrapper" style="margin-bottom:12px">${sessionCardHTML(rs,false)}</div>`;
         return;
       }
+      const wkComplete=isWeekComplete(wk);
+      const wkCollapsed=isWeekCollapsed(wk);
       const sessions=getWeekSessions(wk);
-      html+=`<div class="week-row"><div class="week-label">Week ${wk} &middot; ${weekDateRange(wk)}</div><div class="week-grid">`;
+      html+=`<div class="week-row${wkCollapsed?' collapsed':''}${wkComplete?' complete':''}">
+        <div class="week-label" onclick="toggleWeek(${wk})">
+          <span class="wk-icon">${wkCollapsed?'&#9654;':'&#9660;'}</span>
+          Week ${wk} &middot; ${weekDateRange(wk)}
+          ${wkComplete?'<span class="wk-done">&#x2713; Done</span>':''}
+        </div>
+        <div class="week-grid">`;
       DAYS.forEach((day,di)=>{
         const dateStr=new Date(new Date('2026-05-23').getTime()+((wk-1)*7+di)*864e5).toISOString().split('T')[0];
         const daySessions=sessions[day]||[];
