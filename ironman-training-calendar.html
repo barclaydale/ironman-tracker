@@ -221,6 +221,24 @@ body{font-family:var(--body);background:var(--bg);color:var(--text);font-size:16
 .add-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:1001;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(3px)}
 .add-modal-overlay.hidden{display:none}
 .add-modal{background:var(--s1);border:1px solid var(--border2);border-radius:12px;width:360px;overflow:hidden}
+
+/* ── Projections update modal ── */
+.proj-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:1002;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(3px)}
+.proj-modal-overlay.hidden{display:none}
+.proj-modal{background:var(--s1);border:1px solid var(--border2);border-radius:12px;width:360px;overflow:hidden}
+.proj-modal-hdr{padding:14px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:var(--s2)}
+.proj-modal-body{padding:16px}
+.proj-modal-hint{font-size:12px;color:var(--muted);margin-bottom:14px;line-height:1.5}
+.proj-form-grid{display:grid;grid-template-columns:52px 1fr 56px 14px;gap:8px;align-items:center}
+.proj-form-lbl{font-family:var(--oswald);font-size:14px;font-weight:700;letter-spacing:.06em}
+.proj-form-lbl.swim{color:var(--swim)}.proj-form-lbl.bike{color:var(--bike)}.proj-form-lbl.run{color:var(--run)}.proj-form-lbl.tot{color:var(--red)}
+.proj-inp{padding:6px 10px;background:var(--s3);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-size:14px;font-family:var(--mono);outline:none;width:100%}
+.proj-inp:focus{border-color:var(--red)}
+.proj-inp.conf{width:100%;text-align:right}
+.proj-form-unit{font-size:12px;color:var(--muted)}
+.proj-modal-actions{display:flex;gap:8px;padding:0 16px 16px}
+.proj-update-btn{background:none;border:1px solid var(--border);border-radius:4px;color:var(--dim);font-size:11px;cursor:pointer;padding:3px 8px;font-family:var(--body);white-space:nowrap}
+.proj-update-btn:hover{border-color:var(--muted);color:var(--text)}
 .add-modal-hdr{padding:14px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;background:var(--s2)}
 .add-modal-title{font-family:var(--oswald);font-size:21px;font-weight:700;flex:1}
 .add-modal-body{padding:16px}
@@ -302,7 +320,10 @@ body{font-family:var(--body);background:var(--bg);color:var(--text);font-size:16
       <div class="race-countdown" id="countdown">&#8212; days</div>
     </div>
     <div>
-      <div class="panel-hdr">Training Totals</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <div class="panel-hdr" style="margin-bottom:0">Training Totals</div>
+        <button class="proj-update-btn" onclick="openProjModal()">&#x270E; Update Projections</button>
+      </div>
       <div class="stat-grid">
         <div class="stat-card swim"><div class="stat-label">Swim <span class="stat-label-sub">dist</span></div><div class="stat-val" id="stat-swim">0 yds</div></div>
         <div class="stat-card swim-t"><div class="stat-label">Swim <span class="stat-label-sub">time</span></div><div class="stat-val" id="stat-swim-time">0:00 hrs</div></div>
@@ -363,6 +384,41 @@ body{font-family:var(--body);background:var(--bg);color:var(--text);font-size:16
   </div>
 </div>
 
+<!-- Projections Update Modal -->
+<div class="proj-modal-overlay hidden" id="proj-modal-overlay">
+  <div class="proj-modal">
+    <div class="proj-modal-hdr">
+      <div style="font-family:var(--oswald);font-size:21px;font-weight:700;letter-spacing:.04em">Update Projections</div>
+      <button class="modal-close" onclick="closeProjModal()">&#x2715;</button>
+    </div>
+    <div class="proj-modal-body">
+      <p class="proj-modal-hint">Enter updated splits from your Claude analysis. Leave a field blank to keep the current value.</p>
+      <div class="proj-form-grid">
+        <span class="proj-form-lbl swim">Swim</span>
+        <input class="proj-inp" id="pi-swim-time" type="text" placeholder="0:55">
+        <input class="proj-inp conf" id="pi-swim-conf" type="number" min="0" max="100" placeholder="50">
+        <span class="proj-form-unit">%</span>
+        <span class="proj-form-lbl bike">Bike</span>
+        <input class="proj-inp" id="pi-bike-time" type="text" placeholder="5:36">
+        <input class="proj-inp conf" id="pi-bike-conf" type="number" min="0" max="100" placeholder="68">
+        <span class="proj-form-unit">%</span>
+        <span class="proj-form-lbl run">Run</span>
+        <input class="proj-inp" id="pi-run-time" type="text" placeholder="5:01">
+        <input class="proj-inp conf" id="pi-run-conf" type="number" min="0" max="100" placeholder="72">
+        <span class="proj-form-unit">%</span>
+        <span class="proj-form-lbl tot">Finish</span>
+        <input class="proj-inp" id="pi-total-time" type="text" placeholder="11:42">
+        <input class="proj-inp conf" id="pi-total-conf" type="number" min="0" max="100" placeholder="71">
+        <span class="proj-form-unit">%</span>
+      </div>
+    </div>
+    <div class="proj-modal-actions">
+      <button class="btn-sec" onclick="closeProjModal()">Cancel</button>
+      <button class="btn-pri" onclick="saveProjUpdate()">Save</button>
+    </div>
+  </div>
+</div>
+
 <!-- Add Workout Modal -->
 <div class="add-modal-overlay hidden" id="add-modal-overlay">
   <div class="add-modal">
@@ -420,12 +476,36 @@ function renderProjections(){
   ['swim','bike','run','total'].forEach(k=>{
     const p=projections[k]||PROJ_DEFAULTS[k];
     document.getElementById('proj-'+k).textContent=p.time;
-    if(k!=='total'){
-      document.getElementById('proj-'+k+'-conf').textContent=p.conf+'%';
-    } else {
-      document.getElementById('proj-total-conf').textContent=p.conf+'% · T1/T2 +0:10';
-    }
+    document.getElementById('proj-'+k+'-conf').textContent=p.conf+'%';
   });
+}
+
+function openProjModal(){
+  ['swim','bike','run','total'].forEach(k=>{
+    const p=projections[k]||PROJ_DEFAULTS[k];
+    document.getElementById('pi-'+k+'-time').value=p.time;
+    document.getElementById('pi-'+k+'-conf').value=p.conf;
+  });
+  document.getElementById('proj-modal-overlay').classList.remove('hidden');
+}
+
+function closeProjModal(){
+  document.getElementById('proj-modal-overlay').classList.add('hidden');
+}
+
+function saveProjUpdate(){
+  ['swim','bike','run','total'].forEach(k=>{
+    const t=document.getElementById('pi-'+k+'-time').value.trim();
+    const c=parseInt(document.getElementById('pi-'+k+'-conf').value);
+    projections[k]={
+      time:t||(projections[k]||PROJ_DEFAULTS[k]).time,
+      conf:isNaN(c)?(projections[k]||PROJ_DEFAULTS[k]).conf:c
+    };
+  });
+  saveProjections();
+  renderProjections();
+  renderStickyNav();
+  closeProjModal();
 }
 function saveCollapsed(){
   localStorage.setItem('imfl-collapsed-weeks',JSON.stringify([...collapsedWeeks]));
