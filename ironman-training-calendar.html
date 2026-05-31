@@ -54,6 +54,9 @@ body{font-family:var(--body);background:var(--bg);color:var(--text);font-size:16
 .stat-val{font-family:var(--mono);font-size:17px;font-weight:500}
 .stat-card.swim .stat-val{color:var(--swim)}.stat-card.bike .stat-val{color:var(--bike)}
 .stat-card.run .stat-val{color:var(--run)}.stat-card.total .stat-val{color:var(--red)}
+.stat-card.swim-t .stat-val{color:var(--swim)}.stat-card.bike-t .stat-val{color:var(--bike)}
+.stat-card.run-t .stat-val{color:var(--run)}.stat-card.total-dist .stat-val{color:var(--red)}
+.stat-label-sub{font-size:9px;color:var(--dim);text-transform:uppercase;letter-spacing:.06em;margin-left:3px;font-weight:400}
 .progress-wrap{margin-top:4px}
 .progress-lbl{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:4px}
 .progress-track{height:5px;background:var(--border);border-radius:99px;overflow:hidden}
@@ -255,10 +258,14 @@ body{font-family:var(--body);background:var(--bg);color:var(--text);font-size:16
     <div>
       <div class="panel-hdr">Training Totals</div>
       <div class="stat-grid">
-        <div class="stat-card swim"><div class="stat-label">Swim</div><div class="stat-val" id="stat-swim">0 yds</div></div>
-        <div class="stat-card bike"><div class="stat-label">Bike</div><div class="stat-val" id="stat-bike">0 mi</div></div>
-        <div class="stat-card run"><div class="stat-label">Run</div><div class="stat-val" id="stat-run">0 mi</div></div>
-        <div class="stat-card total"><div class="stat-label">Total Time</div><div class="stat-val" id="stat-time">0:00 hrs</div></div>
+        <div class="stat-card swim"><div class="stat-label">Swim <span class="stat-label-sub">dist</span></div><div class="stat-val" id="stat-swim">0 yds</div></div>
+        <div class="stat-card swim-t"><div class="stat-label">Swim <span class="stat-label-sub">time</span></div><div class="stat-val" id="stat-swim-time">0:00 hrs</div></div>
+        <div class="stat-card bike"><div class="stat-label">Bike <span class="stat-label-sub">dist</span></div><div class="stat-val" id="stat-bike">0 mi</div></div>
+        <div class="stat-card bike-t"><div class="stat-label">Bike <span class="stat-label-sub">time</span></div><div class="stat-val" id="stat-bike-time">0:00 hrs</div></div>
+        <div class="stat-card run"><div class="stat-label">Run <span class="stat-label-sub">dist</span></div><div class="stat-val" id="stat-run">0 mi</div></div>
+        <div class="stat-card run-t"><div class="stat-label">Run <span class="stat-label-sub">time</span></div><div class="stat-val" id="stat-run-time">0:00 hrs</div></div>
+        <div class="stat-card total-dist"><div class="stat-label">Total <span class="stat-label-sub">dist</span></div><div class="stat-val" id="stat-total-dist">0 mi</div></div>
+        <div class="stat-card total"><div class="stat-label">Total <span class="stat-label-sub">time</span></div><div class="stat-val" id="stat-time">0:00 hrs</div></div>
       </div>
       <div class="progress-wrap">
         <div class="progress-lbl"><span>Progress</span><span id="prog-text">0 / 0</span></div>
@@ -402,32 +409,39 @@ function getTodayTomorrow(){
   return{todaySession:pick(today),tomSession:pick(tomorrow)};
 }
 
+function fmtTime(min){
+  const h=Math.floor(min/60),m=min%60;
+  return`${h}:${String(m).padStart(2,'0')}`;
+}
+
 function calcStats(){
-  let swimYds=0,bikeMi=0,runMi=0,totalMin=0,done=0;
+  let swimYds=0,bikeMi=0,runMi=0,swimMin=0,bikeMin=0,runMin=0,totalMin=0,done=0;
   PLAN.forEach(s=>{
     if(deletedSessions.has(s.id)) return;
     const c=completions[s.id];
     if(!c) return;
     done++;
-    totalMin+=c.duration||0;
-    if(s.type==='swim'||s.type==='swimrun') swimYds+=c.distance||0;
-    else if(s.type==='bike'||s.type==='brick') bikeMi+=c.distance||0;
-    else if(s.type==='run') runMi+=c.distance||0;
+    const dur=c.duration||0;
+    totalMin+=dur;
+    if(s.type==='swim'||s.type==='swimrun'){ swimYds+=c.distance||0; swimMin+=dur; }
+    else if(s.type==='bike'||s.type==='brick'){ bikeMi+=c.distance||0; bikeMin+=dur; }
+    else if(s.type==='run'){ runMi+=c.distance||0; runMin+=dur; }
   });
   Object.values(customWorkouts).forEach(w=>{
     if(w.done){
       done++;
-      totalMin+=w.duration||0;
-      if(w.type==='swim') swimYds+=w.distance||0;
-      else if(w.type==='bike'||w.type==='brick') bikeMi+=w.distance||0;
-      else if(w.type==='run') runMi+=w.distance||0;
+      const dur=w.duration||0;
+      totalMin+=dur;
+      if(w.type==='swim'){ swimYds+=w.distance||0; swimMin+=dur; }
+      else if(w.type==='bike'||w.type==='brick'){ bikeMi+=w.distance||0; bikeMin+=dur; }
+      else if(w.type==='run'){ runMi+=w.distance||0; runMin+=dur; }
     }
   });
-  const hrs=Math.floor(totalMin/60),mins=totalMin%60;
+  const totalMi=(swimYds/1760+bikeMi+runMi).toFixed(1);
   const total=activePlan().length+Object.keys(customWorkouts).length;
   return{swimYds,bikeMi:bikeMi.toFixed(1),runMi:runMi.toFixed(1),
-         totalTime:`${hrs}:${String(mins).padStart(2,'0')}`,
-         done,total};
+         swimTime:fmtTime(swimMin),bikeTime:fmtTime(bikeMin),runTime:fmtTime(runMin),
+         totalTime:fmtTime(totalMin),totalMi,done,total};
 }
 
 function renderStats(){
@@ -435,8 +449,12 @@ function renderStats(){
   const days=Math.max(0,Math.ceil((new Date('2026-11-07')-new Date())/864e5));
   document.getElementById('countdown').textContent=days+' days';
   document.getElementById('stat-swim').textContent=st.swimYds.toLocaleString()+' yds';
+  document.getElementById('stat-swim-time').textContent=st.swimTime+' hrs';
   document.getElementById('stat-bike').textContent=st.bikeMi+' mi';
+  document.getElementById('stat-bike-time').textContent=st.bikeTime+' hrs';
   document.getElementById('stat-run').textContent=st.runMi+' mi';
+  document.getElementById('stat-run-time').textContent=st.runTime+' hrs';
+  document.getElementById('stat-total-dist').textContent=st.totalMi+' mi';
   document.getElementById('stat-time').textContent=st.totalTime+' hrs';
   const pct=Math.round(st.done/st.total*100);
   document.getElementById('prog-fill').style.width=pct+'%';
