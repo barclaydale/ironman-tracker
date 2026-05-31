@@ -50,7 +50,9 @@ body{font-family:var(--body);background:var(--bg);color:var(--text);font-size:16
 .sn-proj-item{display:flex;align-items:baseline;gap:2px}
 .sn-proj-item.swim .sn-stat-val{color:var(--swim)}.sn-proj-item.bike .sn-stat-val{color:var(--bike)}
 .sn-proj-item.run .sn-stat-val{color:var(--run)}.sn-proj-item.tot .sn-stat-val{color:var(--red)}
-.sn-proj-conf{font-size:10px;color:var(--dim);font-family:var(--mono)}
+.sn-proj-item{position:relative}
+.sn-proj-item[data-tip]::after{content:attr(data-tip);position:absolute;bottom:calc(100% + 7px);left:50%;transform:translateX(-50%);background:#1c1c1c;border:1px solid var(--border2);border-radius:4px;padding:3px 8px;font-size:11px;font-family:var(--mono);color:var(--muted);white-space:nowrap;opacity:0;pointer-events:none;transition:opacity .15s;z-index:300}
+.sn-proj-item[data-tip]:hover::after{opacity:1}
 
 /* ── Top panel ── */
 .top-panel{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;padding:16px;background:var(--s1);border-bottom:2px solid var(--red);margin-bottom:0}
@@ -74,7 +76,8 @@ body{font-family:var(--body);background:var(--bg);color:var(--text);font-size:16
 .stat-card.proj .stat-val{font-size:15px}
 .stat-card.proj.swim .stat-val{color:var(--swim)}.stat-card.proj.bike .stat-val{color:var(--bike)}
 .stat-card.proj.run .stat-val{color:var(--run)}.stat-card.proj.tot .stat-val{color:var(--red)}
-.proj-conf{font-size:10px;color:var(--dim);font-family:var(--mono);margin-top:1px}
+.proj-val-row{display:flex;align-items:baseline;gap:5px}
+.proj-conf{font-size:10px;color:var(--dim);font-family:var(--mono)}
 .progress-wrap{margin-top:4px}
 .progress-lbl{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:4px}
 .progress-track{height:5px;background:var(--border);border-radius:99px;overflow:hidden}
@@ -282,10 +285,10 @@ body{font-family:var(--body);background:var(--bg);color:var(--text);font-size:16
   </div>
   <div class="sn-proj">
     <span class="sn-proj-hdr">Race</span>
-    <div class="sn-proj-item swim"><span class="sn-stat-val" id="sn-proj-swim">0:55</span><span class="sn-proj-conf" id="sn-proj-swim-conf">(50%)</span><span class="sn-stat-unit">sw</span></div>
-    <div class="sn-proj-item bike"><span class="sn-stat-val" id="sn-proj-bike">5:36</span><span class="sn-proj-conf" id="sn-proj-bike-conf">(68%)</span><span class="sn-stat-unit">bk</span></div>
-    <div class="sn-proj-item run"><span class="sn-stat-val" id="sn-proj-run">5:01</span><span class="sn-proj-conf" id="sn-proj-run-conf">(72%)</span><span class="sn-stat-unit">rn</span></div>
-    <div class="sn-proj-item tot"><span class="sn-stat-val" id="sn-proj-total">11:42</span><span class="sn-proj-conf" id="sn-proj-total-conf">(71%)</span><span class="sn-stat-unit">fin</span></div>
+    <div class="sn-proj-item swim" id="sn-proj-item-swim" data-tip="50% confidence"><span class="sn-stat-val" id="sn-proj-swim">0:55</span><span class="sn-stat-unit">sw</span></div>
+    <div class="sn-proj-item bike" id="sn-proj-item-bike" data-tip="68% confidence"><span class="sn-stat-val" id="sn-proj-bike">5:36</span><span class="sn-stat-unit">bk</span></div>
+    <div class="sn-proj-item run" id="sn-proj-item-run" data-tip="72% confidence"><span class="sn-stat-val" id="sn-proj-run">5:01</span><span class="sn-stat-unit">rn</span></div>
+    <div class="sn-proj-item tot" id="sn-proj-item-total" data-tip="71% confidence"><span class="sn-stat-val" id="sn-proj-total">11:42</span><span class="sn-stat-unit">fin</span></div>
   </div>
 </div>
 
@@ -303,16 +306,16 @@ body{font-family:var(--body);background:var(--bg);color:var(--text);font-size:16
       <div class="stat-grid">
         <div class="stat-card swim"><div class="stat-label">Swim <span class="stat-label-sub">dist</span></div><div class="stat-val" id="stat-swim">0 yds</div></div>
         <div class="stat-card swim-t"><div class="stat-label">Swim <span class="stat-label-sub">time</span></div><div class="stat-val" id="stat-swim-time">0:00 hrs</div></div>
-        <div class="stat-card proj swim"><div class="stat-label">Swim <span class="stat-label-sub">race</span></div><div class="stat-val" id="proj-swim">0:55</div><div class="proj-conf" id="proj-swim-conf">50%</div></div>
+        <div class="stat-card proj swim"><div class="stat-label">Swim <span class="stat-label-sub">race</span></div><div class="proj-val-row"><div class="stat-val" id="proj-swim">0:55</div><span class="proj-conf" id="proj-swim-conf">50%</span></div></div>
         <div class="stat-card bike"><div class="stat-label">Bike <span class="stat-label-sub">dist</span></div><div class="stat-val" id="stat-bike">0 mi</div></div>
         <div class="stat-card bike-t"><div class="stat-label">Bike <span class="stat-label-sub">time</span></div><div class="stat-val" id="stat-bike-time">0:00 hrs</div></div>
-        <div class="stat-card proj bike"><div class="stat-label">Bike <span class="stat-label-sub">race</span></div><div class="stat-val" id="proj-bike">5:36</div><div class="proj-conf" id="proj-bike-conf">68%</div></div>
+        <div class="stat-card proj bike"><div class="stat-label">Bike <span class="stat-label-sub">race</span></div><div class="proj-val-row"><div class="stat-val" id="proj-bike">5:36</div><span class="proj-conf" id="proj-bike-conf">68%</span></div></div>
         <div class="stat-card run"><div class="stat-label">Run <span class="stat-label-sub">dist</span></div><div class="stat-val" id="stat-run">0 mi</div></div>
         <div class="stat-card run-t"><div class="stat-label">Run <span class="stat-label-sub">time</span></div><div class="stat-val" id="stat-run-time">0:00 hrs</div></div>
-        <div class="stat-card proj run"><div class="stat-label">Run <span class="stat-label-sub">race</span></div><div class="stat-val" id="proj-run">5:01</div><div class="proj-conf" id="proj-run-conf">72%</div></div>
+        <div class="stat-card proj run"><div class="stat-label">Run <span class="stat-label-sub">race</span></div><div class="proj-val-row"><div class="stat-val" id="proj-run">5:01</div><span class="proj-conf" id="proj-run-conf">72%</span></div></div>
         <div class="stat-card total-dist"><div class="stat-label">Total <span class="stat-label-sub">dist</span></div><div class="stat-val" id="stat-total-dist">0 mi</div></div>
         <div class="stat-card total"><div class="stat-label">Total <span class="stat-label-sub">time</span></div><div class="stat-val" id="stat-time">0:00 hrs</div></div>
-        <div class="stat-card proj tot"><div class="stat-label">Finish <span class="stat-label-sub">proj</span></div><div class="stat-val" id="proj-total">11:42</div><div class="proj-conf" id="proj-total-conf">71% · T1/T2 +0:10</div></div>
+        <div class="stat-card proj tot"><div class="stat-label">Finish <span class="stat-label-sub">proj</span></div><div class="proj-val-row"><div class="stat-val" id="proj-total">11:42</div><span class="proj-conf" id="proj-total-conf">71%</span></div></div>
       </div>
       <div class="progress-wrap">
         <div class="progress-lbl"><span>Progress</span><span id="prog-text">0 / 0</span></div>
@@ -814,7 +817,7 @@ function renderStickyNav(){
   ['swim','bike','run','total'].forEach(k=>{
     const p=projections[k]||PROJ_DEFAULTS[k];
     document.getElementById('sn-proj-'+k).textContent=p.time;
-    document.getElementById('sn-proj-'+k+'-conf').textContent='('+p.conf+'%)';
+    document.getElementById('sn-proj-item-'+k).setAttribute('data-tip',p.conf+'% confidence');
   });
 }
 
