@@ -44,7 +44,12 @@ body{font-family:var(--body);background:var(--bg);color:var(--text);font-size:16
 .sn-stat-val{font-family:var(--mono);font-size:12px;font-weight:500;color:var(--text)}
 .sn-stat-unit{font-size:9px;color:var(--dim)}
 .sn-grp.swim .sn-stat-val{color:var(--swim)}.sn-grp.bike .sn-stat-val{color:var(--bike)}
-.sn-grp.run .sn-stat-val{color:var(--run)}.sn-grp.tot .sn-stat-val{color:var(--red)}
+.sn-grp.run .sn-stat-val{color:var(--run)}
+.sn-proj{display:flex;align-items:center;gap:9px;border-left:1px solid var(--border);padding-left:14px;flex-shrink:0}
+.sn-proj-hdr{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);flex-shrink:0}
+.sn-proj-item{display:flex;align-items:baseline;gap:2px}
+.sn-proj-item.swim .sn-stat-val{color:var(--swim)}.sn-proj-item.bike .sn-stat-val{color:var(--bike)}
+.sn-proj-item.run .sn-stat-val{color:var(--run)}.sn-proj-item.tot .sn-stat-val{color:var(--red)}
 
 /* ── Top panel ── */
 .top-panel{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;padding:16px;background:var(--s1);border-bottom:2px solid var(--red);margin-bottom:0}
@@ -55,7 +60,7 @@ body{font-family:var(--body);background:var(--bg);color:var(--text);font-size:16
 .race-title{font-family:var(--oswald);font-size:25px;font-weight:700;color:#fff;letter-spacing:.04em;line-height:1}
 .race-sub{font-size:13px;color:var(--muted);margin-top:3px;letter-spacing:.05em}
 .race-countdown{font-family:var(--mono);font-size:32px;color:var(--red);font-weight:500;margin-top:4px;line-height:1}
-.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:4px}
+.stat-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:4px}
 .stat-card{background:var(--s2);border:1px solid var(--border);border-radius:6px;padding:8px 10px}
 .stat-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:2px}
 .stat-val{font-family:var(--mono);font-size:17px;font-weight:500}
@@ -64,6 +69,11 @@ body{font-family:var(--body);background:var(--bg);color:var(--text);font-size:16
 .stat-card.swim-t .stat-val{color:var(--swim)}.stat-card.bike-t .stat-val{color:var(--bike)}
 .stat-card.run-t .stat-val{color:var(--run)}.stat-card.total-dist .stat-val{color:var(--red)}
 .stat-label-sub{font-size:9px;color:var(--dim);text-transform:uppercase;letter-spacing:.06em;margin-left:3px;font-weight:400}
+.stat-card.proj{border-style:dashed;background:rgba(255,255,255,.015)}
+.stat-card.proj .stat-val{font-size:15px}
+.stat-card.proj.swim .stat-val{color:var(--swim)}.stat-card.proj.bike .stat-val{color:var(--bike)}
+.stat-card.proj.run .stat-val{color:var(--run)}.stat-card.proj.tot .stat-val{color:var(--red)}
+.proj-conf{font-size:10px;color:var(--dim);font-family:var(--mono);margin-top:1px}
 .progress-wrap{margin-top:4px}
 .progress-lbl{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:4px}
 .progress-track{height:5px;background:var(--border);border-radius:99px;overflow:hidden}
@@ -268,13 +278,13 @@ body{font-family:var(--body);background:var(--bg);color:var(--text);font-size:16
         <div class="sn-grp-row"><span class="sn-stat-val" id="sn-run-time">0:00</span><span class="sn-stat-unit">hrs</span></div>
       </div>
     </div>
-    <div class="sn-grp tot">
-      <span class="sn-grp-lbl">Total</span>
-      <div class="sn-grp-vals">
-        <div class="sn-grp-row"><span class="sn-stat-val" id="sn-total-dist">0</span><span class="sn-stat-unit">mi</span></div>
-        <div class="sn-grp-row"><span class="sn-stat-val" id="sn-total-time">0:00</span><span class="sn-stat-unit">hrs</span></div>
-      </div>
-    </div>
+  </div>
+  <div class="sn-proj">
+    <span class="sn-proj-hdr">Race</span>
+    <div class="sn-proj-item swim"><span class="sn-stat-val" id="sn-proj-swim">0:55</span><span class="sn-stat-unit">sw</span></div>
+    <div class="sn-proj-item bike"><span class="sn-stat-val" id="sn-proj-bike">5:36</span><span class="sn-stat-unit">bk</span></div>
+    <div class="sn-proj-item run"><span class="sn-stat-val" id="sn-proj-run">5:01</span><span class="sn-stat-unit">rn</span></div>
+    <div class="sn-proj-item tot"><span class="sn-stat-val" id="sn-proj-total">11:42</span><span class="sn-stat-unit">fin</span></div>
   </div>
 </div>
 
@@ -292,12 +302,16 @@ body{font-family:var(--body);background:var(--bg);color:var(--text);font-size:16
       <div class="stat-grid">
         <div class="stat-card swim"><div class="stat-label">Swim <span class="stat-label-sub">dist</span></div><div class="stat-val" id="stat-swim">0 yds</div></div>
         <div class="stat-card swim-t"><div class="stat-label">Swim <span class="stat-label-sub">time</span></div><div class="stat-val" id="stat-swim-time">0:00 hrs</div></div>
+        <div class="stat-card proj swim"><div class="stat-label">Swim <span class="stat-label-sub">race</span></div><div class="stat-val" id="proj-swim">0:55</div><div class="proj-conf" id="proj-swim-conf">50%</div></div>
         <div class="stat-card bike"><div class="stat-label">Bike <span class="stat-label-sub">dist</span></div><div class="stat-val" id="stat-bike">0 mi</div></div>
         <div class="stat-card bike-t"><div class="stat-label">Bike <span class="stat-label-sub">time</span></div><div class="stat-val" id="stat-bike-time">0:00 hrs</div></div>
+        <div class="stat-card proj bike"><div class="stat-label">Bike <span class="stat-label-sub">race</span></div><div class="stat-val" id="proj-bike">5:36</div><div class="proj-conf" id="proj-bike-conf">68%</div></div>
         <div class="stat-card run"><div class="stat-label">Run <span class="stat-label-sub">dist</span></div><div class="stat-val" id="stat-run">0 mi</div></div>
         <div class="stat-card run-t"><div class="stat-label">Run <span class="stat-label-sub">time</span></div><div class="stat-val" id="stat-run-time">0:00 hrs</div></div>
+        <div class="stat-card proj run"><div class="stat-label">Run <span class="stat-label-sub">race</span></div><div class="stat-val" id="proj-run">5:01</div><div class="proj-conf" id="proj-run-conf">72%</div></div>
         <div class="stat-card total-dist"><div class="stat-label">Total <span class="stat-label-sub">dist</span></div><div class="stat-val" id="stat-total-dist">0 mi</div></div>
         <div class="stat-card total"><div class="stat-label">Total <span class="stat-label-sub">time</span></div><div class="stat-val" id="stat-time">0:00 hrs</div></div>
+        <div class="stat-card proj tot"><div class="stat-label">Finish <span class="stat-label-sub">proj</span></div><div class="stat-val" id="proj-total">11:42</div><div class="proj-conf" id="proj-total-conf">71% · T1/T2 +0:10</div></div>
       </div>
       <div class="progress-wrap">
         <div class="progress-lbl"><span>Progress</span><span id="prog-text">0 / 0</span></div>
@@ -385,6 +399,8 @@ let completions    = JSON.parse(localStorage.getItem('imfl-completions')||'{}');
 let positions      = JSON.parse(localStorage.getItem('imfl-positions')||'{}');
 let customWorkouts = JSON.parse(localStorage.getItem('imfl-custom')||'{}');
 let deletedSessions= new Set(JSON.parse(localStorage.getItem('imfl-deleted')||'[]'));
+const PROJ_DEFAULTS={swim:{time:'0:55',conf:50},bike:{time:'5:36',conf:68},run:{time:'5:01',conf:72},total:{time:'11:42',conf:71}};
+let projections    = JSON.parse(localStorage.getItem('imfl-projections')||JSON.stringify(PROJ_DEFAULTS));
 let collapsedWeeks = new Set(JSON.parse(localStorage.getItem('imfl-collapsed-weeks')||'[]'));
 let expandedWeeks  = new Set(JSON.parse(localStorage.getItem('imfl-expanded-weeks')||'[]'));
 let collapsedPhases= new Set(JSON.parse(localStorage.getItem('imfl-collapsed-phases')||'[]'));
@@ -394,6 +410,19 @@ function saveCompletions(){ localStorage.setItem('imfl-completions',JSON.stringi
 function savePositions(){   localStorage.setItem('imfl-positions',JSON.stringify(positions)); }
 function saveCustom(){      localStorage.setItem('imfl-custom',JSON.stringify(customWorkouts)); }
 function saveDeleted(){     localStorage.setItem('imfl-deleted',JSON.stringify([...deletedSessions])); }
+function saveProjections(){ localStorage.setItem('imfl-projections',JSON.stringify(projections)); }
+
+function renderProjections(){
+  ['swim','bike','run','total'].forEach(k=>{
+    const p=projections[k]||PROJ_DEFAULTS[k];
+    document.getElementById('proj-'+k).textContent=p.time;
+    if(k!=='total'){
+      document.getElementById('proj-'+k+'-conf').textContent=p.conf+'%';
+    } else {
+      document.getElementById('proj-total-conf').textContent=p.conf+'% · T1/T2 +0:10';
+    }
+  });
+}
 function saveCollapsed(){
   localStorage.setItem('imfl-collapsed-weeks',JSON.stringify([...collapsedWeeks]));
   localStorage.setItem('imfl-expanded-weeks',JSON.stringify([...expandedWeeks]));
@@ -768,8 +797,10 @@ function renderStickyNav(){
   document.getElementById('sn-bike-time').textContent=st.bikeTime;
   document.getElementById('sn-run').textContent=st.runMi;
   document.getElementById('sn-run-time').textContent=st.runTime;
-  document.getElementById('sn-total-dist').textContent=st.totalMi;
-  document.getElementById('sn-total-time').textContent=st.totalTime;
+  document.getElementById('sn-proj-swim').textContent=projections.swim.time;
+  document.getElementById('sn-proj-bike').textContent=projections.bike.time;
+  document.getElementById('sn-proj-run').textContent=projections.run.time;
+  document.getElementById('sn-proj-total').textContent=projections.total.time;
 }
 
 function updateStickyVisibility(){
@@ -974,6 +1005,7 @@ function renderCalendar(){
 renderStats();
 renderTodayTomorrow();
 renderCalendar();
+renderProjections();
 </script>
 </body>
 </html>
