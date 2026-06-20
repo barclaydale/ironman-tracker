@@ -73,7 +73,6 @@ body{font-family:var(--body);background:var(--bg);color:var(--text);font-size:16
 .stat-card.run-t .stat-val{color:var(--run)}.stat-card.total-dist .stat-val{color:var(--red)}
 .stat-label-sub{font-size:9px;color:var(--dim);text-transform:uppercase;letter-spacing:.06em;margin-left:3px;font-weight:400}
 .stat-card.proj{border-style:dashed;background:rgba(255,255,255,.015)}
-.stat-card.proj .stat-val{font-size:15px}
 .stat-card.proj.swim .stat-val{color:var(--swim)}.stat-card.proj.bike .stat-val{color:var(--bike)}
 .stat-card.proj.run .stat-val{color:var(--run)}.stat-card.proj.tot .stat-val{color:var(--red)}
 .proj-val-row{display:flex;align-items:baseline;gap:5px}
@@ -434,7 +433,29 @@ body{font-family:var(--body);background:var(--bg);color:var(--text);font-size:16
         <input class="add-inp" id="add-dist" type="number" step="0.1" min="0" placeholder="e.g. 10">
         <span class="add-unit" id="add-unit-lbl">mi</span>
       </div>
-      <div class="add-row">
+      <div id="add-brick-rows" style="display:none">
+        <div class="add-row">
+          <span class="add-lbl" style="color:var(--bike)">Bike</span>
+          <input class="add-inp" id="add-bike-dist" type="number" step="0.1" min="0" placeholder="mi">
+          <span class="add-unit">mi</span>
+        </div>
+        <div class="add-row">
+          <span class="add-lbl" style="color:var(--bike)">Bike time</span>
+          <input class="add-inp" id="add-bike-dur" type="number" min="0" placeholder="min">
+          <span class="add-unit">min</span>
+        </div>
+        <div class="add-row">
+          <span class="add-lbl" style="color:var(--run)">Run</span>
+          <input class="add-inp" id="add-run-dist" type="number" step="0.1" min="0" placeholder="mi">
+          <span class="add-unit">mi</span>
+        </div>
+        <div class="add-row">
+          <span class="add-lbl" style="color:var(--run)">Run time</span>
+          <input class="add-inp" id="add-run-dur" type="number" min="0" placeholder="min">
+          <span class="add-unit">min</span>
+        </div>
+      </div>
+      <div class="add-row" id="add-dur-row">
         <span class="add-lbl">Duration</span>
         <input class="add-inp" id="add-dur" type="number" min="0" placeholder="minutes">
         <span class="add-unit">min</span>
@@ -582,7 +603,11 @@ function calcStats(){
     const dur=c.duration||0;
     totalMin+=dur;
     if(s.type==='swim'||s.type==='swimrun'){ swimYds+=c.distance||0; swimMin+=dur; }
-    else if(s.type==='bike'||s.type==='brick'){ bikeMi+=c.distance||0; bikeMin+=dur; }
+    else if(s.type==='brick'){
+      bikeMi+=c.bikeDist!=null?c.bikeDist:(c.distance||0); bikeMin+=c.bikeDur||0;
+      runMi+=c.runDist||0; runMin+=c.runDur||0;
+    }
+    else if(s.type==='bike'){ bikeMi+=c.distance||0; bikeMin+=dur; }
     else if(s.type==='run'){ runMi+=c.distance||0; runMin+=dur; }
   });
   Object.values(customWorkouts).forEach(w=>{
@@ -591,7 +616,11 @@ function calcStats(){
       const dur=w.duration||0;
       totalMin+=dur;
       if(w.type==='swim'){ swimYds+=w.distance||0; swimMin+=dur; }
-      else if(w.type==='bike'||w.type==='brick'){ bikeMi+=w.distance||0; bikeMin+=dur; }
+      else if(w.type==='brick'){
+        bikeMi+=w.bikeDist!=null?w.bikeDist:(w.distance||0); bikeMin+=w.bikeDur||0;
+        runMi+=w.runDist||0; runMin+=w.runDur||0;
+      }
+      else if(w.type==='bike'){ bikeMi+=w.distance||0; bikeMin+=dur; }
       else if(w.type==='run'){ runMi+=w.distance||0; runMin+=dur; }
     }
   });
@@ -671,13 +700,31 @@ function sessionCardHTML(s,draggable=true){
 
 function customCardHTML(w){
   const m=typeMeta(w.type);
-  const sub=w.note?esc(w.note):(w.done?`${esc(String(w.distance))} ${m.unit} &middot; ${esc(String(w.duration))} min`:'<span style="color:var(--dim)">Not logged &mdash; click to log</span>');
+  const sub=w.note?esc(w.note):w.done?(w.type==='brick'?`Bike ${w.bikeDist||0} mi &middot; ${w.bikeDur||0} min &nbsp;| Run ${w.runDist||0} mi &middot; ${w.runDur||0} min`:`${esc(String(w.distance))} ${m.unit} &middot; ${esc(String(w.duration))} min`):'<span style="color:var(--dim)">Not logged &mdash; click to log</span>';
   return`
     <div class="custom-card${w.done?' done':''}" onclick="openCustomModal('${w.id}')">
       <button class="custom-del" onclick="event.stopPropagation();delCustom('${w.id}')" title="Delete">&#x2715;</button>
       <div class="sc-top">${badge(w.type)}<span class="sc-title">${esc(w.title)}</span></div>
       <div class="sc-s1">${sub}</div>
     </div>`;
+}
+
+function brickFormHTML(saveCall){
+  return`<div class="log-form-row" style="margin-bottom:5px">
+    <span style="font-size:10px;font-weight:700;color:var(--bike);width:28px;flex-shrink:0">BIKE</span>
+    <input class="log-input" type="number" id="m-bike-dist" placeholder="Dist" step="0.1" min="0"><span class="log-unit">mi</span>
+    <input class="log-input time-input" type="text" id="m-bike-dur" placeholder="Min"><span class="log-unit">min</span>
+  </div>
+  <div class="log-form-row" style="margin-bottom:6px">
+    <span style="font-size:10px;font-weight:700;color:var(--run);width:28px;flex-shrink:0">RUN</span>
+    <input class="log-input" type="number" id="m-run-dist" placeholder="Dist" step="0.1" min="0"><span class="log-unit">mi</span>
+    <input class="log-input time-input" type="text" id="m-run-dur" placeholder="Min"><span class="log-unit">min</span>
+  </div>
+  <button class="log-btn" onclick="${saveCall}">SAVE</button>`;
+}
+
+function brickDoneText(c){
+  return`Bike: ${c.bikeDist||0} mi &middot; ${c.bikeDur||0} min &nbsp;|&nbsp; Run: ${c.runDist||0} mi &middot; ${c.runDur||0} min`;
 }
 
 function renderTodayTomorrow(){
@@ -694,7 +741,15 @@ function renderPreview(slot,s,showForm){
   let formHTML='';
   if(showForm){
     if(done){
-      formHTML=`<div class="log-form"><div class="completed-badge">&#x2713; Logged: ${esc(String(done.distance||''))||'&mdash;'} ${esc(s.unit||'')} &middot; ${esc(String(done.duration||''))||'&mdash;'} min</div></div>`;
+      const doneText=s.type==='brick'
+        ?brickDoneText(done)
+        :`${esc(String(done.distance||''))||'&mdash;'} ${esc(s.unit||'')} &middot; ${esc(String(done.duration||''))||'&mdash;'} min`;
+      formHTML=`<div class="log-form"><div class="completed-badge">&#x2713; ${doneText}</div></div>`;
+    }else if(s.type==='brick'){
+      formHTML=`<div class="log-form"><div class="log-form-row">
+        <label class="log-check"><input type="checkbox" id="chk-${slot}" onchange="toggleForm('${slot}')"> Mark complete</label>
+      </div><div id="form-fields-${slot}" style="display:none;margin-top:6px">
+        ${brickFormHTML(`logBrick('${s.id}','${slot}')`)}</div></div>`;
     }else{
       formHTML=`<div class="log-form"><div class="log-form-row">
         <label class="log-check"><input type="checkbox" id="chk-${slot}" onchange="toggleForm('${slot}')"> Mark complete</label>
@@ -726,6 +781,38 @@ function logWorkout(sid,slot,unit){
   saveCompletions();renderStats();renderTodayTomorrow();renderCalendar();
 }
 
+function logBrick(sid,slot){
+  const bd=parseFloat(document.getElementById('m-bike-dist')?.value)||0;
+  const br=parseInt(document.getElementById('m-bike-dur')?.value)||0;
+  const rd=parseFloat(document.getElementById('m-run-dist')?.value)||0;
+  const rr=parseInt(document.getElementById('m-run-dur')?.value)||0;
+  completions[sid]={done:true,bikeDist:bd,bikeDur:br,runDist:rd,runDur:rr,
+    duration:br+rr,loggedAt:new Date().toISOString()};
+  saveCompletions();renderStats();renderTodayTomorrow();renderCalendar();
+}
+
+function logBrickFromModal(sid){
+  const bd=parseFloat(document.getElementById('m-bike-dist')?.value)||0;
+  const br=parseInt(document.getElementById('m-bike-dur')?.value)||0;
+  const rd=parseFloat(document.getElementById('m-run-dist')?.value)||0;
+  const rr=parseInt(document.getElementById('m-run-dur')?.value)||0;
+  completions[sid]={done:true,bikeDist:bd,bikeDur:br,runDist:rd,runDur:rr,
+    duration:br+rr,loggedAt:new Date().toISOString()};
+  saveCompletions();renderStats();renderTodayTomorrow();renderCalendar();openModal(sid);
+}
+
+function logCustomBrick(wid){
+  const w=customWorkouts[wid];if(!w) return;
+  w.bikeDist=parseFloat(document.getElementById('m-bike-dist')?.value)||0;
+  w.bikeDur=parseInt(document.getElementById('m-bike-dur')?.value)||0;
+  w.runDist=parseFloat(document.getElementById('m-run-dist')?.value)||0;
+  w.runDur=parseInt(document.getElementById('m-run-dur')?.value)||0;
+  w.distance=w.bikeDist+w.runDist;
+  w.duration=w.bikeDur+w.runDur;
+  w.done=true;w.loggedAt=new Date().toISOString();
+  saveCustom();renderStats();renderCalendar();openCustomModal(wid);
+}
+
 function openModal(sid){
   const s=PLAN.find(x=>x.id===sid);if(!s) return;
   const c=completions[sid];
@@ -739,14 +826,24 @@ function openModal(sid){
     ?`<button class="modal-restore-btn" onclick="restoreSession('${sid}');closeModal()">&#x21BA; Restore to calendar</button>`
     :`<button class="modal-del-btn" onclick="deleteSession('${sid}')">&#x2715; Remove from calendar</button>`;
   if(c&&!isDeleted){
-    logDiv.innerHTML=`<div class="completed-badge" style="margin-top:12px">&#x2713; Logged: ${esc(String(c.distance||''))||'&mdash;'} ${esc(s.unit||'')} &middot; ${esc(String(c.duration||''))||'&mdash;'} min on ${new Date(c.loggedAt).toLocaleDateString()}</div>
+    const doneText=s.type==='brick'
+      ?brickDoneText(c)
+      :`${esc(String(c.distance||''))||'&mdash;'} ${esc(s.unit||'')} &middot; ${esc(String(c.duration||''))||'&mdash;'} min`;
+    logDiv.innerHTML=`<div class="completed-badge" style="margin-top:12px">&#x2713; ${doneText}<br><span style="font-size:11px;color:var(--dim);font-weight:400">on ${new Date(c.loggedAt).toLocaleDateString()}</span></div>
       <button onclick="clearLog('${sid}')" style="background:none;border:none;color:var(--dim);font-size:13px;cursor:pointer;margin-top:4px">Clear log</button>${actionBtn}`;
   }else{
-    const hu=(!isDeleted&&s.unit)?`<input class="log-input" type="number" id="m-dist" placeholder="Distance" step="0.1" min="0"><span class="log-unit">${esc(s.unit)}</span>`:'';
-    const logForm=!isDeleted?`<div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--border)"><div class="log-form-row">${hu}
-      <input class="log-input time-input" type="text" id="m-dur" placeholder="Min"><span class="log-unit">min</span>
-      <button class="log-btn" onclick="logFromModal('${sid}','${esc(s.unit||'')}')">SAVE LOG</button>
-    </div></div>`:''
+    let logForm='';
+    if(!isDeleted){
+      if(s.type==='brick'){
+        logForm=`<div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--border)">${brickFormHTML(`logBrickFromModal('${sid}')`)}</div>`;
+      }else{
+        const hu=s.unit?`<input class="log-input" type="number" id="m-dist" placeholder="Distance" step="0.1" min="0"><span class="log-unit">${esc(s.unit)}</span>`:'';
+        logForm=`<div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--border)"><div class="log-form-row">${hu}
+          <input class="log-input time-input" type="text" id="m-dur" placeholder="Min"><span class="log-unit">min</span>
+          <button class="log-btn" onclick="logFromModal('${sid}','${esc(s.unit||'')}')">SAVE LOG</button>
+        </div></div>`;
+      }
+    }
     logDiv.innerHTML=logForm+actionBtn;
   }
   document.getElementById('modal-overlay').classList.remove('hidden');
@@ -786,9 +883,9 @@ let _addDate='',_addType='run';
 function openAddModal(dateStr){
   _addDate=dateStr;_addType='run';
   document.getElementById('add-modal-date').textContent=new Date(dateStr+'T12:00:00').toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});
-  document.getElementById('add-dist').value='';
-  document.getElementById('add-dur').value='';
-  document.getElementById('add-note').value='';
+  ['add-dist','add-dur','add-note','add-bike-dist','add-bike-dur','add-run-dist','add-run-dur'].forEach(id=>{
+    const el=document.getElementById(id);if(el) el.value='';
+  });
   renderTypeGrid();
   document.getElementById('add-modal-overlay').classList.remove('hidden');
 }
@@ -813,19 +910,34 @@ function selAddType(t){
 
 function updateAddUnit(){
   const m=typeMeta(_addType);
+  const isBrick=_addType==='brick';
   document.getElementById('add-unit-lbl').textContent=m.unit;
-  document.getElementById('add-dist-row').style.display=m.unit?'':'none';
+  document.getElementById('add-dist-row').style.display=(m.unit&&!isBrick)?'':'none';
+  document.getElementById('add-dur-row').style.display=isBrick?'none':'';
+  document.getElementById('add-brick-rows').style.display=isBrick?'':'none';
 }
 
 function commitAddWorkout(logNow){
-  const dist=parseFloat(document.getElementById('add-dist').value)||0;
-  const dur=parseInt(document.getElementById('add-dur').value)||0;
   const rawNote=document.getElementById('add-note').value.trim().slice(0,80);
   const m=typeMeta(_addType);
   const id='cw-'+Date.now();
-  customWorkouts[id]={id,date:_addDate,type:_addType,title:m.label,unit:m.unit,
-    distance:dist,duration:dur,note:rawNote,
-    done:logNow&&(dist>0||dur>0),loggedAt:logNow?new Date().toISOString():null};
+  if(_addType==='brick'){
+    const bd=parseFloat(document.getElementById('add-bike-dist').value)||0;
+    const br=parseInt(document.getElementById('add-bike-dur').value)||0;
+    const rd=parseFloat(document.getElementById('add-run-dist').value)||0;
+    const rr=parseInt(document.getElementById('add-run-dur').value)||0;
+    const hasData=bd>0||br>0||rd>0||rr>0;
+    customWorkouts[id]={id,date:_addDate,type:'brick',title:'Brick',unit:'mi',
+      bikeDist:bd,bikeDur:br,runDist:rd,runDur:rr,
+      distance:bd+rd,duration:br+rr,note:rawNote,
+      done:logNow&&hasData,loggedAt:logNow&&hasData?new Date().toISOString():null};
+  } else {
+    const dist=parseFloat(document.getElementById('add-dist').value)||0;
+    const dur=parseInt(document.getElementById('add-dur').value)||0;
+    customWorkouts[id]={id,date:_addDate,type:_addType,title:m.label,unit:m.unit,
+      distance:dist,duration:dur,note:rawNote,
+      done:logNow&&(dist>0||dur>0),loggedAt:logNow?new Date().toISOString():null};
+  }
   saveCustom();renderStats();renderCalendar();closeAddModal();
 }
 
@@ -842,8 +954,13 @@ function openCustomModal(wid){
   document.getElementById('modal-body').innerHTML=w.note?`<p style="font-size:15px;color:#ccc;margin-bottom:8px">${esc(w.note)}</p>`:'';
   const logDiv=document.getElementById('modal-log');
   if(w.done){
-    logDiv.innerHTML=`<div class="completed-badge" style="margin-top:12px">&#x2713; Logged: ${esc(String(w.distance||''))||'&mdash;'} ${esc(w.unit||'')} &middot; ${esc(String(w.duration||''))||'&mdash;'} min</div>
+    const doneText=w.type==='brick'
+      ?brickDoneText(w)
+      :`${esc(String(w.distance||''))||'&mdash;'} ${esc(w.unit||'')} &middot; ${esc(String(w.duration||''))||'&mdash;'} min`;
+    logDiv.innerHTML=`<div class="completed-badge" style="margin-top:12px">&#x2713; ${doneText}</div>
       <button onclick="clearCustomLog('${wid}')" style="background:none;border:none;color:var(--dim);font-size:13px;cursor:pointer;margin-top:4px">Clear log</button>`;
+  }else if(w.type==='brick'){
+    logDiv.innerHTML=`<div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--border)">${brickFormHTML(`logCustomBrick('${wid}')`)}</div>`;
   }else{
     const hu=m.unit?`<input class="log-input" type="number" id="m-dist" placeholder="Distance" step="0.1" min="0"><span class="log-unit">${esc(m.unit)}</span>`:'';
     logDiv.innerHTML=`<div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--border)"><div class="log-form-row">${hu}
