@@ -63,10 +63,13 @@ body{font-family:var(--body);background:var(--bg);color:var(--text);font-size:16
 .race-title{font-family:var(--oswald);font-size:20px;font-weight:700;color:#fff;letter-spacing:.04em;line-height:1}
 .race-sub{font-size:11px;color:var(--muted);margin-top:2px;letter-spacing:.05em}
 .race-countdown{font-family:var(--mono);font-size:24px;color:var(--red);font-weight:500;margin-top:2px;line-height:1}
-.stat-grid{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:4px;margin-top:3px}
-.stat-card{background:var(--s2);border:1px solid var(--border);border-radius:6px;padding:5px 7px}
+.stat-grid{display:grid;grid-template-columns:auto 1fr 1fr 1fr 1fr;gap:4px;margin-top:3px}
+.stat-card{background:var(--s2);border:1px solid var(--border);border-radius:6px;padding:4px 7px;text-align:center}
 .stat-label{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:1px}
 .stat-val{font-family:var(--mono);font-size:14px;font-weight:500}
+.sg-hdr{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--dim);text-align:center;padding:0 2px 2px;align-self:end}
+.sg-lbl{font-family:var(--oswald);font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;display:flex;align-items:center;padding:0 8px 0 2px;white-space:nowrap}
+.sg-lbl.swim{color:var(--swim)}.sg-lbl.bike{color:var(--bike)}.sg-lbl.run{color:var(--run)}.sg-lbl.tot{color:var(--red)}
 /* Race projections bar */
 .proj-bar{grid-column:1/-1;display:flex;align-items:center;gap:16px;padding:5px 0 6px;border-top:1px solid var(--border);margin-top:2px}
 .proj-bar-hdr{font-family:var(--oswald);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--red);font-weight:600;flex-shrink:0}
@@ -329,22 +332,36 @@ body{font-family:var(--body);background:var(--bg);color:var(--text);font-size:16
     <div>
       <div class="panel-hdr">Training Totals</div>
       <div class="stat-grid">
-        <div class="stat-card swim"><div class="stat-label">Swim <span class="stat-label-sub">dist</span></div><div class="stat-val" id="stat-swim">0 yds</div></div>
-        <div class="stat-card swim-cnt"><div class="stat-label">Swim <span class="stat-label-sub">sessions</span></div><div class="stat-val" id="stat-swim-cnt">0</div></div>
-        <div class="stat-card swim-avg"><div class="stat-label">Swim <span class="stat-label-sub">avg</span></div><div class="stat-val" id="stat-swim-avg">— yds</div></div>
-        <div class="stat-card swim-t"><div class="stat-label">Swim <span class="stat-label-sub">time</span></div><div class="stat-val" id="stat-swim-time">0:00</div></div>
-        <div class="stat-card bike"><div class="stat-label">Bike <span class="stat-label-sub">dist</span></div><div class="stat-val" id="stat-bike">0 mi</div></div>
-        <div class="stat-card bike-cnt"><div class="stat-label">Bike <span class="stat-label-sub">sessions</span></div><div class="stat-val" id="stat-bike-cnt">0</div></div>
-        <div class="stat-card bike-avg"><div class="stat-label">Bike <span class="stat-label-sub">avg</span></div><div class="stat-val" id="stat-bike-avg">— mi</div></div>
-        <div class="stat-card bike-t"><div class="stat-label">Bike <span class="stat-label-sub">time</span></div><div class="stat-val" id="stat-bike-time">0:00</div></div>
-        <div class="stat-card run"><div class="stat-label">Run <span class="stat-label-sub">dist</span></div><div class="stat-val" id="stat-run">0 mi</div></div>
-        <div class="stat-card run-cnt"><div class="stat-label">Run <span class="stat-label-sub">sessions</span></div><div class="stat-val" id="stat-run-cnt">0</div></div>
-        <div class="stat-card run-avg"><div class="stat-label">Run <span class="stat-label-sub">avg</span></div><div class="stat-val" id="stat-run-avg">— mi</div></div>
-        <div class="stat-card run-t"><div class="stat-label">Run <span class="stat-label-sub">time</span></div><div class="stat-val" id="stat-run-time">0:00</div></div>
-        <div class="stat-card total-dist"><div class="stat-label">Total <span class="stat-label-sub">dist</span></div><div class="stat-val" id="stat-total-dist">0 mi</div></div>
-        <div class="stat-card total-cnt"><div class="stat-label">Sessions <span class="stat-label-sub">done</span></div><div class="stat-val" id="stat-total-cnt">0</div></div>
-        <div class="stat-card total-avg"><div class="stat-label">Avg <span class="stat-label-sub">per session</span></div><div class="stat-val" id="stat-total-avg">— mi</div></div>
-        <div class="stat-card total"><div class="stat-label">Total <span class="stat-label-sub">time</span></div><div class="stat-val" id="stat-time">0:00</div></div>
+        <!-- header row -->
+        <div class="sg-hdr"></div>
+        <div class="sg-hdr">Dist</div>
+        <div class="sg-hdr">Sessions</div>
+        <div class="sg-hdr">Avg</div>
+        <div class="sg-hdr">Time</div>
+        <!-- swim -->
+        <div class="sg-lbl swim">Swim</div>
+        <div class="stat-card swim"><div class="stat-val" id="stat-swim">0 yds</div></div>
+        <div class="stat-card swim-cnt"><div class="stat-val" id="stat-swim-cnt">0</div></div>
+        <div class="stat-card swim-avg"><div class="stat-val" id="stat-swim-avg">—</div></div>
+        <div class="stat-card swim-t"><div class="stat-val" id="stat-swim-time">0:00</div></div>
+        <!-- bike -->
+        <div class="sg-lbl bike">Bike</div>
+        <div class="stat-card bike"><div class="stat-val" id="stat-bike">0 mi</div></div>
+        <div class="stat-card bike-cnt"><div class="stat-val" id="stat-bike-cnt">0</div></div>
+        <div class="stat-card bike-avg"><div class="stat-val" id="stat-bike-avg">—</div></div>
+        <div class="stat-card bike-t"><div class="stat-val" id="stat-bike-time">0:00</div></div>
+        <!-- run -->
+        <div class="sg-lbl run">Run</div>
+        <div class="stat-card run"><div class="stat-val" id="stat-run">0 mi</div></div>
+        <div class="stat-card run-cnt"><div class="stat-val" id="stat-run-cnt">0</div></div>
+        <div class="stat-card run-avg"><div class="stat-val" id="stat-run-avg">—</div></div>
+        <div class="stat-card run-t"><div class="stat-val" id="stat-run-time">0:00</div></div>
+        <!-- total -->
+        <div class="sg-lbl tot">Total</div>
+        <div class="stat-card total-dist"><div class="stat-val" id="stat-total-dist">0 mi</div></div>
+        <div class="stat-card total-cnt"><div class="stat-val" id="stat-total-cnt">0</div></div>
+        <div class="stat-card total-avg"><div class="stat-val" id="stat-total-avg">—</div></div>
+        <div class="stat-card total"><div class="stat-val" id="stat-time">0:00</div></div>
       </div>
       <div class="progress-wrap">
         <div class="progress-lbl"><span>Progress</span><span id="prog-text">0 / 0</span></div>
