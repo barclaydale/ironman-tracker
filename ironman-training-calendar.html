@@ -55,7 +55,7 @@ body{font-family:var(--body);background:var(--bg);color:var(--text);font-size:16
 .sn-proj-item[data-tip]:hover::after{opacity:1}
 
 /* ── Top panel ── */
-.top-panel{display:grid;grid-template-columns:2fr 1fr 1fr;gap:8px;padding:8px 14px 0;background:var(--s1);border-bottom:2px solid var(--red);margin-bottom:0}
+.top-panel{display:grid;grid-template-columns:1fr;gap:8px;padding:8px 14px 0;background:var(--s1);border-bottom:2px solid var(--red);margin-bottom:0}
 .panel-hdr{font-family:var(--oswald);font-size:13px;letter-spacing:.12em;text-transform:uppercase;color:var(--red);margin-bottom:8px;font-weight:600}
 
 /* Stats column */
@@ -389,23 +389,7 @@ body{font-family:var(--body);background:var(--bg);color:var(--text);font-size:16
     </div>
   </div>
 
-  <!-- Today -->
-  <div class="today-col">
-    <div class="panel-hdr">Today&#39;s Workout</div>
-    <div class="session-preview">
-      <div id="today-content"></div>
-    </div>
-  </div>
-
-  <!-- Tomorrow -->
-  <div class="tomorrow-col">
-    <div class="panel-hdr">Tomorrow</div>
-    <div class="session-preview">
-      <div id="tomorrow-content"></div>
-    </div>
-  </div>
-
-  <!-- Race Projections bar — spans all 3 cols, above the red border -->
+  <!-- Race Projections bar — spans full width, above the red border -->
   <div class="proj-bar">
     <span class="proj-bar-hdr">Race Projections</span>
     <div class="proj-bar-items">
@@ -881,6 +865,7 @@ function renderTodayTomorrow(){
 
 function renderPreview(slot,s,showForm){
   const container=document.getElementById(slot+'-content');
+  if(!container) return;
   if(!s){container.innerHTML=`<div class="sp-none">No session scheduled${slot==='today'?' today':' tomorrow'}.<br><span style="font-size:13px;color:#333">Drag a session here to schedule it.</span></div>`;return;}
   const done=completions[s.id];
   const m=typeMeta(s.type);
