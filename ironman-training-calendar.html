@@ -68,6 +68,8 @@ body{font-family:var(--body);background:var(--bg);color:var(--text);font-size:16
 .stat-label{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:1px}
 .stat-val{font-family:var(--mono);font-size:14px;font-weight:500}
 .sg-hdr{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--dim);text-align:center;padding:0 2px 2px;align-self:end}
+.excl-toggle{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:2px 7px;border-radius:99px;border:1px solid var(--border2);background:transparent;color:var(--dim);cursor:pointer;white-space:nowrap;transition:background .15s,color .15s,border-color .15s}
+.excl-toggle.active{background:rgba(232,0,45,.12);border-color:var(--red);color:var(--red)}
 .sg-lbl{font-family:var(--oswald);font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;display:flex;align-items:center;padding:0 8px 0 2px;white-space:nowrap}
 .sg-lbl.swim{color:var(--swim)}.sg-lbl.bike{color:var(--bike)}.sg-lbl.run{color:var(--run)}.sg-lbl.tot{color:var(--red)}
 /* Race projections bar */
@@ -330,7 +332,10 @@ body{font-family:var(--body);background:var(--bg);color:var(--text);font-size:16
       <div class="race-countdown" id="countdown">&#8212; days</div>
     </div>
     <div>
-      <div class="panel-hdr">Training Totals</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <div class="panel-hdr" style="margin-bottom:0">Training Totals</div>
+        <button id="excl-toggle" class="excl-toggle" onclick="toggleExcludeCfAr()">excl. CF / AR</button>
+      </div>
       <div class="stat-grid">
         <!-- header row -->
         <div class="sg-hdr"></div>
@@ -537,11 +542,14 @@ let customWorkouts = JSON.parse(localStorage.getItem('imfl-custom')||'{}');
 let deletedSessions= new Set(JSON.parse(localStorage.getItem('imfl-deleted')||'[]'));
 const PROJ_DEFAULTS={swim:{time:'0:55',conf:50},bike:{time:'5:36',conf:68},run:{time:'5:01',conf:72},total:{time:'11:42',conf:71}};
 let projections    = JSON.parse(localStorage.getItem('imfl-projections')||JSON.stringify(PROJ_DEFAULTS));
+let excludeCfAr    = JSON.parse(localStorage.getItem('imfl-exclude-cf-ar')||'false');
 let collapsedWeeks = new Set(JSON.parse(localStorage.getItem('imfl-collapsed-weeks')||'[]'));
 let expandedWeeks  = new Set(JSON.parse(localStorage.getItem('imfl-expanded-weeks')||'[]'));
 let collapsedPhases= new Set(JSON.parse(localStorage.getItem('imfl-collapsed-phases')||'[]'));
 let expandedPhases = new Set(JSON.parse(localStorage.getItem('imfl-expanded-phases')||'[]'));
 
+function saveExcludeCfAr(){ localStorage.setItem('imfl-exclude-cf-ar',JSON.stringify(excludeCfAr)); }
+function toggleExcludeCfAr(){ excludeCfAr=!excludeCfAr; saveExcludeCfAr(); renderStats(); document.getElementById('excl-toggle').classList.toggle('active',excludeCfAr); }
 function saveCompletions(){ localStorage.setItem('imfl-completions',JSON.stringify(completions)); }
 function savePositions(){   localStorage.setItem('imfl-positions',JSON.stringify(positions)); }
 function saveCustom(){      localStorage.setItem('imfl-custom',JSON.stringify(customWorkouts)); }
@@ -651,8 +659,10 @@ function fmtTime(min){
 function calcStats(){
   let swimYds=0,bikeMi=0,runMi=0,swimMin=0,bikeMin=0,runMin=0,totalMin=0,done=0;
   let swimCount=0,bikeCount=0,runCount=0;
+  const skipType=t=>excludeCfAr&&(t==='cf'||t==='ar');
   PLAN.forEach(s=>{
     if(deletedSessions.has(s.id)) return;
+    if(skipType(s.type)) return;
     const c=completions[s.id];
     if(!c) return;
     done++;
@@ -667,7 +677,7 @@ function calcStats(){
     else if(s.type==='run'){ runMi+=c.distance||0; runMin+=dur; runCount++; }
   });
   Object.values(customWorkouts).forEach(w=>{
-    if(w.done){
+    if(w.done&&!skipType(w.type)){
       done++;
       const dur=w.duration||0;
       totalMin+=dur;
@@ -681,7 +691,9 @@ function calcStats(){
     }
   });
   const totalMi=swimYds/1760+bikeMi+runMi;
-  const total=activePlan().length+Object.keys(customWorkouts).length;
+  const planTotal=activePlan().filter(s=>!skipType(s.type)).length;
+  const customTotal=Object.values(customWorkouts).filter(w=>!skipType(w.type)).length;
+  const total=planTotal+customTotal;
   const avg=(val,cnt,dec)=>cnt>0?(val/cnt).toFixed(dec):null;
   const avgT=(min,cnt)=>cnt>0?fmtTime(Math.round(min/cnt)):null;
   return{swimYds,bikeMi:bikeMi.toFixed(1),runMi:runMi.toFixed(1),
@@ -698,6 +710,7 @@ function renderStats(){
   const st=calcStats();
   const days=Math.max(0,Math.ceil((new Date('2026-11-07')-new Date())/864e5));
   document.getElementById('countdown').textContent=days+' days';
+  document.getElementById('excl-toggle').classList.toggle('active',excludeCfAr);
   document.getElementById('stat-swim').textContent=st.swimYds.toLocaleString()+' yds';
   document.getElementById('stat-swim-cnt').textContent=st.swimCount;
   document.getElementById('stat-swim-time').textContent=st.swimTime;
