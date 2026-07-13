@@ -17,7 +17,7 @@
   --oswald:'Oswald',sans-serif;--mono:'DM Mono',monospace;--body:'DM Sans',sans-serif;
   --ph-top:0px;
 }
-body{font-family:var(--body);background:var(--bg);color:var(--text);font-size:16px;min-height:100vh}
+body{font-family:var(--body);background:var(--bg);color:var(--text);font-size:18px;min-height:100vh}
 
 /* ── Sticky nav ── */
 .sticky-nav{position:fixed;top:0;left:0;right:0;z-index:200;background:var(--s1);border-bottom:1px solid var(--border2);padding:7px 20px;display:flex;align-items:center;gap:20px;transform:translateY(-100%);opacity:0;transition:transform .2s,opacity .2s;pointer-events:none}
@@ -56,45 +56,50 @@ body{font-family:var(--body);background:var(--bg);color:var(--text);font-size:16
 
 /* ── Top panel ── */
 .top-panel{display:grid;grid-template-columns:1fr;gap:8px;padding:8px 14px 0;background:var(--s1);border-bottom:2px solid var(--red);margin-bottom:0}
-.panel-hdr{font-family:var(--oswald);font-size:13px;letter-spacing:.12em;text-transform:uppercase;color:var(--red);margin-bottom:8px;font-weight:600}
+.panel-hdr{font-family:var(--oswald);font-size:15px;letter-spacing:.12em;text-transform:uppercase;color:var(--red);margin-bottom:8px;font-weight:600}
 
 /* Stats column */
 .stats-col{display:flex;flex-direction:column;gap:6px}
 .race-info-row{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:2px}
-.race-title{font-family:var(--oswald);font-size:22px;font-weight:700;color:#fff;letter-spacing:.04em;line-height:1.1}
-.race-sub{font-size:11px;color:var(--muted);margin-top:2px;letter-spacing:.05em}
-.race-countdown{font-family:var(--mono);font-size:30px;color:var(--red);font-weight:500;line-height:1;flex-shrink:0}
-.stat-grid{display:grid;grid-template-columns:auto 1fr 1fr 1fr 1fr 1fr 1fr;gap:4px;margin-top:3px}
-.pace-tgt{font-size:11px;color:var(--dim);font-family:var(--mono);line-height:1.3}
-.pace-delta{font-family:var(--mono);font-size:15px;font-weight:600;line-height:1.2}
-.pace-delta.ahead{color:#4ADE80}.pace-delta.behind{color:var(--red)}.pace-delta.zero{color:var(--muted)}
+.race-title{font-family:var(--oswald);font-size:24px;font-weight:700;color:#fff;letter-spacing:.04em;line-height:1.1}
+.race-sub{font-size:13px;color:var(--muted);margin-top:2px;letter-spacing:.05em}
+.race-countdown{font-family:var(--mono);font-size:32px;color:var(--red);font-weight:500;line-height:1;flex-shrink:0}
+.stat-grid{display:grid;grid-template-columns:auto 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr;gap:4px;margin-top:3px}
+.pace-tgt{font-size:18px;font-weight:500;color:var(--dim);font-family:var(--mono);line-height:1.2}
+.pace-delta{font-family:var(--mono);font-size:17px;font-weight:600;line-height:1.2}
+.pace-delta.ahead{color:#4ADE80}.pace-delta.close{color:#FBBF24}.pace-delta.behind{color:var(--red)}.pace-delta.zero{color:var(--muted)}
+.pace-trend{font-family:var(--mono);font-size:17px;font-weight:600;line-height:1.2}
+.pace-trend.ahead{color:#4ADE80}.pace-trend.behind{color:var(--red)}.pace-trend.total-behind{color:#FB923C}.pace-trend.zero{color:var(--muted)}
 .stat-card{background:var(--s2);border:1px solid var(--border);border-radius:6px;padding:5px 8px;text-align:center}
-.stat-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:1px}
-.stat-val{font-family:var(--mono);font-size:16px;font-weight:500}
-.sg-hdr{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--dim);text-align:center;padding:0 2px 3px;align-self:end}
-.excl-toggle{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:3px 9px;border-radius:99px;border:1px solid var(--border2);background:transparent;color:var(--dim);cursor:pointer;white-space:nowrap;transition:background .15s,color .15s,border-color .15s}
+.stat-label{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:1px}
+.stat-val{font-family:var(--mono);font-size:18px;font-weight:500}
+.sg-hdr{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--dim);text-align:center;padding:0 2px 3px;align-self:end}
+.excl-toggle{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:3px 9px;border-radius:99px;border:1px solid var(--border2);background:transparent;color:var(--dim);cursor:pointer;white-space:nowrap;transition:background .15s,color .15s,border-color .15s}
 .excl-toggle.active{background:rgba(232,0,45,.12);border-color:var(--red);color:var(--red)}
-.sg-lbl{font-family:var(--oswald);font-size:14px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;display:flex;align-items:center;padding:0 8px 0 2px;white-space:nowrap}
-.sg-lbl.swim{color:var(--swim)}.sg-lbl.bike{color:var(--bike)}.sg-lbl.run{color:var(--run)}.sg-lbl.tot{color:var(--red)}
+.sg-lbl{font-family:var(--oswald);font-size:16px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;display:flex;align-items:center;padding:0 8px 0 2px;white-space:nowrap}
+.sg-lbl.swim{color:var(--swim)}.sg-lbl.bike{color:var(--bike)}.sg-lbl.run{color:var(--run)}.sg-lbl.tot{color:#FB923C}
 /* Race projections bar */
-.proj-bar{display:inline-flex;align-items:center;gap:18px;padding:5px 12px;border:1px solid var(--border);border-radius:8px;background:rgba(255,255,255,.02);margin-bottom:2px}
-.proj-bar-hdr{font-family:var(--oswald);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--red);font-weight:600;flex-shrink:0}
+.proj-bar{display:flex;align-items:center;gap:18px;padding:5px 12px;border:1px solid var(--border);border-radius:8px;background:rgba(255,255,255,.02);margin-bottom:2px;width:fit-content;margin:0 auto 4px}
+.proj-bar-hdr{font-family:var(--oswald);font-size:15px;letter-spacing:.1em;text-transform:uppercase;color:var(--red);font-weight:600;flex-shrink:0}
 .proj-bar-items{display:flex;gap:20px}
 .proj-bar-item{display:flex;align-items:baseline;gap:6px}
-.proj-bar-lbl{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.proj-bar-lbl{font-size:15px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
 .proj-bar-item.swim .stat-val{color:var(--swim)}.proj-bar-item.bike .stat-val{color:var(--bike)}
-.proj-bar-item.run .stat-val{color:var(--run)}.proj-bar-item.tot .stat-val{color:var(--red)}
+.proj-bar-item.run .stat-val{color:var(--run)}.proj-bar-item.tot .stat-val{color:#FB923C}
 .stat-card.swim .stat-val,.stat-card.swim-t .stat-val,.stat-card.swim-cnt .stat-val,.stat-card.swim-avg .stat-val,.stat-card.swim-avgt .stat-val{color:var(--swim)}
 .stat-card.bike .stat-val,.stat-card.bike-t .stat-val,.stat-card.bike-cnt .stat-val,.stat-card.bike-avg .stat-val,.stat-card.bike-avgt .stat-val{color:var(--bike)}
 .stat-card.run .stat-val,.stat-card.run-t .stat-val,.stat-card.run-cnt .stat-val,.stat-card.run-avg .stat-val,.stat-card.run-avgt .stat-val{color:var(--run)}
-.stat-card.total .stat-val,.stat-card.total-dist .stat-val,.stat-card.total-cnt .stat-val,.stat-card.total-avg .stat-val,.stat-card.total-avgt .stat-val{color:var(--red)}
-.stat-label-sub{font-size:9px;color:var(--dim);text-transform:uppercase;letter-spacing:.06em;margin-left:3px;font-weight:400}
+.stat-card.total .stat-val,.stat-card.total-dist .stat-val,.stat-card.total-cnt .stat-val,.stat-card.total-avg .stat-val,.stat-card.total-avgt .stat-val{color:#FB923C}
+.stat-card.swim-tgt .pace-tgt{color:var(--swim)}.stat-card.bike-tgt .pace-tgt{color:var(--bike)}.stat-card.run-tgt .pace-tgt{color:var(--run)}.stat-card.total-tgt .pace-tgt{color:#FB923C}
+.pace-delta.total-behind{color:#FB923C}
+.stat-label-sub{font-size:11px;color:var(--dim);text-transform:uppercase;letter-spacing:.06em;margin-left:3px;font-weight:400}
 .stat-card.proj{border-style:dashed;background:rgba(255,255,255,.015)}
 .stat-card.proj.swim .stat-val{color:var(--swim)}.stat-card.proj.bike .stat-val{color:var(--bike)}
-.stat-card.proj.run .stat-val{color:var(--run)}.stat-card.proj.tot .stat-val{color:var(--red)}
+.stat-card.proj.run .stat-val{color:var(--run)}.stat-card.proj.tot .stat-val{color:#FB923C}
 .proj-val-row{display:flex;align-items:baseline;gap:5px}
-.proj-conf{font-size:10px;color:var(--dim);font-family:var(--mono)}
-.progress-wrap{margin-top:4px}
+.proj-conf{font-size:14px;color:var(--dim);font-family:var(--mono)}
+.proj-bar .stat-val{font-size:20px}
+.progress-wrap{margin-top:4px;margin-bottom:10px}
 .progress-lbl{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:4px}
 .progress-track{height:5px;background:var(--border);border-radius:99px;overflow:hidden}
 .progress-fill{height:100%;background:var(--red);border-radius:99px;transition:width .4s}
@@ -128,21 +133,21 @@ body{font-family:var(--body);background:var(--bg);color:var(--text);font-size:16
 /* ── Phase banner — sticky below nav ── */
 .phase-banner{padding:12px 16px;display:flex;align-items:center;gap:12px;margin:20px 0 8px;border-radius:8px;position:sticky;top:var(--ph-top,0px);z-index:100;background:var(--bg);cursor:pointer;user-select:none}
 .phase-banner:hover{filter:brightness(1.08)}
-.phase-name{font-family:var(--oswald);font-size:25px;font-weight:700;letter-spacing:.04em}
-.phase-weeks{font-size:14px;color:rgba(255,255,255,.7);font-weight:500}
+.phase-name{font-family:var(--oswald);font-size:27px;font-weight:700;letter-spacing:.04em}
+.phase-weeks{font-size:16px;color:rgba(255,255,255,.7);font-weight:500}
 .phase-bar{flex:1;height:2px;background:rgba(255,255,255,.2);border-radius:99px}
-.ph-done{font-size:11px;color:#4ADE80;background:rgba(74,222,128,.1);border:1px solid rgba(74,222,128,.3);border-radius:3px;padding:2px 8px;font-weight:700;flex-shrink:0}
-.ph-icon{font-size:11px;flex-shrink:0;opacity:.6}
+.ph-done{font-size:13px;color:#4ADE80;background:rgba(74,222,128,.1);border:1px solid rgba(74,222,128,.3);border-radius:3px;padding:2px 8px;font-weight:700;flex-shrink:0}
+.ph-icon{font-size:13px;flex-shrink:0;opacity:.6}
 .phase-section.collapsed>.week-row,.phase-section.collapsed>.race-day-wrapper{display:none}
 
 /* ── Week row ── */
 .week-row{margin-bottom:8px}
 .week-row.collapsed .week-grid{display:none}
-.week-label{font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;padding:4px 8px;margin-bottom:4px;display:flex;align-items:center;gap:6px;cursor:pointer;user-select:none}
+.week-label{font-size:13px;font-weight:700;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;padding:4px 8px;margin-bottom:4px;display:flex;align-items:center;gap:6px;cursor:pointer;user-select:none}
 .week-label:hover{color:var(--text)}
 .week-row.complete>.week-label{color:rgba(74,222,128,.55)}
-.wk-icon{font-size:9px;opacity:.55;flex-shrink:0}
-.wk-done{font-size:10px;color:#4ADE80;background:rgba(74,222,128,.1);border:1px solid rgba(74,222,128,.3);border-radius:3px;padding:1px 6px;font-weight:700;text-transform:none;letter-spacing:0}
+.wk-icon{font-size:11px;opacity:.55;flex-shrink:0}
+.wk-done{font-size:12px;color:#4ADE80;background:rgba(74,222,128,.1);border:1px solid rgba(74,222,128,.3);border-radius:3px;padding:1px 6px;font-weight:700;text-transform:none;letter-spacing:0}
 .week-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
 .day-col{display:flex;flex-direction:column;gap:4px;min-height:80px;min-width:0;overflow:hidden;position:relative;padding-bottom:30px}
 .day-header{font-size:10px;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:.08em;padding:2px 0;text-align:center}
@@ -369,7 +374,9 @@ body{font-family:var(--body);background:var(--bg);color:var(--text);font-size:16
         <!-- header row -->
         <div class="sg-hdr"></div>
         <div class="sg-hdr">Dist</div>
+        <div class="sg-hdr">Target</div>
         <div class="sg-hdr">vs Plan</div>
+        <div class="sg-hdr">Trend</div>
         <div class="sg-hdr">Sessions</div>
         <div class="sg-hdr">Time</div>
         <div class="sg-hdr">Avg Dist</div>
@@ -377,7 +384,9 @@ body{font-family:var(--body);background:var(--bg);color:var(--text);font-size:16
         <!-- swim -->
         <div class="sg-lbl swim">Swim</div>
         <div class="stat-card swim"><div class="stat-val" id="stat-swim">0 yds</div></div>
-        <div class="stat-card swim-pace"><div class="pace-tgt" id="pace-swim-tgt">—</div><div class="pace-delta" id="pace-swim-delta">—</div></div>
+        <div class="stat-card swim-tgt"><div class="pace-tgt" id="pace-swim-tgt">—</div></div>
+        <div class="stat-card swim-delta"><div class="pace-delta" id="pace-swim-delta">—</div></div>
+        <div class="stat-card swim-trend"><div class="pace-trend zero" id="pace-swim-trend">—</div></div>
         <div class="stat-card swim-cnt"><div class="stat-val" id="stat-swim-cnt">0</div></div>
         <div class="stat-card swim-t"><div class="stat-val" id="stat-swim-time">0:00</div></div>
         <div class="stat-card swim-avg"><div class="stat-val" id="stat-swim-avg">—</div></div>
@@ -385,7 +394,9 @@ body{font-family:var(--body);background:var(--bg);color:var(--text);font-size:16
         <!-- bike -->
         <div class="sg-lbl bike">Bike</div>
         <div class="stat-card bike"><div class="stat-val" id="stat-bike">0 mi</div></div>
-        <div class="stat-card bike-pace"><div class="pace-tgt" id="pace-bike-tgt">—</div><div class="pace-delta" id="pace-bike-delta">—</div></div>
+        <div class="stat-card bike-tgt"><div class="pace-tgt" id="pace-bike-tgt">—</div></div>
+        <div class="stat-card bike-delta"><div class="pace-delta" id="pace-bike-delta">—</div></div>
+        <div class="stat-card bike-trend"><div class="pace-trend zero" id="pace-bike-trend">—</div></div>
         <div class="stat-card bike-cnt"><div class="stat-val" id="stat-bike-cnt">0</div></div>
         <div class="stat-card bike-t"><div class="stat-val" id="stat-bike-time">0:00</div></div>
         <div class="stat-card bike-avg"><div class="stat-val" id="stat-bike-avg">—</div></div>
@@ -393,7 +404,9 @@ body{font-family:var(--body);background:var(--bg);color:var(--text);font-size:16
         <!-- run -->
         <div class="sg-lbl run">Run</div>
         <div class="stat-card run"><div class="stat-val" id="stat-run">0 mi</div></div>
-        <div class="stat-card run-pace"><div class="pace-tgt" id="pace-run-tgt">—</div><div class="pace-delta" id="pace-run-delta">—</div></div>
+        <div class="stat-card run-tgt"><div class="pace-tgt" id="pace-run-tgt">—</div></div>
+        <div class="stat-card run-delta"><div class="pace-delta" id="pace-run-delta">—</div></div>
+        <div class="stat-card run-trend"><div class="pace-trend zero" id="pace-run-trend">—</div></div>
         <div class="stat-card run-cnt"><div class="stat-val" id="stat-run-cnt">0</div></div>
         <div class="stat-card run-t"><div class="stat-val" id="stat-run-time">0:00</div></div>
         <div class="stat-card run-avg"><div class="stat-val" id="stat-run-avg">—</div></div>
@@ -401,7 +414,9 @@ body{font-family:var(--body);background:var(--bg);color:var(--text);font-size:16
         <!-- total -->
         <div class="sg-lbl tot">Total</div>
         <div class="stat-card total-dist"><div class="stat-val" id="stat-total-dist">0 mi</div></div>
-        <div class="stat-card"><div class="pace-tgt" id="pace-total-wk">Wk <span id="pace-wk-num">—</span></div><div class="pace-delta zero" id="pace-total-label">targets</div></div>
+        <div class="stat-card total-tgt"><div class="pace-tgt" id="pace-total-tgt">—</div></div>
+        <div class="stat-card"><div class="pace-delta zero" id="pace-total-delta">—</div></div>
+        <div class="stat-card total-trend"><div class="pace-trend zero" id="pace-total-trend">—</div></div>
         <div class="stat-card total-cnt"><div class="stat-val" id="stat-total-cnt">0</div></div>
         <div class="stat-card total"><div class="stat-val" id="stat-time">0:00</div></div>
         <div class="stat-card total-avg"><div class="stat-val" id="stat-total-avg">—</div></div>
@@ -732,6 +747,26 @@ function calcStats(){
          runAvgTime:avgT(runMin,runCount),totalAvgTime:avgT(totalMin,done)};
 }
 
+function calcStatsByWeek(maxWeek){
+  const skipType=t=>excludeCfAr&&(t==='cf'||t==='ar');
+  let swimYds=0,bikeMi=0,runMi=0;
+  PLAN.forEach(s=>{
+    if(deletedSessions.has(s.id)) return;
+    if(s.week>maxWeek) return;
+    if(skipType(s.type)) return;
+    const c=completions[s.id];
+    if(!c) return;
+    if(s.type==='swim'||s.type==='swimrun') swimYds+=c.distance||0;
+    else if(s.type==='brick'){
+      bikeMi+=c.bikeDist!=null?c.bikeDist:(c.distance||0);
+      runMi+=c.runDist||0;
+    }
+    else if(s.type==='bike') bikeMi+=c.distance||0;
+    else if(s.type==='run') runMi+=c.distance||0;
+  });
+  return {swimYds,bikeMi,runMi};
+}
+
 function renderStats(){
   const st=calcStats();
   const days=Math.max(0,Math.ceil((new Date('2026-11-07')-new Date())/864e5));
@@ -760,22 +795,76 @@ function renderStats(){
   // pace column
   const pw=currentPaceWeek();
   const pt=PACE_TARGETS[pw];
-  document.getElementById('pace-wk-num').textContent=pw;
   function setPace(sport,actual,tgt,isYds){
     const tgtEl=document.getElementById('pace-'+sport+'-tgt');
     const dEl=document.getElementById('pace-'+sport+'-delta');
     if(!pt||tgt===0){tgtEl.textContent='—';dEl.textContent='—';dEl.className='pace-delta zero';return;}
     const fmtTgt=isYds?(tgt>=1000?(tgt/1000).toFixed(1)+'k':tgt):tgt.toFixed(1);
-    tgtEl.textContent='tgt '+fmtTgt+(isYds?' yds':' mi');
+    tgtEl.textContent=fmtTgt+(isYds?' yds':' mi');
     const delta=actual-tgt;
     const absDelta=Math.abs(delta);
     const fmtD=isYds?(absDelta>=1000?(absDelta/1000).toFixed(1)+'k':Math.round(absDelta)):absDelta.toFixed(1);
     dEl.textContent=(delta>=0?'↑ ':'↓ ')+fmtD;
-    dEl.className='pace-delta '+(delta>0?'ahead':delta<0?'behind':'zero');
+    let cls;
+    if(delta>=0) cls='ahead';
+    else if(absDelta/tgt<=0.10) cls='close';
+    else cls='behind';
+    dEl.className='pace-delta '+cls;
   }
   setPace('swim',st.swimYds,pt?pt.swim:0,true);
   setPace('bike',parseFloat(st.bikeMi),pt?pt.bike:0,false);
   setPace('run',parseFloat(st.runMi),pt?pt.run:0,false);
+  // total row: sum discipline targets converted to miles
+  const tTgtEl=document.getElementById('pace-total-tgt');
+  const tDeltaEl=document.getElementById('pace-total-delta');
+  if(pt){
+    const totalTgt=(pt.swim/1760)+pt.bike+pt.run;
+    const totalActual=parseFloat(st.totalMi);
+    tTgtEl.textContent=totalTgt.toFixed(1)+' mi';
+    const delta=totalActual-totalTgt;
+    const absDelta=Math.abs(delta);
+    tDeltaEl.textContent=(delta>=0?'↑ ':'↓ ')+absDelta.toFixed(1);
+    let cls;
+    if(delta>=0) cls='ahead';
+    else if(absDelta/totalTgt<=0.10) cls='close';
+    else cls='behind';
+    tDeltaEl.className='pace-delta '+cls;
+  } else {
+    tTgtEl.textContent='—';
+    tDeltaEl.textContent='—';
+    tDeltaEl.className='pace-delta zero';
+  }
+  // trend column: change in vs-plan delta since last week
+  const prevPw=pw>1?pw-1:0;
+  const prevPt=prevPw>0?PACE_TARGETS[prevPw]:{swim:0,bike:0,run:0};
+  const prev=calcStatsByWeek(prevPw);
+  function setTrend(sport,curActual,curTgt,prvActual,prvTgt,isYds){
+    const el=document.getElementById('pace-'+sport+'-trend');
+    if(!pt){el.textContent='—';el.className='pace-trend zero';return;}
+    const trend=(curActual-curTgt)-(prvActual-prvTgt);
+    if(trend===0){el.textContent='→ 0';el.className='pace-trend zero';return;}
+    const abs=Math.abs(trend);
+    const fmt=isYds?(abs>=1000?(abs/1000).toFixed(1)+'k':Math.round(abs)):abs.toFixed(1);
+    el.textContent=(trend>0?'↑ ':'↓ ')+fmt;
+    el.className='pace-trend '+(trend>0?'ahead':'behind');
+  }
+  setTrend('swim',st.swimYds,pt?pt.swim:0,prev.swimYds,prevPt.swim,true);
+  setTrend('bike',parseFloat(st.bikeMi),pt?pt.bike:0,prev.bikeMi,prevPt.bike,false);
+  setTrend('run',parseFloat(st.runMi),pt?pt.run:0,prev.runMi,prevPt.run,false);
+  const tTrendEl=document.getElementById('pace-total-trend');
+  if(pt){
+    const curTotalTgt=(pt.swim/1760)+pt.bike+pt.run;
+    const prvTotalTgt=(prevPt.swim/1760)+prevPt.bike+prevPt.run;
+    const curTotalActual=parseFloat(st.totalMi);
+    const prvTotalActual=prev.swimYds/1760+prev.bikeMi+prev.runMi;
+    const trend=(curTotalActual-curTotalTgt)-(prvTotalActual-prvTotalTgt);
+    const abs=Math.abs(trend);
+    tTrendEl.textContent=(trend>=0?'↑ ':'↓ ')+abs.toFixed(1);
+    tTrendEl.className='pace-trend '+(trend>=0?'ahead':'behind');
+  } else {
+    tTrendEl.textContent='—';
+    tTrendEl.className='pace-trend zero';
+  }
   const pct=Math.round(st.done/st.total*100);
   document.getElementById('prog-fill').style.width=pct+'%';
   document.getElementById('prog-text').textContent=`${st.done} / ${st.total} sessions (${pct}%)`;
@@ -1279,7 +1368,11 @@ function isWeekCollapsed(wk){
 }
 function isPhaseCollapsed(phNum){
   const ph=PHASE_CONFIG.find(p=>p.phase===phNum);
-  return isPhaseComplete(ph) ? !expandedPhases.has(phNum) : collapsedPhases.has(phNum);
+  if(isPhaseComplete(ph)) return !expandedPhases.has(phNum);
+  if(collapsedPhases.has(phNum)) return true;
+  // auto-collapse when all numeric weeks are collapsed
+  const nw=ph.weeks.filter(w=>typeof w==='number');
+  return nw.length>0 && nw.every(w=>isWeekCollapsed(w));
 }
 function toggleWeek(wk){
   if(isWeekComplete(wk)){
@@ -1293,8 +1386,14 @@ function togglePhase(phNum){
   const ph=PHASE_CONFIG.find(p=>p.phase===phNum);
   if(isPhaseComplete(ph)){
     expandedPhases.has(phNum)?expandedPhases.delete(phNum):expandedPhases.add(phNum);
+  } else if(collapsedPhases.has(phNum)){
+    collapsedPhases.delete(phNum);
+  } else if(isPhaseCollapsed(phNum)){
+    // auto-collapsed because all weeks were collapsed — expand them all
+    const nw=ph.weeks.filter(w=>typeof w==='number');
+    nw.forEach(w=>{collapsedWeeks.delete(w);expandedWeeks.delete(w);});
   } else {
-    collapsedPhases.has(phNum)?collapsedPhases.delete(phNum):collapsedPhases.add(phNum);
+    collapsedPhases.add(phNum);
   }
   saveCollapsed(); renderCalendar();
 }
@@ -1352,10 +1451,26 @@ function renderCalendar(){
 }
 
 // ── Init ──
-// On load: ensure complete weeks don't stay stuck in expanded state
+// On load: auto-collapse past weeks and phases whose weeks are all past
 (function(){
   let changed=false;
-  expandedWeeks.forEach(wk=>{if(isWeekComplete(wk)){expandedWeeks.delete(wk);changed=true;}});
+  const currentWk=currentPaceWeek();
+  PHASE_CONFIG.forEach(ph=>{
+    const numericWeeks=ph.weeks.filter(w=>typeof w==='number');
+    numericWeeks.forEach(wk=>{
+      const isPast=wk<currentWk;
+      if(isPast||isWeekComplete(wk)){
+        if(expandedWeeks.has(wk)){expandedWeeks.delete(wk);changed=true;}
+        if(isPast&&!isWeekComplete(wk)&&!collapsedWeeks.has(wk)){collapsedWeeks.add(wk);changed=true;}
+      }
+    });
+    // collapse phase if all its numeric weeks are past and not explicitly expanded
+    if(numericWeeks.length>0 && numericWeeks.every(w=>w<currentWk)){
+      if(!expandedPhases.has(ph.phase)&&!collapsedPhases.has(ph.phase)){
+        collapsedPhases.add(ph.phase);changed=true;
+      }
+    }
+  });
   if(changed) saveCollapsed();
 })();
 renderStats();
