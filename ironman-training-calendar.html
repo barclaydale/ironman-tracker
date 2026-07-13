@@ -60,27 +60,28 @@ body{font-family:var(--body);background:var(--bg);color:var(--text);font-size:16
 
 /* Stats column */
 .stats-col{display:flex;flex-direction:column;gap:6px}
-.race-title{font-family:var(--oswald);font-size:20px;font-weight:700;color:#fff;letter-spacing:.04em;line-height:1}
+.race-info-row{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:2px}
+.race-title{font-family:var(--oswald);font-size:22px;font-weight:700;color:#fff;letter-spacing:.04em;line-height:1.1}
 .race-sub{font-size:11px;color:var(--muted);margin-top:2px;letter-spacing:.05em}
-.race-countdown{font-family:var(--mono);font-size:24px;color:var(--red);font-weight:500;margin-top:2px;line-height:1}
+.race-countdown{font-family:var(--mono);font-size:30px;color:var(--red);font-weight:500;line-height:1;flex-shrink:0}
 .stat-grid{display:grid;grid-template-columns:auto 1fr 1fr 1fr 1fr 1fr 1fr;gap:4px;margin-top:3px}
-.pace-tgt{font-size:9px;color:var(--dim);font-family:var(--mono);line-height:1.2}
-.pace-delta{font-family:var(--mono);font-size:13px;font-weight:600;line-height:1.2}
+.pace-tgt{font-size:11px;color:var(--dim);font-family:var(--mono);line-height:1.3}
+.pace-delta{font-family:var(--mono);font-size:15px;font-weight:600;line-height:1.2}
 .pace-delta.ahead{color:#4ADE80}.pace-delta.behind{color:var(--red)}.pace-delta.zero{color:var(--muted)}
-.stat-card{background:var(--s2);border:1px solid var(--border);border-radius:6px;padding:4px 7px;text-align:center}
-.stat-label{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:1px}
-.stat-val{font-family:var(--mono);font-size:14px;font-weight:500}
-.sg-hdr{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--dim);text-align:center;padding:0 2px 2px;align-self:end}
-.excl-toggle{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:2px 7px;border-radius:99px;border:1px solid var(--border2);background:transparent;color:var(--dim);cursor:pointer;white-space:nowrap;transition:background .15s,color .15s,border-color .15s}
+.stat-card{background:var(--s2);border:1px solid var(--border);border-radius:6px;padding:5px 8px;text-align:center}
+.stat-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:1px}
+.stat-val{font-family:var(--mono);font-size:16px;font-weight:500}
+.sg-hdr{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--dim);text-align:center;padding:0 2px 3px;align-self:end}
+.excl-toggle{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:3px 9px;border-radius:99px;border:1px solid var(--border2);background:transparent;color:var(--dim);cursor:pointer;white-space:nowrap;transition:background .15s,color .15s,border-color .15s}
 .excl-toggle.active{background:rgba(232,0,45,.12);border-color:var(--red);color:var(--red)}
-.sg-lbl{font-family:var(--oswald);font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;display:flex;align-items:center;padding:0 8px 0 2px;white-space:nowrap}
+.sg-lbl{font-family:var(--oswald);font-size:14px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;display:flex;align-items:center;padding:0 8px 0 2px;white-space:nowrap}
 .sg-lbl.swim{color:var(--swim)}.sg-lbl.bike{color:var(--bike)}.sg-lbl.run{color:var(--run)}.sg-lbl.tot{color:var(--red)}
 /* Race projections bar */
-.proj-bar{grid-column:1/-1;display:flex;align-items:center;gap:16px;padding:5px 0 6px;border-top:1px solid var(--border);margin-top:2px}
-.proj-bar-hdr{font-family:var(--oswald);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--red);font-weight:600;flex-shrink:0}
-.proj-bar-items{display:flex;gap:0;flex:1;justify-content:space-around}
-.proj-bar-item{display:flex;align-items:baseline;gap:5px}
-.proj-bar-lbl{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.proj-bar{display:inline-flex;align-items:center;gap:18px;padding:5px 12px;border:1px solid var(--border);border-radius:8px;background:rgba(255,255,255,.02);margin-bottom:2px}
+.proj-bar-hdr{font-family:var(--oswald);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--red);font-weight:600;flex-shrink:0}
+.proj-bar-items{display:flex;gap:20px}
+.proj-bar-item{display:flex;align-items:baseline;gap:6px}
+.proj-bar-lbl{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
 .proj-bar-item.swim .stat-val{color:var(--swim)}.proj-bar-item.bike .stat-val{color:var(--bike)}
 .proj-bar-item.run .stat-val{color:var(--run)}.proj-bar-item.tot .stat-val{color:var(--red)}
 .stat-card.swim .stat-val,.stat-card.swim-t .stat-val,.stat-card.swim-cnt .stat-val,.stat-card.swim-avg .stat-val,.stat-card.swim-avgt .stat-val{color:var(--swim)}
@@ -329,10 +330,35 @@ body{font-family:var(--body);background:var(--bg);color:var(--text);font-size:16
 <div class="top-panel" id="top-panel">
   <!-- Stats -->
   <div class="stats-col">
-    <div>
-      <div class="race-title">IRONMAN<br>FLORIDA</div>
-      <div class="race-sub">Panama City Beach &middot; November 7, 2026</div>
+    <div class="race-info-row">
+      <div>
+        <div class="race-title">IRONMAN FLORIDA</div>
+        <div class="race-sub">Panama City Beach &middot; November 7, 2026</div>
+      </div>
       <div class="race-countdown" id="countdown">&#8212; days</div>
+    </div>
+    <!-- Race Projections — compact, above the table -->
+    <div class="proj-bar">
+    <span class="proj-bar-hdr">Race Projections</span>
+    <div class="proj-bar-items">
+      <div class="proj-bar-item swim">
+        <span class="proj-bar-lbl">Swim</span>
+        <div class="proj-val-row"><div class="stat-val" id="proj-swim">0:55</div><span class="proj-conf" id="proj-swim-conf">50%</span></div>
+      </div>
+      <div class="proj-bar-item bike">
+        <span class="proj-bar-lbl">Bike</span>
+        <div class="proj-val-row"><div class="stat-val" id="proj-bike">5:36</div><span class="proj-conf" id="proj-bike-conf">68%</span></div>
+      </div>
+      <div class="proj-bar-item run">
+        <span class="proj-bar-lbl">Run</span>
+        <div class="proj-val-row"><div class="stat-val" id="proj-run">5:01</div><span class="proj-conf" id="proj-run-conf">72%</span></div>
+      </div>
+      <div class="proj-bar-item tot">
+        <span class="proj-bar-lbl">Finish</span>
+        <div class="proj-val-row"><div class="stat-val" id="proj-total">11:42</div><span class="proj-conf" id="proj-total-conf">71%</span></div>
+      </div>
+    </div>
+    <button class="proj-update-btn" onclick="openProjModal()">&#x270E; Update</button>
     </div>
     <div>
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
@@ -389,29 +415,6 @@ body{font-family:var(--body);background:var(--bg);color:var(--text);font-size:16
     </div>
   </div>
 
-  <!-- Race Projections bar — spans full width, above the red border -->
-  <div class="proj-bar">
-    <span class="proj-bar-hdr">Race Projections</span>
-    <div class="proj-bar-items">
-      <div class="proj-bar-item swim">
-        <span class="proj-bar-lbl">Swim</span>
-        <div class="proj-val-row"><div class="stat-val" id="proj-swim">0:55</div><span class="proj-conf" id="proj-swim-conf">50%</span></div>
-      </div>
-      <div class="proj-bar-item bike">
-        <span class="proj-bar-lbl">Bike</span>
-        <div class="proj-val-row"><div class="stat-val" id="proj-bike">5:36</div><span class="proj-conf" id="proj-bike-conf">68%</span></div>
-      </div>
-      <div class="proj-bar-item run">
-        <span class="proj-bar-lbl">Run</span>
-        <div class="proj-val-row"><div class="stat-val" id="proj-run">5:01</div><span class="proj-conf" id="proj-run-conf">72%</span></div>
-      </div>
-      <div class="proj-bar-item tot">
-        <span class="proj-bar-lbl">Finish</span>
-        <div class="proj-val-row"><div class="stat-val" id="proj-total">11:42</div><span class="proj-conf" id="proj-total-conf">71%</span></div>
-      </div>
-    </div>
-    <button class="proj-update-btn" onclick="openProjModal()">&#x270E; Update</button>
-  </div>
 </div>
 
 <!-- Calendar -->
@@ -1349,6 +1352,12 @@ function renderCalendar(){
 }
 
 // ── Init ──
+// On load: ensure complete weeks don't stay stuck in expanded state
+(function(){
+  let changed=false;
+  expandedWeeks.forEach(wk=>{if(isWeekComplete(wk)){expandedWeeks.delete(wk);changed=true;}});
+  if(changed) saveCollapsed();
+})();
 renderStats();
 renderTodayTomorrow();
 renderCalendar();
