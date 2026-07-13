@@ -63,7 +63,10 @@ body{font-family:var(--body);background:var(--bg);color:var(--text);font-size:16
 .race-title{font-family:var(--oswald);font-size:20px;font-weight:700;color:#fff;letter-spacing:.04em;line-height:1}
 .race-sub{font-size:11px;color:var(--muted);margin-top:2px;letter-spacing:.05em}
 .race-countdown{font-family:var(--mono);font-size:24px;color:var(--red);font-weight:500;margin-top:2px;line-height:1}
-.stat-grid{display:grid;grid-template-columns:auto 1fr 1fr 1fr 1fr 1fr;gap:4px;margin-top:3px}
+.stat-grid{display:grid;grid-template-columns:auto 1fr 1fr 1fr 1fr 1fr 1fr;gap:4px;margin-top:3px}
+.pace-tgt{font-size:9px;color:var(--dim);font-family:var(--mono);line-height:1.2}
+.pace-delta{font-family:var(--mono);font-size:13px;font-weight:600;line-height:1.2}
+.pace-delta.ahead{color:#4ADE80}.pace-delta.behind{color:var(--red)}.pace-delta.zero{color:var(--muted)}
 .stat-card{background:var(--s2);border:1px solid var(--border);border-radius:6px;padding:4px 7px;text-align:center}
 .stat-label{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:1px}
 .stat-val{font-family:var(--mono);font-size:14px;font-weight:500}
@@ -340,6 +343,7 @@ body{font-family:var(--body);background:var(--bg);color:var(--text);font-size:16
         <!-- header row -->
         <div class="sg-hdr"></div>
         <div class="sg-hdr">Dist</div>
+        <div class="sg-hdr">vs Plan</div>
         <div class="sg-hdr">Sessions</div>
         <div class="sg-hdr">Time</div>
         <div class="sg-hdr">Avg Dist</div>
@@ -347,6 +351,7 @@ body{font-family:var(--body);background:var(--bg);color:var(--text);font-size:16
         <!-- swim -->
         <div class="sg-lbl swim">Swim</div>
         <div class="stat-card swim"><div class="stat-val" id="stat-swim">0 yds</div></div>
+        <div class="stat-card swim-pace"><div class="pace-tgt" id="pace-swim-tgt">—</div><div class="pace-delta" id="pace-swim-delta">—</div></div>
         <div class="stat-card swim-cnt"><div class="stat-val" id="stat-swim-cnt">0</div></div>
         <div class="stat-card swim-t"><div class="stat-val" id="stat-swim-time">0:00</div></div>
         <div class="stat-card swim-avg"><div class="stat-val" id="stat-swim-avg">—</div></div>
@@ -354,6 +359,7 @@ body{font-family:var(--body);background:var(--bg);color:var(--text);font-size:16
         <!-- bike -->
         <div class="sg-lbl bike">Bike</div>
         <div class="stat-card bike"><div class="stat-val" id="stat-bike">0 mi</div></div>
+        <div class="stat-card bike-pace"><div class="pace-tgt" id="pace-bike-tgt">—</div><div class="pace-delta" id="pace-bike-delta">—</div></div>
         <div class="stat-card bike-cnt"><div class="stat-val" id="stat-bike-cnt">0</div></div>
         <div class="stat-card bike-t"><div class="stat-val" id="stat-bike-time">0:00</div></div>
         <div class="stat-card bike-avg"><div class="stat-val" id="stat-bike-avg">—</div></div>
@@ -361,6 +367,7 @@ body{font-family:var(--body);background:var(--bg);color:var(--text);font-size:16
         <!-- run -->
         <div class="sg-lbl run">Run</div>
         <div class="stat-card run"><div class="stat-val" id="stat-run">0 mi</div></div>
+        <div class="stat-card run-pace"><div class="pace-tgt" id="pace-run-tgt">—</div><div class="pace-delta" id="pace-run-delta">—</div></div>
         <div class="stat-card run-cnt"><div class="stat-val" id="stat-run-cnt">0</div></div>
         <div class="stat-card run-t"><div class="stat-val" id="stat-run-time">0:00</div></div>
         <div class="stat-card run-avg"><div class="stat-val" id="stat-run-avg">—</div></div>
@@ -368,6 +375,7 @@ body{font-family:var(--body);background:var(--bg);color:var(--text);font-size:16
         <!-- total -->
         <div class="sg-lbl tot">Total</div>
         <div class="stat-card total-dist"><div class="stat-val" id="stat-total-dist">0 mi</div></div>
+        <div class="stat-card"><div class="pace-tgt" id="pace-total-wk">Wk <span id="pace-wk-num">—</span></div><div class="pace-delta zero" id="pace-total-label">targets</div></div>
         <div class="stat-card total-cnt"><div class="stat-val" id="stat-total-cnt">0</div></div>
         <div class="stat-card total"><div class="stat-val" id="stat-time">0:00</div></div>
         <div class="stat-card total-avg"><div class="stat-val" id="stat-total-avg">—</div></div>
@@ -540,6 +548,37 @@ let completions    = JSON.parse(localStorage.getItem('imfl-completions')||'{}');
 let positions      = JSON.parse(localStorage.getItem('imfl-positions')||'{}');
 let customWorkouts = JSON.parse(localStorage.getItem('imfl-custom')||'{}');
 let deletedSessions= new Set(JSON.parse(localStorage.getItem('imfl-deleted')||'[]'));
+const PACE_TARGETS=[
+  null,
+  {swim:0,     bike:26.2,   run:4.1},
+  {swim:0,     bike:61.2,   run:8.7},
+  {swim:0,     bike:96.2,   run:15.4},
+  {swim:3200,  bike:140.0,  run:23.1},
+  {swim:6700,  bike:183.8,  run:31.8},
+  {swim:10200, bike:183.8,  run:34.9},
+  {swim:14200, bike:236.2,  run:41.5},
+  {swim:18200, bike:280.0,  run:51.3},
+  {swim:22400, bike:341.2,  run:58.5},
+  {swim:26600, bike:393.8,  run:68.2},
+  {swim:31100, bike:455.0,  run:75.9},
+  {swim:34600, bike:490.0,  run:79.5},
+  {swim:39100, bike:551.2,  run:92.3},
+  {swim:43900, bike:621.2,  run:102.6},
+  {swim:45800, bike:677.2,  run:113.8},
+  {swim:49300, bike:712.2,  run:117.4},
+  {swim:54300, bike:791.0,  run:133.3},
+  {swim:59300, bike:878.5,  run:151.3},
+  {swim:64300, bike:974.8,  run:172.8},
+  {swim:68100, bike:1053.5, run:188.2},
+  {swim:72600, bike:1141.0, run:202.6},
+  {swim:76600, bike:1202.2, run:210.3},
+  {swim:79600, bike:1246.0, run:216.4},
+  {swim:81600, bike:1263.5, run:218.5},
+];
+function currentPaceWeek(){
+  const diffDays=Math.floor((new Date()-new Date('2026-05-23T12:00:00'))/864e5);
+  return Math.min(Math.max(1,Math.floor(diffDays/7)+1),24);
+}
 const PROJ_DEFAULTS={swim:{time:'0:55',conf:50},bike:{time:'5:36',conf:68},run:{time:'5:01',conf:72},total:{time:'11:42',conf:71}};
 let projections    = JSON.parse(localStorage.getItem('imfl-projections')||JSON.stringify(PROJ_DEFAULTS));
 let excludeCfAr    = JSON.parse(localStorage.getItem('imfl-exclude-cf-ar')||'false');
@@ -731,6 +770,25 @@ function renderStats(){
   document.getElementById('stat-time').textContent=st.totalTime;
   document.getElementById('stat-total-avg').textContent=st.totalAvg!=null?st.totalAvg+' mi':'—';
   document.getElementById('stat-total-avg-time').textContent=st.totalAvgTime||'—';
+  // pace column
+  const pw=currentPaceWeek();
+  const pt=PACE_TARGETS[pw];
+  document.getElementById('pace-wk-num').textContent=pw;
+  function setPace(sport,actual,tgt,isYds){
+    const tgtEl=document.getElementById('pace-'+sport+'-tgt');
+    const dEl=document.getElementById('pace-'+sport+'-delta');
+    if(!pt||tgt===0){tgtEl.textContent='—';dEl.textContent='—';dEl.className='pace-delta zero';return;}
+    const fmtTgt=isYds?(tgt>=1000?(tgt/1000).toFixed(1)+'k':tgt):tgt.toFixed(1);
+    tgtEl.textContent='tgt '+fmtTgt+(isYds?' yds':' mi');
+    const delta=actual-tgt;
+    const absDelta=Math.abs(delta);
+    const fmtD=isYds?(absDelta>=1000?(absDelta/1000).toFixed(1)+'k':Math.round(absDelta)):absDelta.toFixed(1);
+    dEl.textContent=(delta>=0?'↑ ':'↓ ')+fmtD;
+    dEl.className='pace-delta '+(delta>0?'ahead':delta<0?'behind':'zero');
+  }
+  setPace('swim',st.swimYds,pt?pt.swim:0,true);
+  setPace('bike',parseFloat(st.bikeMi),pt?pt.bike:0,false);
+  setPace('run',parseFloat(st.runMi),pt?pt.run:0,false);
   const pct=Math.round(st.done/st.total*100);
   document.getElementById('prog-fill').style.width=pct+'%';
   document.getElementById('prog-text').textContent=`${st.done} / ${st.total} sessions (${pct}%)`;
@@ -1220,7 +1278,8 @@ function onDrop(ev,dateStr,colEl){
 }
 
 function isWeekComplete(wk){
-  const all=Object.values(getWeekSessions(wk)).flat().filter(s=>!deletedSessions.has(s.id));
+  const all=Object.values(getWeekSessions(wk)).flat()
+    .filter(s=>!deletedSessions.has(s.id)&&s.type!=='cf'&&s.type!=='ar');
   return all.length>0 && all.every(s=>!!completions[s.id]);
 }
 function isPhaseComplete(ph){
