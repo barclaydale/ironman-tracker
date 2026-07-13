@@ -749,6 +749,8 @@ function calcStats(){
 
 function calcStatsByWeek(maxWeek){
   const skipType=t=>excludeCfAr&&(t==='cf'||t==='ar');
+  const trainStart=new Date('2026-05-23T12:00:00');
+  const dateWeek=d=>Math.floor((new Date(d)-trainStart)/864e5/7)+1;
   let swimYds=0,bikeMi=0,runMi=0;
   PLAN.forEach(s=>{
     if(deletedSessions.has(s.id)) return;
@@ -763,6 +765,18 @@ function calcStatsByWeek(maxWeek){
     }
     else if(s.type==='bike') bikeMi+=c.distance||0;
     else if(s.type==='run') runMi+=c.distance||0;
+  });
+  Object.values(customWorkouts).forEach(w=>{
+    if(!w.done||!w.date) return;
+    if(skipType(w.type)) return;
+    if(dateWeek(w.date)>maxWeek) return;
+    if(w.type==='swim') swimYds+=w.distance||0;
+    else if(w.type==='brick'){
+      bikeMi+=w.bikeDist!=null?w.bikeDist:(w.distance||0);
+      runMi+=w.runDist||0;
+    }
+    else if(w.type==='bike') bikeMi+=w.distance||0;
+    else if(w.type==='run') runMi+=w.distance||0;
   });
   return {swimYds,bikeMi,runMi};
 }
@@ -834,30 +848,36 @@ function renderStats(){
     tDeltaEl.textContent='—';
     tDeltaEl.className='pace-delta zero';
   }
-  // trend column: change in vs-plan delta since last week
+  // trend column: actual done this week vs planned weekly increment
   const prevPw=pw>1?pw-1:0;
   const prevPt=prevPw>0?PACE_TARGETS[prevPw]:{swim:0,bike:0,run:0};
+  const cur=calcStatsByWeek(pw);
   const prev=calcStatsByWeek(prevPw);
   function setTrend(sport,curActual,curTgt,prvActual,prvTgt,isYds){
     const el=document.getElementById('pace-'+sport+'-trend');
     if(!pt){el.textContent='—';el.className='pace-trend zero';return;}
-    const trend=(curActual-curTgt)-(prvActual-prvTgt);
+    // actual done this week minus the planned weekly increment
+    const doneThisWeek=curActual-prvActual;
+    const plannedThisWeek=curTgt-prvTgt;
+    const trend=doneThisWeek-plannedThisWeek;
     if(trend===0){el.textContent='→ 0';el.className='pace-trend zero';return;}
     const abs=Math.abs(trend);
     const fmt=isYds?(abs>=1000?(abs/1000).toFixed(1)+'k':Math.round(abs)):abs.toFixed(1);
     el.textContent=(trend>0?'↑ ':'↓ ')+fmt;
     el.className='pace-trend '+(trend>0?'ahead':'behind');
   }
-  setTrend('swim',st.swimYds,pt?pt.swim:0,prev.swimYds,prevPt.swim,true);
-  setTrend('bike',parseFloat(st.bikeMi),pt?pt.bike:0,prev.bikeMi,prevPt.bike,false);
-  setTrend('run',parseFloat(st.runMi),pt?pt.run:0,prev.runMi,prevPt.run,false);
+  setTrend('swim',cur.swimYds,pt?pt.swim:0,prev.swimYds,prevPt.swim,true);
+  setTrend('bike',cur.bikeMi,pt?pt.bike:0,prev.bikeMi,prevPt.bike,false);
+  setTrend('run',cur.runMi,pt?pt.run:0,prev.runMi,prevPt.run,false);
   const tTrendEl=document.getElementById('pace-total-trend');
   if(pt){
     const curTotalTgt=(pt.swim/1760)+pt.bike+pt.run;
     const prvTotalTgt=(prevPt.swim/1760)+prevPt.bike+prevPt.run;
-    const curTotalActual=parseFloat(st.totalMi);
+    const curTotalActual=cur.swimYds/1760+cur.bikeMi+cur.runMi;
     const prvTotalActual=prev.swimYds/1760+prev.bikeMi+prev.runMi;
-    const trend=(curTotalActual-curTotalTgt)-(prvTotalActual-prvTotalTgt);
+    const doneThisWeek=curTotalActual-prvTotalActual;
+    const plannedThisWeek=curTotalTgt-prvTotalTgt;
+    const trend=doneThisWeek-plannedThisWeek;
     const abs=Math.abs(trend);
     tTrendEl.textContent=(trend>=0?'↑ ':'↓ ')+abs.toFixed(1);
     tTrendEl.className='pace-trend '+(trend>=0?'ahead':'behind');
@@ -1355,9 +1375,14 @@ function onDrop(ev,dateStr,colEl){
 }
 
 function isWeekComplete(wk){
-  const all=Object.values(getWeekSessions(wk)).flat()
-    .filter(s=>!deletedSessions.has(s.id)&&s.type!=='cf'&&s.type!=='ar');
-  return all.length>0 && all.every(s=>!!completions[s.id]);
+  const active=Object.values(getWeekSessions(wk)).flat()
+    .filter(s=>!deletedSessions.has(s.id));
+  if(active.length===0) return false;
+  const countable=active.filter(s=>s.type!=='cf'&&s.type!=='ar');
+  // if there are countable sessions, all must be complete
+  if(countable.length>0) return countable.every(s=>!!completions[s.id]);
+  // all non-CF/AR were removed — complete if remaining sessions are all done
+  return active.every(s=>!!completions[s.id]);
 }
 function isPhaseComplete(ph){
   const weeks=ph.weeks.filter(w=>w!=='race');
