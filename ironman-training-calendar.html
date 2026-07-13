@@ -80,10 +80,10 @@ body{font-family:var(--body);background:var(--bg);color:var(--text);font-size:18
 .sg-lbl.swim{color:var(--swim)}.sg-lbl.bike{color:var(--bike)}.sg-lbl.run{color:var(--run)}.sg-lbl.tot{color:#FB923C}
 /* Race projections bar */
 .proj-bar{display:flex;align-items:center;gap:18px;padding:5px 12px;border:1px solid var(--border);border-radius:8px;background:rgba(255,255,255,.02);margin-bottom:2px;width:fit-content;margin:0 auto 4px}
-.proj-bar-hdr{font-family:var(--oswald);font-size:15px;letter-spacing:.1em;text-transform:uppercase;color:var(--red);font-weight:600;flex-shrink:0}
+.proj-bar-hdr{font-family:var(--oswald);font-size:19px;letter-spacing:.1em;text-transform:uppercase;color:var(--red);font-weight:600;flex-shrink:0}
 .proj-bar-items{display:flex;gap:20px}
 .proj-bar-item{display:flex;align-items:baseline;gap:6px}
-.proj-bar-lbl{font-size:15px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.proj-bar-lbl{font-size:19px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
 .proj-bar-item.swim .stat-val{color:var(--swim)}.proj-bar-item.bike .stat-val{color:var(--bike)}
 .proj-bar-item.run .stat-val{color:var(--run)}.proj-bar-item.tot .stat-val{color:#FB923C}
 .stat-card.swim .stat-val,.stat-card.swim-t .stat-val,.stat-card.swim-cnt .stat-val,.stat-card.swim-avg .stat-val,.stat-card.swim-avgt .stat-val{color:var(--swim)}
@@ -98,7 +98,7 @@ body{font-family:var(--body);background:var(--bg);color:var(--text);font-size:18
 .stat-card.proj.run .stat-val{color:var(--run)}.stat-card.proj.tot .stat-val{color:#FB923C}
 .proj-val-row{display:flex;align-items:baseline;gap:5px}
 .proj-conf{font-size:14px;color:var(--dim);font-family:var(--mono)}
-.proj-bar .stat-val{font-size:20px}
+.proj-bar .stat-val{font-size:24px}
 .progress-wrap{margin-top:4px;margin-bottom:10px}
 .progress-lbl{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:4px}
 .progress-track{height:5px;background:var(--border);border-radius:99px;overflow:hidden}
@@ -813,7 +813,7 @@ function renderStats(){
     const tgtEl=document.getElementById('pace-'+sport+'-tgt');
     const dEl=document.getElementById('pace-'+sport+'-delta');
     if(!pt||tgt===0){tgtEl.textContent='—';dEl.textContent='—';dEl.className='pace-delta zero';return;}
-    const fmtTgt=isYds?(tgt>=1000?(tgt/1000).toFixed(1)+'k':tgt):tgt.toFixed(1);
+    const fmtTgt=isYds?Math.round(tgt).toLocaleString():tgt.toFixed(1);
     tgtEl.textContent=fmtTgt+(isYds?' yds':' mi');
     const delta=actual-tgt;
     const absDelta=Math.abs(delta);
