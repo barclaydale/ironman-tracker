@@ -749,7 +749,7 @@ function calcStats(){
 
 function calcStatsByWeek(maxWeek){
   const skipType=t=>excludeCfAr&&(t==='cf'||t==='ar');
-  const trainStart=new Date('2026-05-23T12:00:00');
+  const trainStart=new Date('2026-05-23T00:00:00Z');
   const dateWeek=d=>Math.floor((new Date(d)-trainStart)/864e5/7)+1;
   let swimYds=0,bikeMi=0,runMi=0;
   PLAN.forEach(s=>{
