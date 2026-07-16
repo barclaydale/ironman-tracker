@@ -837,7 +837,8 @@ function renderStats(){
   // pace column
   const pw=currentPaceWeek();
   const ptRow=PACE_TARGETS[pw];
-  const pt=ptRow?ptRow[paceMode]:null;
+  const _modeKey=paceMode==='plan'?'bench':'plan';
+  const pt=ptRow?ptRow[_modeKey]:null;
   // sync toggle UI
   const _track=document.getElementById('pace-toggle-track');
   if(_track) _track.classList.toggle('on',paceMode==='bench');
@@ -887,7 +888,7 @@ function renderStats(){
   // trend column
   const prevPw=pw>1?pw-1:0;
   const prevPtRow=prevPw>0?PACE_TARGETS[prevPw]:null;
-  const prevPt=prevPtRow?prevPtRow[paceMode]:{swim:0,bike:0,run:0};
+  const prevPt=prevPtRow?prevPtRow[_modeKey]:{swim:0,bike:0,run:0};
   const cur=calcStatsByWeek(pw);
   const prev=calcStatsByWeek(prevPw);
   function setTrend(sport,curActual,curTgt,prvActual,prvTgt,isYds){
