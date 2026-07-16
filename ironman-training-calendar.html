@@ -76,6 +76,13 @@ body{font-family:var(--body);background:var(--bg);color:var(--text);font-size:18
 .sg-hdr{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--dim);text-align:center;padding:0 2px 3px;align-self:end}
 .excl-toggle{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:3px 9px;border-radius:99px;border:1px solid var(--border2);background:transparent;color:var(--dim);cursor:pointer;white-space:nowrap;transition:background .15s,color .15s,border-color .15s}
 .excl-toggle.active{background:rgba(232,0,45,.12);border-color:var(--red);color:var(--red)}
+.pace-mode-wrap{display:flex;align-items:center;gap:7px;cursor:pointer;user-select:none}
+.pace-mode-lbl{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--dim);transition:color .2s}
+.pace-mode-lbl.active{color:var(--red)}
+.toggle-track{position:relative;width:40px;height:22px;background:var(--border2);border-radius:99px;transition:background .2s;flex-shrink:0}
+.toggle-track.on{background:var(--red)}
+.toggle-thumb{position:absolute;top:3px;left:3px;width:16px;height:16px;background:#fff;border-radius:50%;transition:transform .2s;box-shadow:0 1px 3px rgba(0,0,0,.4)}
+.toggle-track.on .toggle-thumb{transform:translateX(18px)}
 .sg-lbl{font-family:var(--oswald);font-size:16px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;display:flex;align-items:center;padding:0 8px 0 2px;white-space:nowrap}
 .sg-lbl.swim{color:var(--swim)}.sg-lbl.bike{color:var(--bike)}.sg-lbl.run{color:var(--run)}.sg-lbl.tot{color:#FB923C}
 /* Race projections bar */
@@ -368,7 +375,14 @@ body{font-family:var(--body);background:var(--bg);color:var(--text);font-size:18
     <div>
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
         <div class="panel-hdr" style="margin-bottom:0">Training Totals</div>
-        <button id="excl-toggle" class="excl-toggle" onclick="toggleExcludeCfAr()">excl. CF / AR</button>
+        <div style="display:flex;align-items:center;gap:10px">
+          <div class="pace-mode-wrap" onclick="togglePaceMode()">
+            <span class="pace-mode-lbl" id="pace-lbl-bench">Bench</span>
+            <div class="toggle-track" id="pace-toggle-track"><div class="toggle-thumb"></div></div>
+            <span class="pace-mode-lbl" id="pace-lbl-plan">Plan</span>
+          </div>
+          <button id="excl-toggle" class="excl-toggle" onclick="toggleExcludeCfAr()">excl. CF / AR</button>
+        </div>
       </div>
       <div class="stat-grid">
         <!-- header row -->
@@ -552,30 +566,30 @@ let customWorkouts = JSON.parse(localStorage.getItem('imfl-custom')||'{}');
 let deletedSessions= new Set(JSON.parse(localStorage.getItem('imfl-deleted')||'[]'));
 const PACE_TARGETS=[
   null,
-  {swim:0,     bike:26.2,   run:4.1},
-  {swim:0,     bike:61.2,   run:8.7},
-  {swim:0,     bike:96.2,   run:15.4},
-  {swim:3200,  bike:140.0,  run:23.1},
-  {swim:6700,  bike:183.8,  run:31.8},
-  {swim:10200, bike:183.8,  run:34.9},
-  {swim:14200, bike:236.2,  run:41.5},
-  {swim:18200, bike:280.0,  run:51.3},
-  {swim:22400, bike:341.2,  run:58.5},
-  {swim:26600, bike:393.8,  run:68.2},
-  {swim:31100, bike:455.0,  run:75.9},
-  {swim:34600, bike:490.0,  run:79.5},
-  {swim:39100, bike:551.2,  run:92.3},
-  {swim:43900, bike:621.2,  run:102.6},
-  {swim:45800, bike:677.2,  run:113.8},
-  {swim:49300, bike:712.2,  run:117.4},
-  {swim:54300, bike:791.0,  run:133.3},
-  {swim:59300, bike:878.5,  run:151.3},
-  {swim:64300, bike:974.8,  run:172.8},
-  {swim:68100, bike:1053.5, run:188.2},
-  {swim:72600, bike:1141.0, run:202.6},
-  {swim:76600, bike:1202.2, run:210.3},
-  {swim:79600, bike:1246.0, run:216.4},
-  {swim:81600, bike:1263.5, run:218.5},
+  {bench:{swim:0,     bike:26.2,   run:4.1},   plan:{swim:0,     bike:26.2,   run:4.1}},
+  {bench:{swim:0,     bike:61.2,   run:8.7},   plan:{swim:0,     bike:61.2,   run:8.7}},
+  {bench:{swim:0,     bike:96.2,   run:15.4},  plan:{swim:0,     bike:96.2,   run:15.4}},
+  {bench:{swim:3200,  bike:140.0,  run:23.1},  plan:{swim:3200,  bike:140.0,  run:23.1}},
+  {bench:{swim:6700,  bike:183.8,  run:31.8},  plan:{swim:6700,  bike:183.8,  run:31.8}},
+  {bench:{swim:10200, bike:183.8,  run:34.9},  plan:{swim:10200, bike:183.8,  run:34.9}},
+  {bench:{swim:8800,  bike:148.8,  run:51.1},  plan:{swim:8800,  bike:148.8,  run:51.1}},
+  {bench:{swim:12800, bike:192.6,  run:61.2},  plan:{swim:13000, bike:245.9,  run:68.7}},
+  {bench:{swim:17000, bike:253.8,  run:68.6},  plan:{swim:17200, bike:343.1,  run:86.3}},
+  {bench:{swim:21200, bike:306.3,  run:78.7},  plan:{swim:21400, bike:440.2,  run:103.8}},
+  {bench:{swim:25700, bike:367.6,  run:86.7},  plan:{swim:25600, bike:537.3,  run:121.4}},
+  {bench:{swim:29200, bike:402.6,  run:90.4},  plan:{swim:29700, bike:634.4,  run:139.0}},
+  {bench:{swim:33700, bike:463.8,  run:103.7}, plan:{swim:33900, bike:731.6,  run:156.6}},
+  {bench:{swim:38500, bike:533.8,  run:114.3}, plan:{swim:38100, bike:828.7,  run:174.2}},
+  {bench:{swim:40400, bike:631.8,  run:125.9}, plan:{swim:42300, bike:925.8,  run:191.8}},
+  {bench:{swim:43900, bike:666.8,  run:129.7}, plan:{swim:46500, bike:1023.0, run:209.3}},
+  {bench:{swim:48900, bike:745.5,  run:146.1}, plan:{swim:50700, bike:1120.1, run:226.9}},
+  {bench:{swim:53900, bike:833.0,  run:164.7}, plan:{swim:54900, bike:1217.2, run:244.5}},
+  {bench:{swim:58900, bike:929.3,  run:187.0}, plan:{swim:59100, bike:1314.4, run:262.1}},
+  {bench:{swim:62700, bike:1008.0, run:202.9}, plan:{swim:63200, bike:1411.5, run:279.7}},
+  {bench:{swim:67200, bike:1095.5, run:217.8}, plan:{swim:67400, bike:1508.6, run:297.3}},
+  {bench:{swim:71200, bike:1156.8, run:225.7}, plan:{swim:71600, bike:1605.7, run:314.8}},
+  {bench:{swim:74200, bike:1200.5, run:232.1}, plan:{swim:75800, bike:1702.9, run:332.4}},
+  {bench:{swim:76200, bike:1218.0, run:234.2}, plan:{swim:80000, bike:1800.0, run:350.0}},
 ];
 function currentPaceWeek(){
   const diffDays=Math.floor((new Date()-new Date('2026-05-23T12:00:00'))/864e5);
@@ -584,6 +598,7 @@ function currentPaceWeek(){
 const PROJ_DEFAULTS={swim:{time:'0:55',conf:50},bike:{time:'5:36',conf:68},run:{time:'5:01',conf:72},total:{time:'11:42',conf:71}};
 let projections    = JSON.parse(localStorage.getItem('imfl-projections')||JSON.stringify(PROJ_DEFAULTS));
 let excludeCfAr    = JSON.parse(localStorage.getItem('imfl-exclude-cf-ar')||'false');
+let paceMode       = localStorage.getItem('imfl-pace-mode')||'bench';
 let collapsedWeeks = new Set(JSON.parse(localStorage.getItem('imfl-collapsed-weeks')||'[]'));
 let expandedWeeks  = new Set(JSON.parse(localStorage.getItem('imfl-expanded-weeks')||'[]'));
 let collapsedPhases= new Set(JSON.parse(localStorage.getItem('imfl-collapsed-phases')||'[]'));
@@ -591,6 +606,13 @@ let expandedPhases = new Set(JSON.parse(localStorage.getItem('imfl-expanded-phas
 
 function saveExcludeCfAr(){ localStorage.setItem('imfl-exclude-cf-ar',JSON.stringify(excludeCfAr)); }
 function toggleExcludeCfAr(){ excludeCfAr=!excludeCfAr; saveExcludeCfAr(); renderStats(); document.getElementById('excl-toggle').classList.toggle('active',excludeCfAr); }
+function togglePaceMode(){
+  paceMode=paceMode==='bench'?'plan':'bench';
+  localStorage.setItem('imfl-pace-mode',paceMode);
+  renderStats();
+  const track=document.getElementById('pace-toggle-track');
+  if(track) track.classList.toggle('on',paceMode==='plan');
+}
 function saveCompletions(){ localStorage.setItem('imfl-completions',JSON.stringify(completions)); }
 function savePositions(){   localStorage.setItem('imfl-positions',JSON.stringify(positions)); }
 function saveCustom(){      localStorage.setItem('imfl-custom',JSON.stringify(customWorkouts)); }
@@ -808,7 +830,15 @@ function renderStats(){
   document.getElementById('stat-total-avg-time').textContent=st.totalAvgTime||'—';
   // pace column
   const pw=currentPaceWeek();
-  const pt=PACE_TARGETS[pw];
+  const ptRow=PACE_TARGETS[pw];
+  const pt=ptRow?ptRow[paceMode]:null;
+  // sync toggle UI
+  const _track=document.getElementById('pace-toggle-track');
+  if(_track) _track.classList.toggle('on',paceMode==='plan');
+  const _lbB=document.getElementById('pace-lbl-bench');
+  const _lbP=document.getElementById('pace-lbl-plan');
+  if(_lbB) _lbB.classList.toggle('active',paceMode==='bench');
+  if(_lbP) _lbP.classList.toggle('active',paceMode==='plan');
   function setPace(sport,actual,tgt,isYds){
     const tgtEl=document.getElementById('pace-'+sport+'-tgt');
     const dEl=document.getElementById('pace-'+sport+'-delta');
@@ -828,7 +858,7 @@ function renderStats(){
   setPace('swim',st.swimYds,pt?pt.swim:0,true);
   setPace('bike',parseFloat(st.bikeMi),pt?pt.bike:0,false);
   setPace('run',parseFloat(st.runMi),pt?pt.run:0,false);
-  // total row: sum discipline targets converted to miles
+  // total row
   const tTgtEl=document.getElementById('pace-total-tgt');
   const tDeltaEl=document.getElementById('pace-total-delta');
   if(pt){
@@ -848,15 +878,15 @@ function renderStats(){
     tDeltaEl.textContent='—';
     tDeltaEl.className='pace-delta zero';
   }
-  // trend column: actual done this week vs planned weekly increment
+  // trend column
   const prevPw=pw>1?pw-1:0;
-  const prevPt=prevPw>0?PACE_TARGETS[prevPw]:{swim:0,bike:0,run:0};
+  const prevPtRow=prevPw>0?PACE_TARGETS[prevPw]:null;
+  const prevPt=prevPtRow?prevPtRow[paceMode]:{swim:0,bike:0,run:0};
   const cur=calcStatsByWeek(pw);
   const prev=calcStatsByWeek(prevPw);
   function setTrend(sport,curActual,curTgt,prvActual,prvTgt,isYds){
     const el=document.getElementById('pace-'+sport+'-trend');
     if(!pt){el.textContent='—';el.className='pace-trend zero';return;}
-    // actual done this week minus the planned weekly increment
     const doneThisWeek=curActual-prvActual;
     const plannedThisWeek=curTgt-prvTgt;
     const trend=doneThisWeek-plannedThisWeek;
