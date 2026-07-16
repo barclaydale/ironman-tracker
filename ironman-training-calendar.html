@@ -74,8 +74,6 @@ body{font-family:var(--body);background:var(--bg);color:var(--text);font-size:18
 .stat-label{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:1px}
 .stat-val{font-family:var(--mono);font-size:18px;font-weight:500}
 .sg-hdr{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--dim);text-align:center;padding:0 2px 3px;align-self:end}
-.excl-toggle{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:3px 9px;border-radius:99px;border:1px solid var(--border2);background:transparent;color:var(--dim);cursor:pointer;white-space:nowrap;transition:background .15s,color .15s,border-color .15s}
-.excl-toggle.active{background:rgba(232,0,45,.12);border-color:var(--red);color:var(--red)}
 .pace-mode-wrap{display:flex;align-items:center;gap:7px;cursor:pointer;user-select:none}
 .pace-mode-lbl{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--dim);transition:color .2s}
 .pace-mode-lbl.active{color:var(--red)}
@@ -377,11 +375,15 @@ body{font-family:var(--body);background:var(--bg);color:var(--text);font-size:18
         <div class="panel-hdr" style="margin-bottom:0">Training Totals</div>
         <div style="display:flex;align-items:center;gap:10px">
           <div class="pace-mode-wrap" onclick="togglePaceMode()">
-            <span class="pace-mode-lbl" id="pace-lbl-bench">Bench</span>
-            <div class="toggle-track" id="pace-toggle-track"><div class="toggle-thumb"></div></div>
             <span class="pace-mode-lbl" id="pace-lbl-plan">Plan</span>
+            <div class="toggle-track" id="pace-toggle-track"><div class="toggle-thumb"></div></div>
+            <span class="pace-mode-lbl" id="pace-lbl-bench">Bench</span>
           </div>
-          <button id="excl-toggle" class="excl-toggle" onclick="toggleExcludeCfAr()">excl. CF / AR</button>
+          <div class="pace-mode-wrap" onclick="toggleExcludeCfAr()">
+            <span class="pace-mode-lbl" id="cf-lbl-incl">Incl CF</span>
+            <div class="toggle-track" id="cf-toggle-track"><div class="toggle-thumb"></div></div>
+            <span class="pace-mode-lbl" id="cf-lbl-excl">Excl CF</span>
+          </div>
         </div>
       </div>
       <div class="stat-grid">
@@ -605,7 +607,7 @@ let collapsedPhases= new Set(JSON.parse(localStorage.getItem('imfl-collapsed-pha
 let expandedPhases = new Set(JSON.parse(localStorage.getItem('imfl-expanded-phases')||'[]'));
 
 function saveExcludeCfAr(){ localStorage.setItem('imfl-exclude-cf-ar',JSON.stringify(excludeCfAr)); }
-function toggleExcludeCfAr(){ excludeCfAr=!excludeCfAr; saveExcludeCfAr(); renderStats(); document.getElementById('excl-toggle').classList.toggle('active',excludeCfAr); }
+function toggleExcludeCfAr(){ excludeCfAr=!excludeCfAr; saveExcludeCfAr(); renderStats(); }
 function togglePaceMode(){
   paceMode=paceMode==='bench'?'plan':'bench';
   localStorage.setItem('imfl-pace-mode',paceMode);
@@ -807,7 +809,12 @@ function renderStats(){
   const st=calcStats();
   const days=Math.max(0,Math.ceil((new Date('2026-11-07')-new Date())/864e5));
   document.getElementById('countdown').textContent=days+' days';
-  document.getElementById('excl-toggle').classList.toggle('active',excludeCfAr);
+  const _cfTrack=document.getElementById('cf-toggle-track');
+  if(_cfTrack) _cfTrack.classList.toggle('on',excludeCfAr);
+  const _cfIncl=document.getElementById('cf-lbl-incl');
+  const _cfExcl=document.getElementById('cf-lbl-excl');
+  if(_cfIncl) _cfIncl.classList.toggle('active',!excludeCfAr);
+  if(_cfExcl) _cfExcl.classList.toggle('active',excludeCfAr);
   document.getElementById('stat-swim').textContent=st.swimYds.toLocaleString()+' yds';
   document.getElementById('stat-swim-cnt').textContent=st.swimCount;
   document.getElementById('stat-swim-time').textContent=st.swimTime;
@@ -834,7 +841,7 @@ function renderStats(){
   const pt=ptRow?ptRow[paceMode]:null;
   // sync toggle UI
   const _track=document.getElementById('pace-toggle-track');
-  if(_track) _track.classList.toggle('on',paceMode==='plan');
+  if(_track) _track.classList.toggle('on',paceMode==='bench');
   const _lbB=document.getElementById('pace-lbl-bench');
   const _lbP=document.getElementById('pace-lbl-plan');
   if(_lbB) _lbB.classList.toggle('active',paceMode==='bench');
