@@ -17,21 +17,6 @@
   --oswald:'Oswald',sans-serif;--mono:'DM Mono',monospace;--body:'DM Sans',sans-serif;
   --ph-top:0px;
 }
-@media(prefers-color-scheme:light){
-  :root{
-    --bg:#f0f0f0;--s1:#ffffff;--s2:#f8f8f8;--s3:#efefef;
-    --border:#e0e0e0;--border2:#d0d0d0;--text:#1a1a1a;--muted:#666;--dim:#999;
-    --swim-d:#e3f5ff;--bike-d:#fff9e0;--run-d:#fff0f0;--cf-d:#edfff5;
-    --brick-d:#f5eeff;--ar-d:#f5f5f5;--swimrun-d:#e3f5ff;--race-d:#fff0f0;
-    --bike:#c9a800;--bike-d:#fff9e0;
-  }
-  .sn-brand-title{color:var(--text)}
-  .race-title{color:var(--red)}
-  .phase-weeks{color:rgba(0,0,0,.55)}
-  .race-day-card{background:linear-gradient(135deg,#ffe8ed,#fff5e8)}
-  .t-body p,.coach-note p,.nutr-note p{color:#444}
-  .session-stub:hover{color:rgba(0,0,0,.6)}
-}
 body{font-family:var(--body);background:var(--bg);color:var(--text);font-size:18px;min-height:100vh}
 
 /* ── Sticky nav ── */
@@ -317,6 +302,21 @@ body{font-family:var(--body);background:var(--bg);color:var(--text);font-size:18
 
 @media(max-width:1100px){.top-panel{grid-template-columns:1fr 1fr;}.stats-col{grid-column:1/-1}}
 @media(max-width:700px){.top-panel{grid-template-columns:1fr}.week-grid{grid-template-columns:repeat(4,1fr)}.day-col:last-child{display:none}}
+@media(prefers-color-scheme:light){
+  :root{
+    --bg:#f0f0f0;--s1:#ffffff;--s2:#f8f8f8;--s3:#efefef;
+    --border:#e0e0e0;--border2:#d0d0d0;--text:#1a1a1a;--muted:#444;--dim:#555;
+    --swim-d:#e3f5ff;--bike-d:#fff9e0;--run-d:#fff0f0;--cf-d:#edfff5;
+    --brick-d:#f5eeff;--ar-d:#f5f5f5;--swimrun-d:#e3f5ff;--race-d:#fff0f0;
+    --bike:#c9a800;--bike-d:#fff9e0;
+  }
+  .sn-brand-title{color:var(--text)}
+  .race-title{color:var(--red)}
+  .phase-weeks{color:rgba(0,0,0,.55)}
+  .race-day-card{background:linear-gradient(135deg,#ffe8ed,#fff5e8)}
+  .t-body p,.coach-note p,.nutr-note p{color:#333}
+  .session-stub:hover{color:rgba(0,0,0,.6)}
+}
 </style>
 </head>
 <body>
@@ -1658,26 +1658,39 @@ function chartMouseMove(e){
   const rect=canvas.getBoundingClientRect();
   const mx=(e.clientX-rect.left)*(canvas.width/rect.width);
   const my=(e.clientY-rect.top)*(canvas.height/rect.height);
-  let best=null, bestD=18;
+  const isTrend=chartType==='trendplan'||chartType==='trendbench';
+  let best=null, bestD=isTrend?40:18;
   _scatterPts.forEach(p=>{
-    const d=Math.hypot(p.cx-mx,p.cy-my);
+    const d=isTrend?Math.abs(p.cx-mx):Math.hypot(p.cx-mx,p.cy-my);
     if(d<bestD){bestD=d;best=p;}
   });
   if(best){
-    const c=CHART_COLORS[best.disc]||'#aaa';
     let html;
-    if(best.isTrend){
-      const diff=best.diff;
-      const status=diff>=0?'Ahead':'Behind';
-      const statusColor=diff>=0?'#2FC87A':'#E8002D';
-      // swim diff in yards, others in miles
-      const diffStr=best.disc==='swim'
-        ?`${(diff*1760).toFixed(0)} yds`
-        :`${diff.toFixed(1)} mi`;
-      html=`<span style="color:${c};font-weight:700">${best.disc.toUpperCase()}</span> &middot; Wk ${best.wk}<br><span style="color:${statusColor}">${status}: ${diff>=0?'+':''}${diffStr}</span>`;
-    } else {
+    if(best.isTrend&&best.discs){
+      const sections=[];
+      ['swim','bike','run','total'].forEach(d=>{
+        const info=best.discs[d];
+        if(!info) return;
+        const c=CHART_COLORS[d];
+        const isSwim=d==='swim';
+        const actualStr=isSwim?`${Math.round(info.actual*1760)} yds`:`${info.actual.toFixed(1)} mi`;
+        const tgtStr=info.target!=null?(isSwim?`${Math.round(info.target*1760)} yds`:`${info.target.toFixed(1)} mi`):'--';
+        const diff=info.diff;
+        let line3='';
+        if(diff!=null){
+          const status=diff>=0?'Ahead':'Behind';
+          const statusColor=diff>=0?'#2FC87A':'#E8002D';
+          const absDiffStr=isSwim?`${Math.round(Math.abs(diff)*1760)} yds`:`${Math.abs(diff).toFixed(1)} mi`;
+          line3=`<span style="color:${statusColor}">${status}: ${diff>=0?'+':'-'}${absDiffStr}</span>`;
+        }
+        sections.push(`<span style="color:${c};font-weight:700">${d.toUpperCase()}</span><br>Plan: ${tgtStr} &middot; Actual: ${actualStr}<br>${line3}`);
+      });
+      html=`<b>Week ${best.wk}</b><br><br>${sections.join('<br><br>')}`;
+    } else if(!best.isTrend){
+      const c=CHART_COLORS[best.disc]||'#aaa';
       html=`<span style="color:${c};font-weight:700">${best.disc.toUpperCase()}</span> Wk ${best.wk}<br>${best.dist.toFixed(1)} ${best.unit} &middot; ${best.dur} min<br><b>${best.mph.toFixed(2)} mph</b>${best.paceStr}`;
     }
+    if(!html) return;
     tt.innerHTML=html;
     const bw=tt.offsetWidth||160, bh=tt.offsetHeight||70;
     let tx2=e.clientX-rect.left+12, ty2=e.clientY-rect.top-bh-8;
@@ -1950,7 +1963,7 @@ function drawChart(){
     const tgtMap={};
     tgts.forEach(t=>tgtMap[t.wk]=t);
 
-    // draw data lines
+    // draw data lines (no scatter push here — we do a per-week summary below)
     ['swim','run','bike','total'].forEach(d=>{
       if(!chartDiscs[d]) return;
       const c=COLORS[d], tyFn=tyFor(d);
@@ -1959,19 +1972,26 @@ function drawChart(){
       ctx.beginPath();
       tgts.forEach((r,i)=>{ i?ctx.lineTo(tx(r.wk),tyFn(r[d])):ctx.moveTo(tx(r.wk),tyFn(r[d])); });
       ctx.stroke(); ctx.setLineDash([]); ctx.globalAlpha=1; ctx.restore();
-      // solid actual
+      // solid actual + dots
       if(!cumul.length) return;
       ctx.save(); ctx.strokeStyle=c; ctx.lineWidth=2.5; ctx.lineJoin='round'; ctx.lineCap='round';
       ctx.beginPath();
       cumul.forEach((r,i)=>{ i?ctx.lineTo(tx(r.wk),tyFn(r[d])):ctx.moveTo(tx(r.wk),tyFn(r[d])); });
       ctx.stroke();
-      cumul.forEach(r=>{
-        const cx=tx(r.wk), cy=tyFn(r[d]);
-        ctx.beginPath();ctx.fillStyle=c;ctx.arc(cx,cy,4,0,Math.PI*2);ctx.fill();
-        const tgtVal=tgtMap[r.wk]?tgtMap[r.wk][d]:null;
-        if(tgtVal!=null) _scatterPts.push({cx,cy,disc:d,wk:r.wk,diff:r[d]-tgtVal,isTrend:true});
-      });
+      cumul.forEach(r=>{ ctx.beginPath();ctx.fillStyle=c;ctx.arc(tx(r.wk),tyFn(r[d]),4,0,Math.PI*2);ctx.fill(); });
       ctx.restore();
+    });
+
+    // one hover point per week — contains all visible disciplines
+    cumul.forEach(r=>{
+      const wkTgt=tgtMap[r.wk];
+      const discs={};
+      ['swim','run','bike','total'].forEach(d=>{
+        if(!chartDiscs[d]) return;
+        const tgt=wkTgt?wkTgt[d]:null;
+        discs[d]={actual:r[d], target:tgt, diff:tgt!=null?r[d]-tgt:null};
+      });
+      _scatterPts.push({cx:tx(r.wk), cy:PT+CH2/2, wk:r.wk, isTrend:true, discs});
     });
     return;
   }
