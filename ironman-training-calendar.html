@@ -23,9 +23,10 @@
     --border:#e0e0e0;--border2:#d0d0d0;--text:#1a1a1a;--muted:#666;--dim:#999;
     --swim-d:#e3f5ff;--bike-d:#fff9e0;--run-d:#fff0f0;--cf-d:#edfff5;
     --brick-d:#f5eeff;--ar-d:#f5f5f5;--swimrun-d:#e3f5ff;--race-d:#fff0f0;
-    --bike:#b08900;--bike-d:#fff9e0;
+    --bike:#c9a800;--bike-d:#fff9e0;
   }
   .sn-brand-title{color:var(--text)}
+  .race-title{color:var(--red)}
   .phase-weeks{color:rgba(0,0,0,.55)}
   .race-day-card{background:linear-gradient(135deg,#ffe8ed,#fff5e8)}
   .t-body p,.coach-note p,.nutr-note p{color:#444}
@@ -70,7 +71,7 @@ body{font-family:var(--body);background:var(--bg);color:var(--text);font-size:18
 
 /* ── Top panel ── */
 .top-panel{display:grid;grid-template-columns:1fr;gap:8px;padding:8px 14px 0;background:var(--s1);border-bottom:2px solid var(--red);margin-bottom:0}
-.panel-hdr{font-family:var(--oswald);font-size:17px;letter-spacing:.12em;text-transform:uppercase;color:var(--red);margin-bottom:8px;font-weight:600}
+.panel-hdr{font-family:var(--oswald);font-size:19px;letter-spacing:.12em;text-transform:uppercase;color:var(--red);margin-bottom:8px;font-weight:600}
 
 /* Stats column */
 .stats-col{display:flex;flex-direction:column;gap:6px}
@@ -81,9 +82,9 @@ body{font-family:var(--body);background:var(--bg);color:var(--text);font-size:18
 .stat-grid{display:grid;grid-template-columns:auto 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr;gap:4px;margin-top:3px}
 .pace-tgt{font-size:18px;font-weight:500;color:var(--dim);font-family:var(--mono);line-height:1.2}
 .pace-delta{font-family:var(--mono);font-size:17px;font-weight:600;line-height:1.2}
-.pace-delta.ahead{color:#4ADE80}.pace-delta.close{color:#FBBF24}.pace-delta.behind{color:var(--red)}.pace-delta.zero{color:var(--muted)}
+.pace-delta.ahead{color:#2FC87A}.pace-delta.close{color:#FBBF24}.pace-delta.behind{color:var(--red)}.pace-delta.zero{color:var(--muted)}
 .pace-trend{font-family:var(--mono);font-size:17px;font-weight:600;line-height:1.2}
-.pace-trend.ahead{color:#4ADE80}.pace-trend.behind{color:var(--red)}.pace-trend.total-behind{color:#FB923C}.pace-trend.zero{color:var(--muted)}
+.pace-trend.ahead{color:#2FC87A}.pace-trend.behind{color:var(--red)}.pace-trend.total-behind{color:#FB923C}.pace-trend.zero{color:var(--muted)}
 .stat-card{background:var(--s2);border:1px solid var(--border);border-radius:6px;padding:5px 8px;text-align:center}
 .stat-label{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:1px}
 .stat-val{font-family:var(--mono);font-size:18px;font-weight:500}
@@ -603,13 +604,13 @@ let customWorkouts = JSON.parse(localStorage.getItem('imfl-custom')||'{}');
 let deletedSessions= new Set(JSON.parse(localStorage.getItem('imfl-deleted')||'[]'));
 const PACE_TARGETS=[
   null,
-  {bench:{swim:0,     bike:26.2,   run:4.1},   plan:{swim:0,     bike:26.2,   run:4.1}},
-  {bench:{swim:0,     bike:61.2,   run:8.7},   plan:{swim:0,     bike:61.2,   run:8.7}},
-  {bench:{swim:0,     bike:96.2,   run:15.4},  plan:{swim:0,     bike:96.2,   run:15.4}},
-  {bench:{swim:3200,  bike:140.0,  run:23.1},  plan:{swim:3200,  bike:140.0,  run:23.1}},
-  {bench:{swim:6700,  bike:183.8,  run:31.8},  plan:{swim:6700,  bike:183.8,  run:31.8}},
-  {bench:{swim:10200, bike:183.8,  run:34.9},  plan:{swim:10200, bike:183.8,  run:34.9}},
-  {bench:{swim:8800,  bike:148.8,  run:51.1},  plan:{swim:8800,  bike:148.8,  run:51.1}},
+  {bench:{swim:1600,  bike:24.1,   run:7.7},   plan:{swim:1625,  bike:30.7,   run:8.6}},   // wk 1
+  {bench:{swim:3200,  bike:48.2,   run:15.3},  plan:{swim:3250,  bike:61.5,   run:17.2}},  // wk 2
+  {bench:{swim:4800,  bike:72.2,   run:23.0},  plan:{swim:4875,  bike:92.2,   run:25.8}},  // wk 3
+  {bench:{swim:6400,  bike:96.3,   run:30.6},  plan:{swim:6500,  bike:123.0,  run:34.4}},  // wk 4
+  {bench:{swim:8000,  bike:120.4,  run:38.3},  plan:{swim:8125,  bike:153.7,  run:42.9}},  // wk 5
+  {bench:{swim:9600,  bike:144.5,  run:45.9},  plan:{swim:9750,  bike:184.4,  run:51.5}},  // wk 6
+  {bench:{swim:11200, bike:168.5,  run:53.6},  plan:{swim:11375, bike:215.2,  run:60.1}},  // wk 7
   {bench:{swim:12800, bike:192.6,  run:61.2},  plan:{swim:13000, bike:245.9,  run:68.7}},
   {bench:{swim:17000, bike:253.8,  run:68.6},  plan:{swim:17200, bike:343.1,  run:86.3}},
   {bench:{swim:21200, bike:306.3,  run:78.7},  plan:{swim:21400, bike:440.2,  run:103.8}},
@@ -1705,7 +1706,7 @@ function drawChart(){
   const numC=isLight?'#777':'#555';
   const lblC=isLight?'#888':'#666';
   const noteC=isLight?'#bbb':'#444';
-  const COLORS={swim:'#38BDF8',bike:isLight?'#b08900':'#FCD34D',run:'#F87171',total:'#FB923C'};
+  const COLORS={swim:'#38BDF8',bike:isLight?'#c9a800':'#FCD34D',run:'#F87171',total:'#FB923C'};
 
   const pw=currentPaceWeek();
   // shared layout — generous padding so labels never clip
@@ -1858,12 +1859,12 @@ function drawChart(){
     return;
   }
 
-  // ── TREND VS PLAN / TREND VS BENCHMARK ──
+  // ── TREND VS PLAN / TREND VS BENCHMARK (dual Y-axis) ──
   if(chartType==='trendplan'||chartType==='trendbench'){
-    // 'bench' key in PACE_TARGETS holds Plan values (data columns are inverted)
     const tgtKey=chartType==='trendplan'?'bench':'plan';
-    const discs=['swim','bike','run','total'];
-    const XMAX=24; // show full 24-week target horizon
+    const XMAX=24;
+    const RPR=82; // extra right padding for right axis
+    const CW2=W-PL-RPR, CH2=CH;
 
     const cumul=[];
     for(let wk=1;wk<=pw;wk++){
@@ -1877,34 +1878,74 @@ function drawChart(){
       if(row){ const pt=row[tgtKey],sm=pt.swim/1760; tgts.push({wk,swim:sm,bike:pt.bike,run:pt.run,total:sm+pt.bike+pt.run}); }
     }
 
-    // scale to max of actuals + target up to current week (avoid 24-wk target dominating)
-    const allV=[];
-    discs.forEach(d=>{
-      if(!chartDiscs[d]) return;
-      cumul.forEach(r=>allV.push(r[d]));
-      tgts.filter(r=>r.wk<=pw+2).forEach(r=>allV.push(r[d]));
-    });
-    const yMax=tightNiceMax(allV.length?Math.max(...allV):100);
+    // left axis: swim + run; right axis: bike + total
+    const leftDiscs=['swim','run'], rightDiscs=['bike','total'];
+    const allL=[], allR=[];
+    leftDiscs.forEach(d=>{ if(!chartDiscs[d]) return; [...cumul,...tgts].forEach(r=>allL.push(r[d])); });
+    rightDiscs.forEach(d=>{ if(!chartDiscs[d]) return; [...cumul,...tgts].forEach(r=>allR.push(r[d])); });
+    const yMaxL=tightNiceMax(allL.length?Math.max(...allL):20);
+    const yMaxR=tightNiceMax(allR.length?Math.max(...allR):200);
 
-    const tx=wk=>PL+(wk-1)/(XMAX-1)*CW;
-    const ty=v=>PT+CH*(1-Math.min(v,yMax*1.5)/yMax);
-    drawAxes(XMAX,yMax,'Training Week','Cumulative Miles');
-    ctx.fillStyle=noteC; ctx.font='13px monospace'; ctx.textAlign='right';
-    ctx.fillText('solid = actual · dashed = target',W-PR,PT+16);
+    const tx=wk=>PL+(wk-1)/(XMAX-1)*CW2;
+    const tyL=v=>PT+CH2*(1-v/yMaxL);
+    const tyR=v=>PT+CH2*(1-v/yMaxR);
+    const tyFor=d=>(['bike','total'].includes(d)?tyR:tyL);
 
-    discs.forEach(d=>{
+    // left y-axis grid + labels
+    for(let i=0;i<=5;i++){
+      const v=yMaxL*i/5, y=PT+CH2*(1-i/5);
+      ctx.strokeStyle=gridC; ctx.lineWidth=1;
+      ctx.beginPath();ctx.moveTo(PL,y);ctx.lineTo(PL+CW2,y);ctx.stroke();
+      const lbl=v>=100?Math.round(v).toString():v<10?v.toFixed(1):Math.round(v).toString();
+      ctx.fillStyle=numC; ctx.font='15px monospace'; ctx.textAlign='right';
+      ctx.fillText(lbl,PL-10,y+5);
+    }
+    // right y-axis labels (no extra grid lines)
+    for(let i=0;i<=5;i++){
+      const v=yMaxR*i/5, y=PT+CH2*(1-i/5);
+      const lbl=v>=1000?Math.round(v).toString():v>=100?Math.round(v).toString():v<10?v.toFixed(1):Math.round(v).toString();
+      ctx.fillStyle=numC; ctx.font='15px monospace'; ctx.textAlign='left';
+      ctx.fillText(lbl,PL+CW2+10,y+5);
+    }
+    // x ticks
+    const xStep=XMAX<=16?2:4;
+    for(let wk=1;wk<=XMAX;wk++){
+      if(wk===1||wk===XMAX||wk%xStep===0){
+        const x=tx(wk);
+        ctx.strokeStyle=tickC; ctx.lineWidth=1;
+        ctx.beginPath();ctx.moveTo(x,PT+CH2);ctx.lineTo(x,PT+CH2+5);ctx.stroke();
+        ctx.fillStyle=numC; ctx.font='15px monospace'; ctx.textAlign='center';
+        ctx.fillText('W'+wk,x,PT+CH2+24);
+      }
+    }
+    // axis box (left + bottom + right)
+    ctx.strokeStyle=axisC; ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(PL,PT);ctx.lineTo(PL,PT+CH2);ctx.lineTo(PL+CW2,PT+CH2);ctx.lineTo(PL+CW2,PT);ctx.stroke();
+    // axis title labels
+    ctx.fillStyle=lblC; ctx.font='16px monospace'; ctx.textAlign='center';
+    ctx.fillText('Training Week',PL+CW2/2,H-14);
+    ctx.save(); ctx.translate(20,PT+CH2/2); ctx.rotate(-Math.PI/2);
+    ctx.fillText('Swim / Run (mi)',0,0); ctx.restore();
+    ctx.save(); ctx.translate(W-14,PT+CH2/2); ctx.rotate(Math.PI/2);
+    ctx.fillText('Bike / Total (mi)',0,0); ctx.restore();
+    // note
+    ctx.fillStyle=noteC; ctx.font='13px monospace'; ctx.textAlign='left';
+    ctx.fillText('solid = actual · dashed = target',PL+6,PT+16);
+
+    // draw data lines
+    ['swim','run','bike','total'].forEach(d=>{
       if(!chartDiscs[d]) return;
-      const c=COLORS[d];
-      // dashed target line (full 24 weeks)
+      const c=COLORS[d], ty=tyFor(d);
+      // dashed target (full 24 wks)
       ctx.save(); ctx.strokeStyle=c; ctx.lineWidth=1.5; ctx.setLineDash([7,5]); ctx.globalAlpha=0.5;
       ctx.beginPath();
-      tgts.forEach((r,i)=>{ const y=ty(r[d]); i?ctx.lineTo(tx(r.wk),y):ctx.moveTo(tx(r.wk),y); });
+      tgts.forEach((r,i)=>{ i?ctx.lineTo(tx(r.wk),ty(r[d])):ctx.moveTo(tx(r.wk),ty(r[d])); });
       ctx.stroke(); ctx.setLineDash([]); ctx.globalAlpha=1; ctx.restore();
-      // solid actual line
+      // solid actual
       if(!cumul.length) return;
       ctx.save(); ctx.strokeStyle=c; ctx.lineWidth=2.5; ctx.lineJoin='round'; ctx.lineCap='round';
       ctx.beginPath();
-      cumul.forEach((r,i)=>{ const y=ty(r[d]); i?ctx.lineTo(tx(r.wk),y):ctx.moveTo(tx(r.wk),y); });
+      cumul.forEach((r,i)=>{ i?ctx.lineTo(tx(r.wk),ty(r[d])):ctx.moveTo(tx(r.wk),ty(r[d])); });
       ctx.stroke();
       cumul.forEach(r=>{ ctx.beginPath();ctx.fillStyle=c;ctx.arc(tx(r.wk),ty(r[d]),3.5,0,Math.PI*2);ctx.fill(); });
       ctx.restore();
