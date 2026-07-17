@@ -1688,18 +1688,6 @@ function chartMouseMove(e){
         sections.push(`<span style="color:${c};font-weight:700">${d.toUpperCase()}</span><br>Plan: ${tgtStr} &middot; Actual: ${actualStr}<br>${line3}`);
       });
       html=`<b>Week ${best.wk}</b><br><br>${sections.join('<br><br>')}`;
-    } else if(best.isLine){
-      const c=CHART_COLORS[best.disc]||'#aaa';
-      let slopeStr;
-      if(best.disc==='bike'){
-        slopeStr=`${best.slope.toFixed(2)} mph`;
-      } else if(best.disc==='run'){
-        slopeStr=`${best.slope.toFixed(2)} mph &middot; ${fmtPaceMin(60/best.slope)}/mi`;
-      } else {
-        // swim: slope is mi/hr; pace per 100 yds = 6000/(1760*slope) min
-        slopeStr=`${fmtPaceMin(6000/(1760*best.slope))}/100m`;
-      }
-      html=`<span style="color:${c};font-weight:700">${best.disc.toUpperCase()}</span> best fit<br><b>${slopeStr}</b>`;
     } else if(!best.isTrend){
       const c=CHART_COLORS[best.disc]||'#aaa';
       html=`<span style="color:${c};font-weight:700">${best.disc.toUpperCase()}</span> Wk ${best.wk}<br>${best.dist.toFixed(1)} ${best.unit} &middot; ${best.dur} min<br><b>${best.mph.toFixed(2)} mph</b>${best.paceStr}`;
@@ -1831,14 +1819,20 @@ function drawChart(){
     ctx.fillStyle=noteC; ctx.font='13px monospace'; ctx.textAlign='right';
     ctx.fillText('dashed = best fit',W-PR,PT+16);
 
+    // compute regressions first so table can be drawn after dots
+    const regs={};
+    discs.forEach(d=>{
+      if(!chartDiscs[d]) return;
+      const pts=scData[d];
+      if(pts.length>=2) regs[d]=linReg(pts.map(p=>[p.dur/60,p.distMi]));
+    });
+
     discs.forEach(d=>{
       if(!chartDiscs[d]) return;
       const pts=scData[d];
       if(!pts.length) return;
       const c=COLORS[d];
-
-      // regression line through (durHrs, distMi)
-      const reg=linReg(pts.map(p=>[p.dur/60,p.distMi]));
+      const reg=regs[d];
       if(reg){
         const y0=reg.intercept;
         const y1=reg.slope*xHrsMax+reg.intercept;
@@ -1849,15 +1843,7 @@ function drawChart(){
         ctx.lineTo(tx(xHrsMax),ty(Math.max(0,y1)));
         ctx.stroke();
         ctx.setLineDash([]); ctx.globalAlpha=1; ctx.restore();
-        // hit-test points along the line for tooltip (dots pushed below will naturally win when closer)
-        for(let i=1;i<=7;i++){
-          const hx=xHrsMax*i/8;
-          const hy=Math.max(0,reg.slope*hx+reg.intercept);
-          _scatterPts.push({cx:tx(hx),cy:ty(hy),isLine:true,disc:d,slope:reg.slope});
-        }
       }
-
-      // scatter dots
       pts.forEach(p=>{
         const cx=tx(p.dur/60), cy=ty(p.distMi);
         ctx.beginPath(); ctx.fillStyle=c; ctx.globalAlpha=0.85;
@@ -1865,6 +1851,42 @@ function drawChart(){
         _scatterPts.push({cx,cy,disc:d,mph:p.mph,dist:p.dist,unit:p.unit,dur:p.dur,wk:p.wk,paceStr:p.paceStr});
       });
     });
+
+    // best-fit table — upper left of chart area
+    const hasAnyReg=Object.keys(regs).length>0;
+    if(hasAnyReg){
+      const rows=[];
+      if(regs.swim) rows.push({d:'swim',c:COLORS.swim,val:fmtPaceMin(6000/(1760*regs.swim.slope))+'/100m'});
+      if(regs.bike) rows.push({d:'bike',c:COLORS.bike,val:regs.bike.slope.toFixed(2)+' mph'});
+      if(regs.run)  rows.push({d:'run', c:COLORS.run, val:regs.run.slope.toFixed(2)+' mph  '+fmtPaceMin(60/regs.run.slope)+'/mi'});
+      const rowH=18, pad=8, hdrH=16;
+      const colW=54;
+      const tblH=hdrH+rows.length*rowH+pad;
+      const tblW=colW+rows.reduce((mx,r)=>{
+        ctx.font='13px monospace';
+        return Math.max(mx,ctx.measureText(r.val).width);
+      },0)+pad*2+6;
+      const tblX=PL+10, tblY=PT+8;
+      // background
+      ctx.save();
+      ctx.fillStyle=isLight?'rgba(255,255,255,0.82)':'rgba(18,18,18,0.82)';
+      ctx.strokeStyle=isLight?'#d0d0d0':'#333';
+      ctx.lineWidth=1;
+      ctx.beginPath();
+      ctx.roundRect(tblX,tblY,tblW,tblH,5);
+      ctx.fill(); ctx.stroke(); ctx.restore();
+      // header
+      ctx.fillStyle=lblC; ctx.font='bold 12px monospace'; ctx.textAlign='left';
+      ctx.fillText('BEST FIT',tblX+pad,tblY+pad+10);
+      // rows
+      rows.forEach((r,i)=>{
+        const ry=tblY+hdrH+pad+i*rowH+rowH*0.75;
+        ctx.fillStyle=r.c; ctx.font='bold 13px monospace';
+        ctx.fillText(r.d.toUpperCase(),tblX+pad,ry);
+        ctx.fillStyle=numC; ctx.font='13px monospace';
+        ctx.fillText(r.val,tblX+pad+colW,ry);
+      });
+    }
     return;
   }
 
