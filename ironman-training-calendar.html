@@ -1748,17 +1748,45 @@ function drawChart(){
     _scatterPts=[];
     const scData=getPacingScatterData();
     const discs=['swim','bike','run'];
-    const xMax=Math.max(pw,2);
 
-    // y-scale: distance in miles, tight fit
-    const allDist=[];
-    discs.forEach(d=>{ if(chartDiscs[d]) scData[d].forEach(p=>allDist.push(p.distMi)); });
-    const niceMax=tightNiceMax(allDist.length?Math.max(...allDist):10);
+    // x = session duration in hours, y = distance in miles — tight scales
+    const allDurHrs=[], allDist=[];
+    discs.forEach(d=>{
+      if(!chartDiscs[d]) return;
+      scData[d].forEach(p=>{ allDurHrs.push(p.dur/60); allDist.push(p.distMi); });
+    });
+    const xHrsMax=tightNiceMax(allDurHrs.length?Math.max(...allDurHrs):3);
+    const yDistMax=tightNiceMax(allDist.length?Math.max(...allDist):20);
 
-    const tx=wk=>PL+(wk-1)/(xMax-1)*CW;
-    const ty=v=>PT+CH*(1-v/niceMax);
+    const tx=hrs=>PL+(hrs/xHrsMax)*CW;
+    const ty=v=>PT+CH*(1-v/yDistMax);
 
-    drawAxes(xMax,niceMax,'Training Week','Distance (mi)');
+    // y grid + labels
+    for(let i=0;i<=5;i++){
+      const v=yDistMax*i/5, y=PT+CH*(1-i/5);
+      ctx.strokeStyle=gridC; ctx.lineWidth=1;
+      ctx.beginPath();ctx.moveTo(PL,y);ctx.lineTo(PL+CW,y);ctx.stroke();
+      const lbl=v>=100?Math.round(v).toString():v<10?v.toFixed(1):Math.round(v).toString();
+      ctx.fillStyle=numC; ctx.font='15px monospace'; ctx.textAlign='right';
+      ctx.fillText(lbl,PL-10,y+5);
+    }
+    // x ticks at 0.5 hr intervals
+    const xStep=xHrsMax<=2?0.5:xHrsMax<=4?0.5:1;
+    for(let h=0;h<=xHrsMax+0.01;h+=xStep){
+      const x=tx(h);
+      ctx.strokeStyle=tickC; ctx.lineWidth=1;
+      ctx.beginPath();ctx.moveTo(x,PT+CH);ctx.lineTo(x,PT+CH+5);ctx.stroke();
+      ctx.fillStyle=numC; ctx.font='15px monospace'; ctx.textAlign='center';
+      ctx.fillText(h.toFixed(1),x,PT+CH+24);
+    }
+    // axis lines
+    ctx.strokeStyle=axisC; ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(PL,PT);ctx.lineTo(PL,PT+CH);ctx.lineTo(PL+CW,PT+CH);ctx.stroke();
+    // axis labels
+    ctx.fillStyle=lblC; ctx.font='16px monospace'; ctx.textAlign='center';
+    ctx.fillText('Duration (hrs)',PL+CW/2,H-14);
+    ctx.save(); ctx.translate(20,PT+CH/2); ctx.rotate(-Math.PI/2);
+    ctx.fillText('Distance (mi)',0,0); ctx.restore();
     ctx.fillStyle=noteC; ctx.font='13px monospace'; ctx.textAlign='right';
     ctx.fillText('dashed = best fit',W-PR,PT+16);
 
@@ -1768,23 +1796,23 @@ function drawChart(){
       if(!pts.length) return;
       const c=COLORS[d];
 
-      // regression line through (wk, distMi)
-      const reg=linReg(pts.map(p=>[p.wk,p.distMi]));
+      // regression line through (durHrs, distMi)
+      const reg=linReg(pts.map(p=>[p.dur/60,p.distMi]));
       if(reg){
-        const y1=reg.slope*1+reg.intercept;
-        const y2=reg.slope*xMax+reg.intercept;
+        const y0=reg.intercept;
+        const y1=reg.slope*xHrsMax+reg.intercept;
         ctx.save();
         ctx.strokeStyle=c; ctx.lineWidth=2; ctx.setLineDash([6,4]); ctx.globalAlpha=0.55;
         ctx.beginPath();
-        ctx.moveTo(tx(1),ty(Math.max(0,y1)));
-        ctx.lineTo(tx(xMax),ty(Math.max(0,y2)));
+        ctx.moveTo(tx(0),ty(Math.max(0,y0)));
+        ctx.lineTo(tx(xHrsMax),ty(Math.max(0,y1)));
         ctx.stroke();
         ctx.setLineDash([]); ctx.globalAlpha=1; ctx.restore();
       }
 
       // scatter dots
       pts.forEach(p=>{
-        const cx=tx(p.wk), cy=ty(p.distMi);
+        const cx=tx(p.dur/60), cy=ty(p.distMi);
         ctx.beginPath(); ctx.fillStyle=c; ctx.globalAlpha=0.85;
         ctx.arc(cx,cy,5.5,0,Math.PI*2); ctx.fill(); ctx.globalAlpha=1;
         _scatterPts.push({cx,cy,disc:d,mph:p.mph,dist:p.dist,unit:p.unit,dur:p.dur,wk:p.wk,paceStr:p.paceStr});
