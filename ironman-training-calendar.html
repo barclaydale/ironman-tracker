@@ -1673,19 +1673,33 @@ function chartMouseMove(e){
         if(!info) return;
         const c=CHART_COLORS[d];
         const isSwim=d==='swim';
-        const actualStr=isSwim?`${Math.round(info.actual*1760)} yds`:`${info.actual.toFixed(1)} mi`;
-        const tgtStr=info.target!=null?(isSwim?`${Math.round(info.target*1760)} yds`:`${info.target.toFixed(1)} mi`):'--';
+        const fmtYds=v=>Math.round(v*1760).toLocaleString('en-US');
+        const fmtMi=v=>v.toLocaleString('en-US',{minimumFractionDigits:1,maximumFractionDigits:1});
+        const actualStr=isSwim?`${fmtYds(info.actual)} yds`:`${fmtMi(info.actual)} mi`;
+        const tgtStr=info.target!=null?(isSwim?`${fmtYds(info.target)} yds`:`${fmtMi(info.target)} mi`):'--';
         const diff=info.diff;
         let line3='';
         if(diff!=null){
           const status=diff>=0?'Ahead':'Behind';
           const statusColor=diff>=0?'#2FC87A':'#E8002D';
-          const absDiffStr=isSwim?`${Math.round(Math.abs(diff)*1760)} yds`:`${Math.abs(diff).toFixed(1)} mi`;
+          const absDiffStr=isSwim?`${Math.round(Math.abs(diff)*1760).toLocaleString('en-US')} yds`:`${fmtMi(Math.abs(diff))} mi`;
           line3=`<span style="color:${statusColor}">${status}: ${diff>=0?'+':'-'}${absDiffStr}</span>`;
         }
         sections.push(`<span style="color:${c};font-weight:700">${d.toUpperCase()}</span><br>Plan: ${tgtStr} &middot; Actual: ${actualStr}<br>${line3}`);
       });
       html=`<b>Week ${best.wk}</b><br><br>${sections.join('<br><br>')}`;
+    } else if(best.isLine){
+      const c=CHART_COLORS[best.disc]||'#aaa';
+      let slopeStr;
+      if(best.disc==='bike'){
+        slopeStr=`${best.slope.toFixed(2)} mph`;
+      } else if(best.disc==='run'){
+        slopeStr=`${best.slope.toFixed(2)} mph &middot; ${fmtPaceMin(60/best.slope)}/mi`;
+      } else {
+        // swim: slope is mi/hr; pace per 100 yds = 6000/(1760*slope) min
+        slopeStr=`${fmtPaceMin(6000/(1760*best.slope))}/100m`;
+      }
+      html=`<span style="color:${c};font-weight:700">${best.disc.toUpperCase()}</span> best fit<br><b>${slopeStr}</b>`;
     } else if(!best.isTrend){
       const c=CHART_COLORS[best.disc]||'#aaa';
       html=`<span style="color:${c};font-weight:700">${best.disc.toUpperCase()}</span> Wk ${best.wk}<br>${best.dist.toFixed(1)} ${best.unit} &middot; ${best.dur} min<br><b>${best.mph.toFixed(2)} mph</b>${best.paceStr}`;
@@ -1835,6 +1849,12 @@ function drawChart(){
         ctx.lineTo(tx(xHrsMax),ty(Math.max(0,y1)));
         ctx.stroke();
         ctx.setLineDash([]); ctx.globalAlpha=1; ctx.restore();
+        // hit-test points along the line for tooltip (dots pushed below will naturally win when closer)
+        for(let i=1;i<=7;i++){
+          const hx=xHrsMax*i/8;
+          const hy=Math.max(0,reg.slope*hx+reg.intercept);
+          _scatterPts.push({cx:tx(hx),cy:ty(hy),isLine:true,disc:d,slope:reg.slope});
+        }
       }
 
       // scatter dots
