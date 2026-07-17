@@ -1589,15 +1589,15 @@ function getPacingScatterData(){
     if(yds<=0||dur<=0) return;
     const mph=(yds/1760)/(dur/60);
     const p100m=dur/(yds/100);
-    pts.swim.push({wk,dist:yds,unit:'yds',dur,mph,paceStr:' / '+fmtPaceMin(p100m)+'/100m'});
+    pts.swim.push({wk,dist:yds,distMi:yds/1760,unit:'yds',dur,mph,paceStr:' / '+fmtPaceMin(p100m)+'/100m'});
   }
   function pushBike(wk,mi,dur){
     if(mi<=0||dur<=0) return;
-    pts.bike.push({wk,dist:mi,unit:'mi',dur,mph:mi/(dur/60),paceStr:' / '+fmtPaceMin(dur/mi)+'/mi'});
+    pts.bike.push({wk,dist:mi,distMi:mi,unit:'mi',dur,mph:mi/(dur/60),paceStr:' / '+fmtPaceMin(dur/mi)+'/mi'});
   }
   function pushRun(wk,mi,dur){
     if(mi<=0||dur<=0) return;
-    pts.run.push({wk,dist:mi,unit:'mi',dur,mph:mi/(dur/60),paceStr:' / '+fmtPaceMin(dur/mi)+'/mi'});
+    pts.run.push({wk,dist:mi,distMi:mi,unit:'mi',dur,mph:mi/(dur/60),paceStr:' / '+fmtPaceMin(dur/mi)+'/mi'});
   }
 
   PLAN.forEach(s=>{
@@ -1681,6 +1681,14 @@ function chartMouseLeave(){
   if(tt) tt.style.display='none';
 }
 
+function tightNiceMax(rawMax){
+  if(rawMax<=0) return 10;
+  const target=rawMax*1.08;
+  const mag=Math.pow(10,Math.floor(Math.log10(target)));
+  const halfMag=mag*0.5;
+  return Math.ceil(target/halfMag)*halfMag;
+}
+
 function drawChart(){
   const canvas=document.getElementById('chart-canvas');
   const body=document.getElementById('chart-body');
@@ -1696,73 +1704,77 @@ function drawChart(){
   const axisC=isLight?'#cccccc':'#333333';
   const numC=isLight?'#777':'#555';
   const lblC=isLight?'#888':'#666';
+  const noteC=isLight?'#bbb':'#444';
   const COLORS={swim:'#38BDF8',bike:isLight?'#b08900':'#FCD34D',run:'#F87171',total:'#FB923C'};
 
   const pw=currentPaceWeek();
-  const PL=64,PR=16,PT=16,PB=42;
+  // shared layout — generous padding so labels never clip
+  const PL=80,PR=24,PT=22,PB=62;
   const CW=W-PL-PR, CH=H-PT-PB;
+
+  function drawAxes(xMax,niceMax,xLabel,yLabel){
+    // grid + y labels
+    for(let i=0;i<=5;i++){
+      const v=niceMax*i/5, y=PT+CH*(1-i/5);
+      ctx.strokeStyle=gridC; ctx.lineWidth=1;
+      ctx.beginPath();ctx.moveTo(PL,y);ctx.lineTo(PL+CW,y);ctx.stroke();
+      const lbl=v>=100?Math.round(v).toString():v<10?v.toFixed(1):Math.round(v).toString();
+      ctx.fillStyle=numC; ctx.font='15px monospace'; ctx.textAlign='right';
+      ctx.fillText(lbl,PL-10,y+5);
+    }
+    // x ticks + labels
+    const xStep=xMax<=10?1:xMax<=16?2:4;
+    for(let wk=1;wk<=xMax;wk++){
+      if(wk===1||wk===xMax||wk%xStep===0){
+        const x=PL+(wk-1)/(Math.max(xMax-1,1))*CW;
+        ctx.strokeStyle=tickC; ctx.lineWidth=1;
+        ctx.beginPath();ctx.moveTo(x,PT+CH);ctx.lineTo(x,PT+CH+5);ctx.stroke();
+        ctx.fillStyle=numC; ctx.font='15px monospace'; ctx.textAlign='center';
+        ctx.fillText('W'+wk,x,PT+CH+24);
+      }
+    }
+    // axis lines
+    ctx.strokeStyle=axisC; ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(PL,PT);ctx.lineTo(PL,PT+CH);ctx.lineTo(PL+CW,PT+CH);ctx.stroke();
+    // axis labels
+    ctx.fillStyle=lblC; ctx.font='16px monospace'; ctx.textAlign='center';
+    ctx.fillText(xLabel,PL+CW/2,H-14);
+    ctx.save(); ctx.translate(20,PT+CH/2); ctx.rotate(-Math.PI/2);
+    ctx.fillText(yLabel,0,0); ctx.restore();
+  }
 
   // ── PACING SCATTER ──
   if(chartType==='pacing'){
     _scatterPts=[];
     const scData=getPacingScatterData();
     const discs=['swim','bike','run'];
-
-    // collect y-values (mph) for scale
-    const allMph=[];
-    discs.forEach(d=>{ if(chartDiscs[d]) scData[d].forEach(p=>allMph.push(p.mph)); });
-    const rawMax=allMph.length?Math.max(...allMph)*1.18:25;
-    const mag=Math.pow(10,Math.floor(Math.log10(rawMax||1)));
-    const niceMax=Math.ceil(rawMax/mag)*mag;
     const xMax=Math.max(pw,2);
+
+    // y-scale: distance in miles, tight fit
+    const allDist=[];
+    discs.forEach(d=>{ if(chartDiscs[d]) scData[d].forEach(p=>allDist.push(p.distMi)); });
+    const niceMax=tightNiceMax(allDist.length?Math.max(...allDist):10);
 
     const tx=wk=>PL+(wk-1)/(xMax-1)*CW;
     const ty=v=>PT+CH*(1-v/niceMax);
 
-    // grid
-    for(let i=0;i<=5;i++){
-      const v=niceMax*i/5, y=ty(v);
-      ctx.strokeStyle=gridC; ctx.lineWidth=1;
-      ctx.beginPath();ctx.moveTo(PL,y);ctx.lineTo(PL+CW,y);ctx.stroke();
-      ctx.fillStyle=numC; ctx.font='11px monospace'; ctx.textAlign='right';
-      ctx.fillText(v.toFixed(1),PL-7,y+4);
-    }
-    // x ticks
-    const xStep=xMax<=10?1:xMax<=16?2:4;
-    for(let wk=1;wk<=xMax;wk++){
-      if(wk===1||wk===xMax||wk%xStep===0){
-        const x=tx(wk);
-        ctx.strokeStyle=tickC; ctx.lineWidth=1;
-        ctx.beginPath();ctx.moveTo(x,PT+CH);ctx.lineTo(x,PT+CH+4);ctx.stroke();
-        ctx.fillStyle=numC; ctx.font='11px monospace'; ctx.textAlign='center';
-        ctx.fillText('W'+wk,x,PT+CH+16);
-      }
-    }
-    // axes
-    ctx.strokeStyle=axisC; ctx.lineWidth=1;
-    ctx.beginPath();ctx.moveTo(PL,PT);ctx.lineTo(PL,PT+CH);ctx.lineTo(PL+CW,PT+CH);ctx.stroke();
-    // labels
-    ctx.fillStyle=lblC; ctx.font='12px monospace'; ctx.textAlign='center';
-    ctx.fillText('Week',PL+CW/2,H-4);
-    ctx.save(); ctx.translate(11,PT+CH/2); ctx.rotate(-Math.PI/2);
-    ctx.fillText('Speed (mph)',0,0); ctx.restore();
-    ctx.fillStyle=isLight?'#aaa':'#444'; ctx.font='10px monospace'; ctx.textAlign='right';
-    ctx.fillText('dashed = best fit',W-PR,PT+10);
+    drawAxes(xMax,niceMax,'Training Week','Distance (mi)');
+    ctx.fillStyle=noteC; ctx.font='13px monospace'; ctx.textAlign='right';
+    ctx.fillText('dashed = best fit',W-PR,PT+16);
 
-    // draw per discipline
     discs.forEach(d=>{
       if(!chartDiscs[d]) return;
       const pts=scData[d];
       if(!pts.length) return;
       const c=COLORS[d];
 
-      // regression line
-      const reg=linReg(pts.map(p=>[p.wk,p.mph]));
+      // regression line through (wk, distMi)
+      const reg=linReg(pts.map(p=>[p.wk,p.distMi]));
       if(reg){
         const y1=reg.slope*1+reg.intercept;
         const y2=reg.slope*xMax+reg.intercept;
         ctx.save();
-        ctx.strokeStyle=c; ctx.lineWidth=1.5; ctx.setLineDash([6,4]); ctx.globalAlpha=0.55;
+        ctx.strokeStyle=c; ctx.lineWidth=2; ctx.setLineDash([6,4]); ctx.globalAlpha=0.55;
         ctx.beginPath();
         ctx.moveTo(tx(1),ty(Math.max(0,y1)));
         ctx.lineTo(tx(xMax),ty(Math.max(0,y2)));
@@ -1772,9 +1784,9 @@ function drawChart(){
 
       // scatter dots
       pts.forEach(p=>{
-        const cx=tx(p.wk), cy=ty(p.mph);
+        const cx=tx(p.wk), cy=ty(p.distMi);
         ctx.beginPath(); ctx.fillStyle=c; ctx.globalAlpha=0.85;
-        ctx.arc(cx,cy,5,0,Math.PI*2); ctx.fill(); ctx.globalAlpha=1;
+        ctx.arc(cx,cy,5.5,0,Math.PI*2); ctx.fill(); ctx.globalAlpha=1;
         _scatterPts.push({cx,cy,disc:d,mph:p.mph,dist:p.dist,unit:p.unit,dur:p.dur,wk:p.wk,paceStr:p.paceStr});
       });
     });
@@ -1800,53 +1812,27 @@ function drawChart(){
   const allV=[];
   const discs=['swim','bike','run','total'];
   discs.forEach(d=>{ if(!chartDiscs[d]) return; actData.forEach(r=>allV.push(r[d])); });
-  const rawMax=allV.length?Math.max(...allV):10;
-  const mag=Math.pow(10,Math.floor(Math.log10(rawMax||1)));
-  const niceMax=Math.ceil(rawMax*1.1/mag)*mag;
+  const niceMax=tightNiceMax(allV.length?Math.max(...allV):10);
 
   const tx=wk=>PL+(wk-1)/(Math.max(xMax-1,1))*CW;
   const ty=v=>PT+CH*(1-v/niceMax);
 
-  for(let i=0;i<=5;i++){
-    const v=niceMax*i/5, y=ty(v);
-    ctx.strokeStyle=gridC; ctx.lineWidth=1;
-    ctx.beginPath();ctx.moveTo(PL,y);ctx.lineTo(PL+CW,y);ctx.stroke();
-    const lbl=v>=100?Math.round(v).toString():v<10?v.toFixed(1):Math.round(v).toString();
-    ctx.fillStyle=numC; ctx.font='11px monospace'; ctx.textAlign='right';
-    ctx.fillText(lbl,PL-7,y+4);
-  }
-  const xStep=xMax<=10?1:xMax<=16?2:4;
-  for(let wk=1;wk<=xMax;wk++){
-    if(wk===1||wk===xMax||wk%xStep===0){
-      const x=tx(wk);
-      ctx.strokeStyle=tickC; ctx.lineWidth=1;
-      ctx.beginPath();ctx.moveTo(x,PT+CH);ctx.lineTo(x,PT+CH+4);ctx.stroke();
-      ctx.fillStyle=numC; ctx.font='11px monospace'; ctx.textAlign='center';
-      ctx.fillText('W'+wk,x,PT+CH+16);
-    }
-  }
-  ctx.strokeStyle=axisC; ctx.lineWidth=1;
-  ctx.beginPath();ctx.moveTo(PL,PT);ctx.lineTo(PL,PT+CH);ctx.lineTo(PL+CW,PT+CH);ctx.stroke();
-  ctx.fillStyle=lblC; ctx.font='12px monospace'; ctx.textAlign='center';
-  ctx.fillText('Week',PL+CW/2,H-4);
-  ctx.save(); ctx.translate(11,PT+CH/2); ctx.rotate(-Math.PI/2);
-  ctx.fillText(isVol?'Miles (this week)':'Cumulative miles',0,0); ctx.restore();
+  drawAxes(xMax,niceMax,'Training Week',isVol?'Miles (this week)':'Cumulative miles');
 
-  function drawLine(pts,color,dashed){
+  function drawLine(pts,color){
     if(!pts||!pts.length) return;
     ctx.save();
-    ctx.beginPath(); ctx.strokeStyle=color; ctx.lineWidth=dashed?1.5:2.5;
+    ctx.beginPath(); ctx.strokeStyle=color; ctx.lineWidth=2.5;
     ctx.lineJoin='round'; ctx.lineCap='round';
-    if(dashed) ctx.setLineDash([7,5]);
     pts.forEach((p,i)=>{i?ctx.lineTo(tx(p.wk),ty(p.v)):ctx.moveTo(tx(p.wk),ty(p.v));});
-    ctx.stroke(); ctx.setLineDash([]);
-    if(!dashed){ pts.forEach(p=>{ ctx.beginPath();ctx.fillStyle=color;ctx.arc(tx(p.wk),ty(p.v),3.5,0,Math.PI*2);ctx.fill(); }); }
+    ctx.stroke();
+    pts.forEach(p=>{ ctx.beginPath();ctx.fillStyle=color;ctx.arc(tx(p.wk),ty(p.v),3.5,0,Math.PI*2);ctx.fill(); });
     ctx.restore();
   }
 
   discs.forEach(d=>{
     if(!chartDiscs[d]) return;
-    drawLine(actData.map(r=>({wk:r.wk,v:r[d]})),COLORS[d],false);
+    drawLine(actData.map(r=>({wk:r.wk,v:r[d]})),COLORS[d]);
   });
 }
 
