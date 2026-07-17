@@ -17,6 +17,20 @@
   --oswald:'Oswald',sans-serif;--mono:'DM Mono',monospace;--body:'DM Sans',sans-serif;
   --ph-top:0px;
 }
+@media(prefers-color-scheme:light){
+  :root{
+    --bg:#f0f0f0;--s1:#ffffff;--s2:#f8f8f8;--s3:#efefef;
+    --border:#e0e0e0;--border2:#d0d0d0;--text:#1a1a1a;--muted:#666;--dim:#999;
+    --swim-d:#e3f5ff;--bike-d:#fff9e0;--run-d:#fff0f0;--cf-d:#edfff5;
+    --brick-d:#f5eeff;--ar-d:#f5f5f5;--swimrun-d:#e3f5ff;--race-d:#fff0f0;
+    --bike:#b08900;--bike-d:#fff9e0;
+  }
+  .sn-brand-title{color:var(--text)}
+  .phase-weeks{color:rgba(0,0,0,.55)}
+  .race-day-card{background:linear-gradient(135deg,#ffe8ed,#fff5e8)}
+  .t-body p,.coach-note p,.nutr-note p{color:#444}
+  .session-stub:hover{color:rgba(0,0,0,.6)}
+}
 body{font-family:var(--body);background:var(--bg);color:var(--text);font-size:18px;min-height:100vh}
 
 /* ── Sticky nav ── */
@@ -56,7 +70,7 @@ body{font-family:var(--body);background:var(--bg);color:var(--text);font-size:18
 
 /* ── Top panel ── */
 .top-panel{display:grid;grid-template-columns:1fr;gap:8px;padding:8px 14px 0;background:var(--s1);border-bottom:2px solid var(--red);margin-bottom:0}
-.panel-hdr{font-family:var(--oswald);font-size:15px;letter-spacing:.12em;text-transform:uppercase;color:var(--red);margin-bottom:8px;font-weight:600}
+.panel-hdr{font-family:var(--oswald);font-size:17px;letter-spacing:.12em;text-transform:uppercase;color:var(--red);margin-bottom:8px;font-weight:600}
 
 /* Stats column */
 .stats-col{display:flex;flex-direction:column;gap:6px}
@@ -105,6 +119,23 @@ body{font-family:var(--body);background:var(--bg);color:var(--text);font-size:18
 .proj-conf{font-size:14px;color:var(--dim);font-family:var(--mono)}
 .proj-bar .stat-val{font-size:24px}
 .progress-wrap{margin-top:4px;margin-bottom:10px}
+/* Chart Modal */
+.chart-overlay{position:fixed;inset:0;background:rgba(0,0,0,.82);z-index:900;display:flex;align-items:center;justify-content:center}
+.chart-modal-box{width:75vw;height:75vh;background:var(--s1);border:1px solid var(--border);border-radius:12px;display:flex;flex-direction:column;overflow:hidden}
+.chart-modal-top{display:flex;align-items:center;justify-content:space-between;padding:12px 18px;border-bottom:1px solid var(--border);flex-shrink:0}
+.chart-modal-lbl{font-family:var(--oswald);font-size:18px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--red)}
+.chart-close-btn{background:none;border:none;color:var(--muted);font-size:22px;cursor:pointer;line-height:1;padding:0}
+.chart-close-btn:hover{color:var(--text)}
+.chart-ctrl-bar{display:flex;align-items:center;gap:12px;padding:8px 18px;border-bottom:1px solid var(--border);flex-shrink:0;flex-wrap:wrap}
+.chart-type-grp,.chart-disc-grp{display:flex;gap:5px}
+.chart-type-btn{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;padding:4px 12px;border-radius:99px;border:1px solid var(--border2);background:transparent;color:var(--dim);cursor:pointer;transition:all .15s;white-space:nowrap}
+.chart-type-btn.sel{background:var(--red);border-color:var(--red);color:#fff}
+.chart-ctrl-sep{width:1px;height:18px;background:var(--border2);flex-shrink:0}
+.chart-disc-btn{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;padding:4px 10px;border-radius:99px;border:1px solid;background:transparent;cursor:pointer;opacity:.3;transition:opacity .15s}
+.chart-disc-btn.on{opacity:1}
+.chart-body{flex:1;min-height:0;position:relative;overflow:hidden}
+#chart-canvas{position:absolute;top:0;left:0}
+.chart-tooltip{position:absolute;pointer-events:none;display:none;background:var(--s1);border:1px solid var(--border2);border-radius:6px;padding:6px 10px;font-size:12px;font-family:var(--mono);color:var(--text);white-space:nowrap;z-index:10;box-shadow:0 2px 8px rgba(0,0,0,.25);line-height:1.6}
 .progress-lbl{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:4px}
 .progress-track{height:5px;background:var(--border);border-radius:99px;overflow:hidden}
 .progress-fill{height:100%;background:var(--red);border-radius:99px;transition:width .4s}
@@ -263,8 +294,8 @@ body{font-family:var(--body);background:var(--bg);color:var(--text);font-size:18
 .proj-inp.conf{width:100%;text-align:right}
 .proj-form-unit{font-size:12px;color:var(--muted)}
 .proj-modal-actions{display:flex;gap:8px;padding:0 16px 16px}
-.proj-update-btn{background:none;border:1px solid var(--border);border-radius:4px;color:var(--dim);font-size:11px;cursor:pointer;padding:3px 8px;font-family:var(--body);white-space:nowrap}
-.proj-update-btn:hover{border-color:var(--muted);color:var(--text)}
+.proj-update-btn{background:none;border:1px solid var(--border2);border-radius:4px;color:var(--muted);font-size:13px;cursor:pointer;padding:4px 10px;font-family:var(--body);white-space:nowrap}
+.proj-update-btn:hover{border-color:#aaa;color:var(--text)}
 .add-modal-hdr{padding:14px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;background:var(--s2)}
 .add-modal-title{font-family:var(--oswald);font-size:21px;font-weight:700;flex:1}
 .add-modal-body{padding:16px}
@@ -372,7 +403,10 @@ body{font-family:var(--body);background:var(--bg);color:var(--text);font-size:18
     </div>
     <div>
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-        <div class="panel-hdr" style="margin-bottom:0">Training Totals</div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <div class="panel-hdr" style="margin-bottom:0">Training Totals</div>
+          <button class="proj-update-btn" onclick="openChartModal()">View Data</button>
+        </div>
         <div style="display:flex;align-items:center;gap:10px">
           <div class="pace-mode-wrap" onclick="togglePaceMode()">
             <span class="pace-mode-lbl" id="pace-lbl-plan">Plan</span>
@@ -817,7 +851,7 @@ function renderStats(){
   document.getElementById('stat-swim').textContent=st.swimYds.toLocaleString()+' yds';
   document.getElementById('stat-swim-cnt').textContent=st.swimCount;
   document.getElementById('stat-swim-time').textContent=st.swimTime;
-  document.getElementById('stat-swim-avg').textContent=st.swimAvg!=null?st.swimAvg+' yds':'—';
+  document.getElementById('stat-swim-avg').textContent=st.swimAvg!=null?parseInt(st.swimAvg).toLocaleString()+' yds':'—';
   document.getElementById('stat-swim-avg-time').textContent=st.swimAvgTime||'—';
   document.getElementById('stat-bike').textContent=st.bikeMi+' mi';
   document.getElementById('stat-bike-cnt').textContent=st.bikeCount;
@@ -1512,6 +1546,310 @@ function renderCalendar(){
   cal.innerHTML=html;
 }
 
+// ── Chart Modal ──
+let chartType='volume';
+let chartDiscs={swim:true,bike:true,run:true,total:true};
+const CHART_COLORS={swim:'#38BDF8',bike:'#FCD34D',run:'#F87171',total:'#FB923C'};
+const CHART_TITLES={volume:'Training Volume by Week',cumulative:'Cumulative Volume by Week',pacing:'Pace per Session'};
+
+function openChartModal(){
+  document.getElementById('chart-overlay').style.display='flex';
+  requestAnimationFrame(drawChart);
+}
+function closeChartModal(){
+  document.getElementById('chart-overlay').style.display='none';
+  chartMouseLeave();
+}
+function setChartType(type,btn){
+  chartType=type;
+  document.getElementById('chart-modal-lbl').textContent=CHART_TITLES[type];
+  document.querySelectorAll('.chart-type-btn').forEach(b=>b.classList.remove('sel'));
+  btn.classList.add('sel');
+  // hide Total toggle for pacing (per-session data has no total pace)
+  const totBtn=document.getElementById('cdisc-total');
+  if(totBtn) totBtn.style.display=type==='pacing'?'none':'';
+  chartMouseLeave();
+  drawChart();
+}
+function toggleChartDisc(disc){
+  chartDiscs[disc]=!chartDiscs[disc];
+  document.getElementById('cdisc-'+disc).classList.toggle('on',chartDiscs[disc]);
+  drawChart();
+}
+
+// ── Pacing scatter helpers ──
+let _scatterPts=[];
+
+function getPacingScatterData(){
+  const trainStart=new Date('2026-05-23T00:00:00Z');
+  const dateWeek=d=>Math.floor((new Date(d)-trainStart)/864e5/7)+1;
+  const pts={swim:[],bike:[],run:[]};
+
+  function pushSwim(wk,yds,dur){
+    if(yds<=0||dur<=0) return;
+    const mph=(yds/1760)/(dur/60);
+    const p100m=dur/(yds/100);
+    pts.swim.push({wk,dist:yds,unit:'yds',dur,mph,paceStr:' / '+fmtPaceMin(p100m)+'/100m'});
+  }
+  function pushBike(wk,mi,dur){
+    if(mi<=0||dur<=0) return;
+    pts.bike.push({wk,dist:mi,unit:'mi',dur,mph:mi/(dur/60),paceStr:' / '+fmtPaceMin(dur/mi)+'/mi'});
+  }
+  function pushRun(wk,mi,dur){
+    if(mi<=0||dur<=0) return;
+    pts.run.push({wk,dist:mi,unit:'mi',dur,mph:mi/(dur/60),paceStr:' / '+fmtPaceMin(dur/mi)+'/mi'});
+  }
+
+  PLAN.forEach(s=>{
+    if(deletedSessions.has(s.id)) return;
+    const c=completions[s.id];
+    if(!c) return;
+    const wk=s.week;
+    if(s.type==='swim'||s.type==='swimrun') pushSwim(wk,c.distance||0,c.duration||0);
+    else if(s.type==='bike') pushBike(wk,c.distance||0,c.duration||0);
+    else if(s.type==='run') pushRun(wk,c.distance||0,c.duration||0);
+    else if(s.type==='brick'){
+      pushBike(wk,c.bikeDist!=null?c.bikeDist:(c.distance||0),c.bikeDur||0);
+      pushRun(wk,c.runDist||0,c.runDur||0);
+    }
+  });
+
+  Object.values(customWorkouts).forEach(w=>{
+    if(!w.done||!w.date) return;
+    const wk=dateWeek(w.date);
+    if(wk<1) return;
+    const dur=w.duration||0;
+    if(w.type==='swim') pushSwim(wk,w.distance||0,dur);
+    else if(w.type==='bike') pushBike(wk,w.distance||0,dur);
+    else if(w.type==='run') pushRun(wk,w.distance||0,dur);
+    else if(w.type==='brick'){
+      pushBike(wk,w.bikeDist!=null?w.bikeDist:(w.distance||0),w.bikeDur||0);
+      pushRun(wk,w.runDist||0,w.runDur||0);
+    }
+  });
+
+  return pts;
+}
+
+function fmtPaceMin(m){
+  if(!isFinite(m)||m<=0) return '--';
+  const mm=Math.floor(m), ss=Math.round((m-mm)*60);
+  return ss===60?`${mm+1}:00`:`${mm}:${String(ss).padStart(2,'0')}`;
+}
+
+function linReg(pairs){
+  const n=pairs.length;
+  if(n<2) return null;
+  let sx=0,sy=0,sxy=0,sx2=0;
+  pairs.forEach(([x,y])=>{sx+=x;sy+=y;sxy+=x*y;sx2+=x*x;});
+  const denom=n*sx2-sx*sx;
+  if(Math.abs(denom)<1e-10) return null;
+  const slope=(n*sxy-sx*sy)/denom;
+  return {slope, intercept:(sy-slope*sx)/n};
+}
+
+function chartMouseMove(e){
+  if(chartType!=='pacing') return;
+  const canvas=document.getElementById('chart-canvas');
+  const tt=document.getElementById('chart-tooltip');
+  if(!canvas||!tt||!_scatterPts.length) return;
+  const rect=canvas.getBoundingClientRect();
+  const mx=(e.clientX-rect.left)*(canvas.width/rect.width);
+  const my=(e.clientY-rect.top)*(canvas.height/rect.height);
+  let best=null, bestD=18;
+  _scatterPts.forEach(p=>{
+    const d=Math.hypot(p.cx-mx,p.cy-my);
+    if(d<bestD){bestD=d;best=p;}
+  });
+  if(best){
+    const c=CHART_COLORS[best.disc]||'#aaa';
+    tt.innerHTML=`<span style="color:${c};font-weight:700">${best.disc.toUpperCase()}</span> Wk ${best.wk}<br>${best.dist.toFixed(1)} ${best.unit} &middot; ${best.dur} min<br><b>${best.mph.toFixed(2)} mph</b>${best.paceStr}`;
+    const bw=tt.offsetWidth||160, bh=tt.offsetHeight||70;
+    const scaleX=rect.width/canvas.width;
+    let tx2=e.clientX-rect.left+12, ty2=e.clientY-rect.top-bh-8;
+    if(tx2+bw>rect.width) tx2=e.clientX-rect.left-bw-12;
+    if(ty2<0) ty2=e.clientY-rect.top+12;
+    tt.style.left=tx2+'px';
+    tt.style.top=ty2+'px';
+    tt.style.display='block';
+  } else {
+    tt.style.display='none';
+  }
+}
+function chartMouseLeave(){
+  const tt=document.getElementById('chart-tooltip');
+  if(tt) tt.style.display='none';
+}
+
+function drawChart(){
+  const canvas=document.getElementById('chart-canvas');
+  const body=document.getElementById('chart-body');
+  if(!canvas||!body) return;
+  const W=body.clientWidth, H=body.clientHeight;
+  canvas.width=W; canvas.height=H;
+  const ctx=canvas.getContext('2d');
+  ctx.clearRect(0,0,W,H);
+
+  const isLight=window.matchMedia('(prefers-color-scheme:light)').matches;
+  const gridC=isLight?'#e8e8e8':'#1c1c1c';
+  const tickC=isLight?'#d0d0d0':'#2a2a2a';
+  const axisC=isLight?'#cccccc':'#333333';
+  const numC=isLight?'#777':'#555';
+  const lblC=isLight?'#888':'#666';
+  const COLORS={swim:'#38BDF8',bike:isLight?'#b08900':'#FCD34D',run:'#F87171',total:'#FB923C'};
+
+  const pw=currentPaceWeek();
+  const PL=64,PR=16,PT=16,PB=42;
+  const CW=W-PL-PR, CH=H-PT-PB;
+
+  // ── PACING SCATTER ──
+  if(chartType==='pacing'){
+    _scatterPts=[];
+    const scData=getPacingScatterData();
+    const discs=['swim','bike','run'];
+
+    // collect y-values (mph) for scale
+    const allMph=[];
+    discs.forEach(d=>{ if(chartDiscs[d]) scData[d].forEach(p=>allMph.push(p.mph)); });
+    const rawMax=allMph.length?Math.max(...allMph)*1.18:25;
+    const mag=Math.pow(10,Math.floor(Math.log10(rawMax||1)));
+    const niceMax=Math.ceil(rawMax/mag)*mag;
+    const xMax=Math.max(pw,2);
+
+    const tx=wk=>PL+(wk-1)/(xMax-1)*CW;
+    const ty=v=>PT+CH*(1-v/niceMax);
+
+    // grid
+    for(let i=0;i<=5;i++){
+      const v=niceMax*i/5, y=ty(v);
+      ctx.strokeStyle=gridC; ctx.lineWidth=1;
+      ctx.beginPath();ctx.moveTo(PL,y);ctx.lineTo(PL+CW,y);ctx.stroke();
+      ctx.fillStyle=numC; ctx.font='11px monospace'; ctx.textAlign='right';
+      ctx.fillText(v.toFixed(1),PL-7,y+4);
+    }
+    // x ticks
+    const xStep=xMax<=10?1:xMax<=16?2:4;
+    for(let wk=1;wk<=xMax;wk++){
+      if(wk===1||wk===xMax||wk%xStep===0){
+        const x=tx(wk);
+        ctx.strokeStyle=tickC; ctx.lineWidth=1;
+        ctx.beginPath();ctx.moveTo(x,PT+CH);ctx.lineTo(x,PT+CH+4);ctx.stroke();
+        ctx.fillStyle=numC; ctx.font='11px monospace'; ctx.textAlign='center';
+        ctx.fillText('W'+wk,x,PT+CH+16);
+      }
+    }
+    // axes
+    ctx.strokeStyle=axisC; ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(PL,PT);ctx.lineTo(PL,PT+CH);ctx.lineTo(PL+CW,PT+CH);ctx.stroke();
+    // labels
+    ctx.fillStyle=lblC; ctx.font='12px monospace'; ctx.textAlign='center';
+    ctx.fillText('Week',PL+CW/2,H-4);
+    ctx.save(); ctx.translate(11,PT+CH/2); ctx.rotate(-Math.PI/2);
+    ctx.fillText('Speed (mph)',0,0); ctx.restore();
+    ctx.fillStyle=isLight?'#aaa':'#444'; ctx.font='10px monospace'; ctx.textAlign='right';
+    ctx.fillText('dashed = best fit',W-PR,PT+10);
+
+    // draw per discipline
+    discs.forEach(d=>{
+      if(!chartDiscs[d]) return;
+      const pts=scData[d];
+      if(!pts.length) return;
+      const c=COLORS[d];
+
+      // regression line
+      const reg=linReg(pts.map(p=>[p.wk,p.mph]));
+      if(reg){
+        const y1=reg.slope*1+reg.intercept;
+        const y2=reg.slope*xMax+reg.intercept;
+        ctx.save();
+        ctx.strokeStyle=c; ctx.lineWidth=1.5; ctx.setLineDash([6,4]); ctx.globalAlpha=0.55;
+        ctx.beginPath();
+        ctx.moveTo(tx(1),ty(Math.max(0,y1)));
+        ctx.lineTo(tx(xMax),ty(Math.max(0,y2)));
+        ctx.stroke();
+        ctx.setLineDash([]); ctx.globalAlpha=1; ctx.restore();
+      }
+
+      // scatter dots
+      pts.forEach(p=>{
+        const cx=tx(p.wk), cy=ty(p.mph);
+        ctx.beginPath(); ctx.fillStyle=c; ctx.globalAlpha=0.85;
+        ctx.arc(cx,cy,5,0,Math.PI*2); ctx.fill(); ctx.globalAlpha=1;
+        _scatterPts.push({cx,cy,disc:d,mph:p.mph,dist:p.dist,unit:p.unit,dur:p.dur,wk:p.wk,paceStr:p.paceStr});
+      });
+    });
+    return;
+  }
+
+  // ── VOLUME / CUMULATIVE ──
+  const cumul=[];
+  for(let wk=1;wk<=pw;wk++){
+    const s=calcStatsByWeek(wk);
+    const sm=s.swimYds/1760;
+    cumul.push({wk,swim:sm,bike:s.bikeMi,run:s.runMi,total:sm+s.bikeMi+s.runMi});
+  }
+  const weekly=cumul.map((d,i)=>{
+    const p=i>0?cumul[i-1]:{swim:0,bike:0,run:0,total:0};
+    return{wk:d.wk,swim:d.swim-p.swim,bike:d.bike-p.bike,run:d.run-p.run,total:d.total-p.total};
+  });
+
+  const isVol=chartType==='volume';
+  const actData=isVol?weekly:cumul;
+  const xMax=Math.max(pw,2);
+
+  const allV=[];
+  const discs=['swim','bike','run','total'];
+  discs.forEach(d=>{ if(!chartDiscs[d]) return; actData.forEach(r=>allV.push(r[d])); });
+  const rawMax=allV.length?Math.max(...allV):10;
+  const mag=Math.pow(10,Math.floor(Math.log10(rawMax||1)));
+  const niceMax=Math.ceil(rawMax*1.1/mag)*mag;
+
+  const tx=wk=>PL+(wk-1)/(Math.max(xMax-1,1))*CW;
+  const ty=v=>PT+CH*(1-v/niceMax);
+
+  for(let i=0;i<=5;i++){
+    const v=niceMax*i/5, y=ty(v);
+    ctx.strokeStyle=gridC; ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(PL,y);ctx.lineTo(PL+CW,y);ctx.stroke();
+    const lbl=v>=100?Math.round(v).toString():v<10?v.toFixed(1):Math.round(v).toString();
+    ctx.fillStyle=numC; ctx.font='11px monospace'; ctx.textAlign='right';
+    ctx.fillText(lbl,PL-7,y+4);
+  }
+  const xStep=xMax<=10?1:xMax<=16?2:4;
+  for(let wk=1;wk<=xMax;wk++){
+    if(wk===1||wk===xMax||wk%xStep===0){
+      const x=tx(wk);
+      ctx.strokeStyle=tickC; ctx.lineWidth=1;
+      ctx.beginPath();ctx.moveTo(x,PT+CH);ctx.lineTo(x,PT+CH+4);ctx.stroke();
+      ctx.fillStyle=numC; ctx.font='11px monospace'; ctx.textAlign='center';
+      ctx.fillText('W'+wk,x,PT+CH+16);
+    }
+  }
+  ctx.strokeStyle=axisC; ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(PL,PT);ctx.lineTo(PL,PT+CH);ctx.lineTo(PL+CW,PT+CH);ctx.stroke();
+  ctx.fillStyle=lblC; ctx.font='12px monospace'; ctx.textAlign='center';
+  ctx.fillText('Week',PL+CW/2,H-4);
+  ctx.save(); ctx.translate(11,PT+CH/2); ctx.rotate(-Math.PI/2);
+  ctx.fillText(isVol?'Miles (this week)':'Cumulative miles',0,0); ctx.restore();
+
+  function drawLine(pts,color,dashed){
+    if(!pts||!pts.length) return;
+    ctx.save();
+    ctx.beginPath(); ctx.strokeStyle=color; ctx.lineWidth=dashed?1.5:2.5;
+    ctx.lineJoin='round'; ctx.lineCap='round';
+    if(dashed) ctx.setLineDash([7,5]);
+    pts.forEach((p,i)=>{i?ctx.lineTo(tx(p.wk),ty(p.v)):ctx.moveTo(tx(p.wk),ty(p.v));});
+    ctx.stroke(); ctx.setLineDash([]);
+    if(!dashed){ pts.forEach(p=>{ ctx.beginPath();ctx.fillStyle=color;ctx.arc(tx(p.wk),ty(p.v),3.5,0,Math.PI*2);ctx.fill(); }); }
+    ctx.restore();
+  }
+
+  discs.forEach(d=>{
+    if(!chartDiscs[d]) return;
+    drawLine(actData.map(r=>({wk:r.wk,v:r[d]})),COLORS[d],false);
+  });
+}
+
 // ── Init ──
 // On load: auto-collapse past weeks and phases whose weeks are all past
 (function(){
@@ -1540,5 +1878,32 @@ renderTodayTomorrow();
 renderCalendar();
 renderProjections();
 </script>
+
+<div class="chart-overlay" id="chart-overlay" style="display:none" onclick="if(event.target===this)closeChartModal()">
+  <div class="chart-modal-box">
+    <div class="chart-modal-top">
+      <span class="chart-modal-lbl" id="chart-modal-lbl">Training Volume by Week</span>
+      <button class="chart-close-btn" onclick="closeChartModal()">&#x2715;</button>
+    </div>
+    <div class="chart-ctrl-bar">
+      <div class="chart-type-grp">
+        <button class="chart-type-btn sel" onclick="setChartType('volume',this)">Volume by Week</button>
+        <button class="chart-type-btn" onclick="setChartType('cumulative',this)">Cumulative Volume</button>
+        <button class="chart-type-btn" onclick="setChartType('pacing',this)">Pacing</button>
+      </div>
+      <div class="chart-ctrl-sep"></div>
+      <div class="chart-disc-grp">
+        <button class="chart-disc-btn on" id="cdisc-swim" onclick="toggleChartDisc('swim')" style="color:#38BDF8">Swim</button>
+        <button class="chart-disc-btn on" id="cdisc-bike" onclick="toggleChartDisc('bike')" style="color:#FCD34D">Bike</button>
+        <button class="chart-disc-btn on" id="cdisc-run" onclick="toggleChartDisc('run')" style="color:#F87171">Run</button>
+        <button class="chart-disc-btn on" id="cdisc-total" onclick="toggleChartDisc('total')" style="color:#FB923C">Total</button>
+      </div>
+    </div>
+    <div class="chart-body" id="chart-body">
+      <canvas id="chart-canvas" onmousemove="chartMouseMove(event)" onmouseleave="chartMouseLeave()"></canvas>
+      <div class="chart-tooltip" id="chart-tooltip"></div>
+    </div>
+  </div>
+</div>
 </body>
 </html>
