@@ -1550,7 +1550,7 @@ function renderCalendar(){
 let chartType='volume';
 let chartDiscs={swim:true,bike:true,run:true,total:true};
 const CHART_COLORS={swim:'#38BDF8',bike:'#FCD34D',run:'#F87171',total:'#FB923C'};
-const CHART_TITLES={volume:'Training Volume by Week',cumulative:'Cumulative Volume by Week',pacing:'Pace per Session'};
+const CHART_TITLES={volume:'Training Volume by Week',cumulative:'Cumulative Volume by Week',pacing:'Pace per Session',speed:'Speed by Week',trendplan:'Trend vs Plan',trendbench:'Trend vs Benchmark'};
 
 function openChartModal(){
   document.getElementById('chart-overlay').style.display='flex';
@@ -1565,9 +1565,9 @@ function setChartType(type,btn){
   document.getElementById('chart-modal-lbl').textContent=CHART_TITLES[type];
   document.querySelectorAll('.chart-type-btn').forEach(b=>b.classList.remove('sel'));
   btn.classList.add('sel');
-  // hide Total toggle for pacing (per-session data has no total pace)
+  // hide Total for per-session charts (no meaningful total speed/pace)
   const totBtn=document.getElementById('cdisc-total');
-  if(totBtn) totBtn.style.display=type==='pacing'?'none':'';
+  if(totBtn) totBtn.style.display=(type==='pacing'||type==='speed')?'none':'';
   chartMouseLeave();
   drawChart();
 }
@@ -1821,6 +1821,97 @@ function drawChart(){
     return;
   }
 
+  // ── SPEED BY WEEK (scatter: week vs mph, per session) ──
+  if(chartType==='speed'){
+    _scatterPts=[];
+    const scData=getPacingScatterData();
+    const discs=['swim','bike','run'];
+    const xMax=Math.max(pw,2);
+    const allMph=[];
+    discs.forEach(d=>{ if(chartDiscs[d]) scData[d].forEach(p=>allMph.push(p.mph)); });
+    const yMax=tightNiceMax(allMph.length?Math.max(...allMph):25);
+    const tx=wk=>PL+(wk-1)/(Math.max(xMax-1,1))*CW;
+    const ty=v=>PT+CH*(1-v/yMax);
+    drawAxes(xMax,yMax,'Training Week','Speed (mph)');
+    ctx.fillStyle=noteC; ctx.font='13px monospace'; ctx.textAlign='right';
+    ctx.fillText('dashed = best fit',W-PR,PT+16);
+    discs.forEach(d=>{
+      if(!chartDiscs[d]) return;
+      const pts=scData[d];
+      if(!pts.length) return;
+      const c=COLORS[d];
+      const reg=linReg(pts.map(p=>[p.wk,p.mph]));
+      if(reg){
+        ctx.save(); ctx.strokeStyle=c; ctx.lineWidth=2; ctx.setLineDash([6,4]); ctx.globalAlpha=0.55;
+        ctx.beginPath();
+        ctx.moveTo(tx(1),ty(Math.max(0,reg.slope+reg.intercept)));
+        ctx.lineTo(tx(xMax),ty(Math.max(0,reg.slope*xMax+reg.intercept)));
+        ctx.stroke(); ctx.setLineDash([]); ctx.globalAlpha=1; ctx.restore();
+      }
+      pts.forEach(p=>{
+        const cx=tx(p.wk), cy=ty(p.mph);
+        ctx.beginPath(); ctx.fillStyle=c; ctx.globalAlpha=0.85;
+        ctx.arc(cx,cy,5.5,0,Math.PI*2); ctx.fill(); ctx.globalAlpha=1;
+        _scatterPts.push({cx,cy,disc:d,mph:p.mph,dist:p.dist,unit:p.unit,dur:p.dur,wk:p.wk,paceStr:p.paceStr});
+      });
+    });
+    return;
+  }
+
+  // ── TREND VS PLAN / TREND VS BENCHMARK ──
+  if(chartType==='trendplan'||chartType==='trendbench'){
+    // 'bench' key in PACE_TARGETS holds Plan values (data columns are inverted)
+    const tgtKey=chartType==='trendplan'?'bench':'plan';
+    const discs=['swim','bike','run','total'];
+    const XMAX=24; // show full 24-week target horizon
+
+    const cumul=[];
+    for(let wk=1;wk<=pw;wk++){
+      const s=calcStatsByWeek(wk);
+      const sm=s.swimYds/1760;
+      cumul.push({wk,swim:sm,bike:s.bikeMi,run:s.runMi,total:sm+s.bikeMi+s.runMi});
+    }
+    const tgts=[];
+    for(let wk=1;wk<=XMAX;wk++){
+      const row=PACE_TARGETS[wk];
+      if(row){ const pt=row[tgtKey],sm=pt.swim/1760; tgts.push({wk,swim:sm,bike:pt.bike,run:pt.run,total:sm+pt.bike+pt.run}); }
+    }
+
+    // scale to max of actuals + target up to current week (avoid 24-wk target dominating)
+    const allV=[];
+    discs.forEach(d=>{
+      if(!chartDiscs[d]) return;
+      cumul.forEach(r=>allV.push(r[d]));
+      tgts.filter(r=>r.wk<=pw+2).forEach(r=>allV.push(r[d]));
+    });
+    const yMax=tightNiceMax(allV.length?Math.max(...allV):100);
+
+    const tx=wk=>PL+(wk-1)/(XMAX-1)*CW;
+    const ty=v=>PT+CH*(1-Math.min(v,yMax*1.5)/yMax);
+    drawAxes(XMAX,yMax,'Training Week','Cumulative Miles');
+    ctx.fillStyle=noteC; ctx.font='13px monospace'; ctx.textAlign='right';
+    ctx.fillText('solid = actual · dashed = target',W-PR,PT+16);
+
+    discs.forEach(d=>{
+      if(!chartDiscs[d]) return;
+      const c=COLORS[d];
+      // dashed target line (full 24 weeks)
+      ctx.save(); ctx.strokeStyle=c; ctx.lineWidth=1.5; ctx.setLineDash([7,5]); ctx.globalAlpha=0.5;
+      ctx.beginPath();
+      tgts.forEach((r,i)=>{ const y=ty(r[d]); i?ctx.lineTo(tx(r.wk),y):ctx.moveTo(tx(r.wk),y); });
+      ctx.stroke(); ctx.setLineDash([]); ctx.globalAlpha=1; ctx.restore();
+      // solid actual line
+      if(!cumul.length) return;
+      ctx.save(); ctx.strokeStyle=c; ctx.lineWidth=2.5; ctx.lineJoin='round'; ctx.lineCap='round';
+      ctx.beginPath();
+      cumul.forEach((r,i)=>{ const y=ty(r[d]); i?ctx.lineTo(tx(r.wk),y):ctx.moveTo(tx(r.wk),y); });
+      ctx.stroke();
+      cumul.forEach(r=>{ ctx.beginPath();ctx.fillStyle=c;ctx.arc(tx(r.wk),ty(r[d]),3.5,0,Math.PI*2);ctx.fill(); });
+      ctx.restore();
+    });
+    return;
+  }
+
   // ── VOLUME / CUMULATIVE ──
   const cumul=[];
   for(let wk=1;wk<=pw;wk++){
@@ -1904,6 +1995,9 @@ renderProjections();
         <button class="chart-type-btn sel" onclick="setChartType('volume',this)">Volume by Week</button>
         <button class="chart-type-btn" onclick="setChartType('cumulative',this)">Cumulative Volume</button>
         <button class="chart-type-btn" onclick="setChartType('pacing',this)">Pacing</button>
+        <button class="chart-type-btn" onclick="setChartType('speed',this)">Speed by Week</button>
+        <button class="chart-type-btn" onclick="setChartType('trendplan',this)">Trend vs Plan</button>
+        <button class="chart-type-btn" onclick="setChartType('trendbench',this)">Trend vs Bench</button>
       </div>
       <div class="chart-ctrl-sep"></div>
       <div class="chart-disc-grp">
