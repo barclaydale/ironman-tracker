@@ -147,6 +147,9 @@ body{font-family:var(--body);background:var(--bg);color:var(--text);font-size:18
 .log-btn{padding:5px 12px;background:var(--red);border:none;border-radius:6px;color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:var(--oswald);letter-spacing:.05em}
 .log-btn:hover{background:var(--red-d)}
 .log-unit{font-size:11px;color:var(--muted)}
+.swim-unit-tog{display:inline-flex;align-items:center;border:1px solid var(--border2);border-radius:4px;overflow:hidden;flex-shrink:0;cursor:pointer;font-size:10px;font-weight:700;letter-spacing:.05em}
+.swim-unit-opt{padding:2px 6px;color:var(--dim);transition:background .12s,color .12s}
+.swim-unit-opt.su-active{background:var(--red);color:#fff}
 .completed-badge{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;background:rgba(74,222,128,.1);border:1px solid rgba(74,222,128,.3);border-radius:99px;font-size:13px;color:#4ADE80;font-weight:600}
 
 /* ── Main wrapper ── */
@@ -641,6 +644,17 @@ let collapsedWeeks = new Set(JSON.parse(localStorage.getItem('imfl-collapsed-wee
 let expandedWeeks  = new Set(JSON.parse(localStorage.getItem('imfl-expanded-weeks')||'[]'));
 let collapsedPhases= new Set(JSON.parse(localStorage.getItem('imfl-collapsed-phases')||'[]'));
 let expandedPhases = new Set(JSON.parse(localStorage.getItem('imfl-expanded-phases')||'[]'));
+let swimUnit       = localStorage.getItem('imfl-swim-unit')||'yds';
+
+function swimUnitToggleHTML(){
+  return `<span class="swim-unit-tog"><span class="swim-unit-opt${swimUnit==='yds'?' su-active':''}" data-u="yds" onclick="setSwimUnit('yds')">YDS</span><span class="swim-unit-opt${swimUnit==='m'?' su-active':''}" data-u="m" onclick="setSwimUnit('m')">M</span></span>`;
+}
+function setSwimUnit(u){
+  swimUnit=u;
+  localStorage.setItem('imfl-swim-unit',u);
+  document.querySelectorAll('.swim-unit-opt').forEach(el=>el.classList.toggle('su-active',el.dataset.u===u));
+}
+function toYds(val){ return swimUnit==='m'?Math.round(val*1.09361):val; }
 
 function saveExcludeCfAr(){ localStorage.setItem('imfl-exclude-cf-ar',JSON.stringify(excludeCfAr)); }
 function toggleExcludeCfAr(){ excludeCfAr=!excludeCfAr; saveExcludeCfAr(); renderStats(); }
@@ -1069,7 +1083,7 @@ function renderPreview(slot,s,showForm){
       formHTML=`<div class="log-form"><div class="log-form-row">
         <label class="log-check"><input type="checkbox" id="chk-${slot}" onchange="toggleForm('${slot}')"> Mark complete</label>
       </div><div id="form-fields-${slot}" style="display:none;margin-top:6px"><div class="log-form-row">
-        ${s.unit?`<input class="log-input" type="number" id="inp-dist-${slot}" placeholder="Dist" step="0.1" min="0"><span class="log-unit">${esc(s.unit)}</span>`:''}
+        ${s.unit?`<input class="log-input" type="number" id="inp-dist-${slot}" placeholder="Dist" step="0.1" min="0">${(s.type==='swim'||s.type==='swimrun')?swimUnitToggleHTML():`<span class="log-unit">${esc(s.unit)}</span>`}`:''}
         <input class="log-input time-input" type="text" id="inp-dur-${slot}" placeholder="Min"><span class="log-unit">min</span>
         <button class="log-btn" onclick="logWorkout('${s.id}','${slot}','${esc(s.unit||'')}')">SAVE</button>
       </div></div></div>`;
@@ -1091,8 +1105,9 @@ function toggleForm(slot){
 function logWorkout(sid,slot,unit){
   const di=document.getElementById('inp-dist-'+slot);
   const dur=parseInt(document.getElementById('inp-dur-'+slot)?.value)||0;
-  const dist=di?parseFloat(di.value)||0:0;
-  completions[sid]={done:true,distance:dist,duration:dur,loggedAt:new Date().toISOString(),unit};
+  const raw=di?parseFloat(di.value)||0:0;
+  const dist=unit==='yds'?toYds(raw):raw;
+  completions[sid]={done:true,distance:dist,duration:dur,loggedAt:new Date().toISOString(),unit:'yds'};
   saveCompletions();renderStats();renderTodayTomorrow();renderCalendar();
 }
 
@@ -1152,7 +1167,8 @@ function openModal(sid){
       if(s.type==='brick'){
         logForm=`<div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--border)">${brickFormHTML(`logBrickFromModal('${sid}')`)}</div>`;
       }else{
-        const hu=s.unit?`<input class="log-input" type="number" id="m-dist" placeholder="Distance" step="0.1" min="0"><span class="log-unit">${esc(s.unit)}</span>`:'';
+        const isSwimType=s.type==='swim'||s.type==='swimrun';
+        const hu=s.unit?`<input class="log-input" type="number" id="m-dist" placeholder="Distance" step="0.1" min="0">${isSwimType?swimUnitToggleHTML():`<span class="log-unit">${esc(s.unit)}</span>`}`:'';
         logForm=`<div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--border)"><div class="log-form-row">${hu}
           <input class="log-input time-input" type="text" id="m-dur" placeholder="Min"><span class="log-unit">min</span>
           <button class="log-btn" onclick="logFromModal('${sid}','${esc(s.unit||'')}')">SAVE LOG</button>
@@ -1178,9 +1194,10 @@ function restoreAllSessions(){
 }
 
 function logFromModal(sid,unit){
-  const dist=parseFloat(document.getElementById('m-dist')?.value)||0;
+  const raw=parseFloat(document.getElementById('m-dist')?.value)||0;
   const dur=parseInt(document.getElementById('m-dur')?.value)||0;
-  completions[sid]={done:true,distance:dist,duration:dur,loggedAt:new Date().toISOString(),unit};
+  const dist=unit==='yds'?toYds(raw):raw;
+  completions[sid]={done:true,distance:dist,duration:dur,loggedAt:new Date().toISOString(),unit:'yds'};
   saveCompletions();renderStats();renderTodayTomorrow();renderCalendar();openModal(sid);
 }
 
@@ -1226,7 +1243,10 @@ function selAddType(t){
 function updateAddUnit(){
   const m=typeMeta(_addType);
   const isBrick=_addType==='brick';
-  document.getElementById('add-unit-lbl').textContent=m.unit;
+  const isSwimAdd=_addType==='swim'||_addType==='swimrun';
+  const unitEl=document.getElementById('add-unit-lbl');
+  if(isSwimAdd) unitEl.innerHTML=swimUnitToggleHTML();
+  else unitEl.textContent=m.unit;
   document.getElementById('add-dist-row').style.display=(m.unit&&!isBrick)?'':'none';
   document.getElementById('add-dur-row').style.display=isBrick?'none':'';
   document.getElementById('add-brick-rows').style.display=isBrick?'':'none';
@@ -1247,9 +1267,11 @@ function commitAddWorkout(logNow){
       distance:bd+rd,duration:br+rr,note:rawNote,
       done:logNow&&hasData,loggedAt:logNow&&hasData?new Date().toISOString():null};
   } else {
-    const dist=parseFloat(document.getElementById('add-dist').value)||0;
+    const rawDist=parseFloat(document.getElementById('add-dist').value)||0;
+    const isSwimAdd=_addType==='swim'||_addType==='swimrun';
+    const dist=isSwimAdd?toYds(rawDist):rawDist;
     const dur=parseInt(document.getElementById('add-dur').value)||0;
-    customWorkouts[id]={id,date:_addDate,type:_addType,title:m.label,unit:m.unit,
+    customWorkouts[id]={id,date:_addDate,type:_addType,title:m.label,unit:isSwimAdd?'yds':m.unit,
       distance:dist,duration:dur,note:rawNote,
       done:logNow&&(dist>0||dur>0),loggedAt:logNow?new Date().toISOString():null};
   }
@@ -1277,7 +1299,8 @@ function openCustomModal(wid){
   }else if(w.type==='brick'){
     logDiv.innerHTML=`<div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--border)">${brickFormHTML(`logCustomBrick('${wid}')`)}</div>`;
   }else{
-    const hu=m.unit?`<input class="log-input" type="number" id="m-dist" placeholder="Distance" step="0.1" min="0"><span class="log-unit">${esc(m.unit)}</span>`:'';
+    const isSwimCust=w.type==='swim'||w.type==='swimrun';
+    const hu=m.unit?`<input class="log-input" type="number" id="m-dist" placeholder="Distance" step="0.1" min="0">${isSwimCust?swimUnitToggleHTML():`<span class="log-unit">${esc(m.unit)}</span>`}`:'';
     logDiv.innerHTML=`<div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--border)"><div class="log-form-row">${hu}
       <input class="log-input time-input" type="text" id="m-dur" placeholder="Min"><span class="log-unit">min</span>
       <button class="log-btn" onclick="logCustom('${wid}')">SAVE LOG</button>
@@ -1288,7 +1311,9 @@ function openCustomModal(wid){
 
 function logCustom(wid){
   const w=customWorkouts[wid];if(!w) return;
-  w.distance=parseFloat(document.getElementById('m-dist')?.value)||0;
+  const raw=parseFloat(document.getElementById('m-dist')?.value)||0;
+  const isSwimCust=w.type==='swim'||w.type==='swimrun';
+  w.distance=isSwimCust?toYds(raw):raw;
   w.duration=parseInt(document.getElementById('m-dur')?.value)||0;
   w.done=true;w.loggedAt=new Date().toISOString();
   saveCustom();renderStats();renderCalendar();openCustomModal(wid);
