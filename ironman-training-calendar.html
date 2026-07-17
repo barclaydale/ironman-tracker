@@ -612,22 +612,22 @@ const PACE_TARGETS=[
   {bench:{swim:9600,  bike:144.5,  run:45.9},  plan:{swim:9750,  bike:184.4,  run:51.5}},  // wk 6
   {bench:{swim:11200, bike:168.5,  run:53.6},  plan:{swim:11375, bike:215.2,  run:60.1}},  // wk 7
   {bench:{swim:12800, bike:192.6,  run:61.2},  plan:{swim:13000, bike:245.9,  run:68.7}},
-  {bench:{swim:17000, bike:253.8,  run:68.6},  plan:{swim:17200, bike:343.1,  run:86.3}},
-  {bench:{swim:21200, bike:306.3,  run:78.7},  plan:{swim:21400, bike:440.2,  run:103.8}},
-  {bench:{swim:25700, bike:367.6,  run:86.7},  plan:{swim:25600, bike:537.3,  run:121.4}},
-  {bench:{swim:29200, bike:402.6,  run:90.4},  plan:{swim:29700, bike:634.4,  run:139.0}},
-  {bench:{swim:33700, bike:463.8,  run:103.7}, plan:{swim:33900, bike:731.6,  run:156.6}},
-  {bench:{swim:38500, bike:533.8,  run:114.3}, plan:{swim:38100, bike:828.7,  run:174.2}},
-  {bench:{swim:40400, bike:631.8,  run:125.9}, plan:{swim:42300, bike:925.8,  run:191.8}},
-  {bench:{swim:43900, bike:666.8,  run:129.7}, plan:{swim:46500, bike:1023.0, run:209.3}},
-  {bench:{swim:48900, bike:745.5,  run:146.1}, plan:{swim:50700, bike:1120.1, run:226.9}},
-  {bench:{swim:53900, bike:833.0,  run:164.7}, plan:{swim:54900, bike:1217.2, run:244.5}},
-  {bench:{swim:58900, bike:929.3,  run:187.0}, plan:{swim:59100, bike:1314.4, run:262.1}},
-  {bench:{swim:62700, bike:1008.0, run:202.9}, plan:{swim:63200, bike:1411.5, run:279.7}},
-  {bench:{swim:67200, bike:1095.5, run:217.8}, plan:{swim:67400, bike:1508.6, run:297.3}},
-  {bench:{swim:71200, bike:1156.8, run:225.7}, plan:{swim:71600, bike:1605.7, run:314.8}},
-  {bench:{swim:74200, bike:1200.5, run:232.1}, plan:{swim:75800, bike:1702.9, run:332.4}},
-  {bench:{swim:76200, bike:1218.0, run:234.2}, plan:{swim:80000, bike:1800.0, run:350.0}},
+  {bench:{swim:17000, bike:253.8,  run:68.6},  plan:{swim:17438, bike:338.7,  run:80.7}},   // wk 9
+  {bench:{swim:21200, bike:306.3,  run:78.7},  plan:{swim:21875, bike:418.2,  run:97.2}},   // wk 10
+  {bench:{swim:25700, bike:367.6,  run:86.7},  plan:{swim:26629, bike:511.1,  run:110.2}},  // wk 11
+  {bench:{swim:29200, bike:402.6,  run:90.4},  plan:{swim:30328, bike:564.2,  run:116.2}},  // wk 12
+  {bench:{swim:33700, bike:463.8,  run:103.7}, plan:{swim:35082, bike:656.9,  run:137.8}},  // wk 13
+  {bench:{swim:38500, bike:533.8,  run:114.3}, plan:{swim:40155, bike:763.0,  run:155.0}},  // wk 14
+  {bench:{swim:40400, bike:631.8,  run:125.9}, plan:{swim:42163, bike:911.5,  run:173.9}},  // wk 15
+  {bench:{swim:43900, bike:666.8,  run:129.7}, plan:{swim:45862, bike:964.6,  run:180.1}},  // wk 16
+  {bench:{swim:48900, bike:745.5,  run:146.1}, plan:{swim:51146, bike:1083.9, run:206.7}},  // wk 17
+  {bench:{swim:53900, bike:833.0,  run:164.7}, plan:{swim:56430, bike:1216.5, run:237.0}},  // wk 18
+  {bench:{swim:58900, bike:929.3,  run:187.0}, plan:{swim:61715, bike:1362.4, run:273.3}},  // wk 19
+  {bench:{swim:62700, bike:1008.0, run:202.9}, plan:{swim:65731, bike:1481.7, run:299.1}},  // wk 20
+  {bench:{swim:67200, bike:1095.5, run:217.8}, plan:{swim:70485, bike:1614.3, run:323.3}},  // wk 21
+  {bench:{swim:71200, bike:1156.8, run:225.7}, plan:{swim:74713, bike:1707.2, run:336.2}},  // wk 22
+  {bench:{swim:74200, bike:1200.5, run:232.1}, plan:{swim:77884, bike:1773.5, run:346.6}},  // wk 23
+  {bench:{swim:76200, bike:1218.0, run:234.2}, plan:{swim:80000, bike:1800.0, run:350.0}},  // wk 24
 ];
 function currentPaceWeek(){
   const diffDays=Math.floor((new Date()-new Date('2026-05-23T12:00:00'))/864e5);
@@ -1650,7 +1650,8 @@ function linReg(pairs){
 }
 
 function chartMouseMove(e){
-  if(chartType!=='pacing') return;
+  const hoverable=['pacing','speed','trendplan','trendbench'];
+  if(!hoverable.includes(chartType)) return;
   const canvas=document.getElementById('chart-canvas');
   const tt=document.getElementById('chart-tooltip');
   if(!canvas||!tt||!_scatterPts.length) return;
@@ -1664,9 +1665,21 @@ function chartMouseMove(e){
   });
   if(best){
     const c=CHART_COLORS[best.disc]||'#aaa';
-    tt.innerHTML=`<span style="color:${c};font-weight:700">${best.disc.toUpperCase()}</span> Wk ${best.wk}<br>${best.dist.toFixed(1)} ${best.unit} &middot; ${best.dur} min<br><b>${best.mph.toFixed(2)} mph</b>${best.paceStr}`;
+    let html;
+    if(best.isTrend){
+      const diff=best.diff;
+      const status=diff>=0?'Ahead':'Behind';
+      const statusColor=diff>=0?'#2FC87A':'#E8002D';
+      // swim diff in yards, others in miles
+      const diffStr=best.disc==='swim'
+        ?`${(diff*1760).toFixed(0)} yds`
+        :`${diff.toFixed(1)} mi`;
+      html=`<span style="color:${c};font-weight:700">${best.disc.toUpperCase()}</span> &middot; Wk ${best.wk}<br><span style="color:${statusColor}">${status}: ${diff>=0?'+':''}${diffStr}</span>`;
+    } else {
+      html=`<span style="color:${c};font-weight:700">${best.disc.toUpperCase()}</span> Wk ${best.wk}<br>${best.dist.toFixed(1)} ${best.unit} &middot; ${best.dur} min<br><b>${best.mph.toFixed(2)} mph</b>${best.paceStr}`;
+    }
+    tt.innerHTML=html;
     const bw=tt.offsetWidth||160, bh=tt.offsetHeight||70;
-    const scaleX=rect.width/canvas.width;
     let tx2=e.clientX-rect.left+12, ty2=e.clientY-rect.top-bh-8;
     if(tx2+bw>rect.width) tx2=e.clientX-rect.left-bw-12;
     if(ty2<0) ty2=e.clientY-rect.top+12;
@@ -1932,22 +1945,32 @@ function drawChart(){
     ctx.fillStyle=noteC; ctx.font='13px monospace'; ctx.textAlign='left';
     ctx.fillText('solid = actual · dashed = target',PL+6,PT+16);
 
+    // build target lookup by week
+    _scatterPts=[];
+    const tgtMap={};
+    tgts.forEach(t=>tgtMap[t.wk]=t);
+
     // draw data lines
     ['swim','run','bike','total'].forEach(d=>{
       if(!chartDiscs[d]) return;
-      const c=COLORS[d], ty=tyFor(d);
+      const c=COLORS[d], tyFn=tyFor(d);
       // dashed target (full 24 wks)
       ctx.save(); ctx.strokeStyle=c; ctx.lineWidth=1.5; ctx.setLineDash([7,5]); ctx.globalAlpha=0.5;
       ctx.beginPath();
-      tgts.forEach((r,i)=>{ i?ctx.lineTo(tx(r.wk),ty(r[d])):ctx.moveTo(tx(r.wk),ty(r[d])); });
+      tgts.forEach((r,i)=>{ i?ctx.lineTo(tx(r.wk),tyFn(r[d])):ctx.moveTo(tx(r.wk),tyFn(r[d])); });
       ctx.stroke(); ctx.setLineDash([]); ctx.globalAlpha=1; ctx.restore();
       // solid actual
       if(!cumul.length) return;
       ctx.save(); ctx.strokeStyle=c; ctx.lineWidth=2.5; ctx.lineJoin='round'; ctx.lineCap='round';
       ctx.beginPath();
-      cumul.forEach((r,i)=>{ i?ctx.lineTo(tx(r.wk),ty(r[d])):ctx.moveTo(tx(r.wk),ty(r[d])); });
+      cumul.forEach((r,i)=>{ i?ctx.lineTo(tx(r.wk),tyFn(r[d])):ctx.moveTo(tx(r.wk),tyFn(r[d])); });
       ctx.stroke();
-      cumul.forEach(r=>{ ctx.beginPath();ctx.fillStyle=c;ctx.arc(tx(r.wk),ty(r[d]),3.5,0,Math.PI*2);ctx.fill(); });
+      cumul.forEach(r=>{
+        const cx=tx(r.wk), cy=tyFn(r[d]);
+        ctx.beginPath();ctx.fillStyle=c;ctx.arc(cx,cy,4,0,Math.PI*2);ctx.fill();
+        const tgtVal=tgtMap[r.wk]?tgtMap[r.wk][d]:null;
+        if(tgtVal!=null) _scatterPts.push({cx,cy,disc:d,wk:r.wk,diff:r[d]-tgtVal,isTrend:true});
+      });
       ctx.restore();
     });
     return;
