@@ -1480,14 +1480,7 @@ function onDrop(ev,dateStr,colEl){
 }
 
 function isWeekComplete(wk){
-  const active=Object.values(getWeekSessions(wk)).flat()
-    .filter(s=>!deletedSessions.has(s.id));
-  if(active.length===0) return false;
-  const countable=active.filter(s=>s.type!=='cf'&&s.type!=='ar');
-  // if there are countable sessions, all must be complete
-  if(countable.length>0) return countable.every(s=>!!completions[s.id]);
-  // all non-CF/AR were removed — complete if remaining sessions are all done
-  return active.every(s=>!!completions[s.id]);
+  return currentPaceWeek() > wk;
 }
 function isPhaseComplete(ph){
   const weeks=ph.weeks.filter(w=>w!=='race');
