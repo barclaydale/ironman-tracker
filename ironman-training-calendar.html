@@ -4,6 +4,8 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>IRONMAN Florida 2026 · Training Calendar</title>
+    <link rel="icon" type="image/svg+xml" href="ironman-favicon.svg" />
+    <link rel="apple-touch-icon" id="apple-touch-icon" href="ironman-favicon.svg" />
     <style>
       @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600;700&display=swap');
       * {
@@ -8019,6 +8021,37 @@
       renderTodayTomorrow();
       renderCalendar();
       renderProjections();
+
+      // Generate PNG apple-touch-icon for iPhone home screen
+      (function () {
+        const c = document.createElement('canvas');
+        c.width = c.height = 180;
+        const ctx = c.getContext('2d');
+        // Red rounded background
+        ctx.fillStyle = '#E8002D';
+        ctx.beginPath();
+        ctx.roundRect(0, 0, 180, 180, 22);
+        ctx.fill();
+        // White M shape
+        ctx.strokeStyle = '#fff';
+        ctx.lineWidth = 24;
+        ctx.lineCap = 'square';
+        ctx.lineJoin = 'miter';
+        ctx.beginPath();
+        ctx.moveTo(28, 150);
+        ctx.lineTo(28, 44);
+        ctx.lineTo(90, 110);
+        ctx.lineTo(152, 44);
+        ctx.lineTo(152, 150);
+        ctx.stroke();
+        // White dot above M
+        ctx.fillStyle = '#fff';
+        ctx.beginPath();
+        ctx.arc(90, 19, 14, 0, Math.PI * 2);
+        ctx.fill();
+        const link = document.getElementById('apple-touch-icon');
+        if (link) link.href = c.toDataURL('image/png');
+      })();
     </script>
 
     <div
