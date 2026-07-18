@@ -636,6 +636,14 @@ function currentPaceWeek(){
   const diffDays=Math.floor((new Date()-new Date('2026-05-23T12:00:00'))/864e5);
   return Math.min(Math.max(1,Math.floor(diffDays/7)+1),24);
 }
+function maxLoggedWeek(){
+  const trainStart=new Date('2026-05-23T00:00:00Z');
+  const dateWeek=d=>Math.max(1,Math.floor((new Date(d)-trainStart)/864e5/7)+1);
+  let mx=0;
+  PLAN.forEach(s=>{ if(!deletedSessions.has(s.id)&&completions[s.id]) mx=Math.max(mx,s.week); });
+  Object.values(customWorkouts).forEach(w=>{ if(w.done&&w.date) mx=Math.max(mx,dateWeek(w.date)); });
+  return mx;
+}
 const PROJ_DEFAULTS={swim:{time:'0:55',conf:50},bike:{time:'5:36',conf:68},run:{time:'5:01',conf:72},total:{time:'11:42',conf:71}};
 let projections    = JSON.parse(localStorage.getItem('imfl-projections')||JSON.stringify(PROJ_DEFAULTS));
 let excludeCfAr    = JSON.parse(localStorage.getItem('imfl-exclude-cf-ar')||'false');
@@ -1108,7 +1116,7 @@ function logWorkout(sid,slot,unit){
   const raw=di?parseFloat(di.value)||0:0;
   const dist=unit==='yds'?toYds(raw):raw;
   completions[sid]={done:true,distance:dist,duration:dur,loggedAt:new Date().toISOString(),unit:'yds'};
-  saveCompletions();renderStats();renderTodayTomorrow();renderCalendar();
+  saveCompletions();renderStats();renderTodayTomorrow();renderCalendar();maybeRefreshChart();
 }
 
 function logBrick(sid,slot){
@@ -1118,7 +1126,7 @@ function logBrick(sid,slot){
   const rr=parseInt(document.getElementById('m-run-dur')?.value)||0;
   completions[sid]={done:true,bikeDist:bd,bikeDur:br,runDist:rd,runDur:rr,
     duration:br+rr,loggedAt:new Date().toISOString()};
-  saveCompletions();renderStats();renderTodayTomorrow();renderCalendar();
+  saveCompletions();renderStats();renderTodayTomorrow();renderCalendar();maybeRefreshChart();
 }
 
 function logBrickFromModal(sid){
@@ -1128,7 +1136,7 @@ function logBrickFromModal(sid){
   const rr=parseInt(document.getElementById('m-run-dur')?.value)||0;
   completions[sid]={done:true,bikeDist:bd,bikeDur:br,runDist:rd,runDur:rr,
     duration:br+rr,loggedAt:new Date().toISOString()};
-  saveCompletions();renderStats();renderTodayTomorrow();renderCalendar();openModal(sid);
+  saveCompletions();renderStats();renderTodayTomorrow();renderCalendar();openModal(sid);maybeRefreshChart();
 }
 
 function logCustomBrick(wid){
@@ -1140,7 +1148,7 @@ function logCustomBrick(wid){
   w.distance=w.bikeDist+w.runDist;
   w.duration=w.bikeDur+w.runDur;
   w.done=true;w.loggedAt=new Date().toISOString();
-  saveCustom();renderStats();renderCalendar();openCustomModal(wid);
+  saveCustom();renderStats();renderCalendar();openCustomModal(wid);maybeRefreshChart();
 }
 
 function openModal(sid){
@@ -1198,7 +1206,7 @@ function logFromModal(sid,unit){
   const dur=parseInt(document.getElementById('m-dur')?.value)||0;
   const dist=unit==='yds'?toYds(raw):raw;
   completions[sid]={done:true,distance:dist,duration:dur,loggedAt:new Date().toISOString(),unit:'yds'};
-  saveCompletions();renderStats();renderTodayTomorrow();renderCalendar();openModal(sid);
+  saveCompletions();renderStats();renderTodayTomorrow();renderCalendar();openModal(sid);maybeRefreshChart();
 }
 
 function clearLog(sid){delete completions[sid];saveCompletions();renderStats();renderTodayTomorrow();renderCalendar();openModal(sid);}
@@ -1275,7 +1283,7 @@ function commitAddWorkout(logNow){
       distance:dist,duration:dur,note:rawNote,
       done:logNow&&(dist>0||dur>0),loggedAt:logNow?new Date().toISOString():null};
   }
-  saveCustom();renderStats();renderCalendar();closeAddModal();
+  saveCustom();renderStats();renderCalendar();closeAddModal();maybeRefreshChart();
 }
 
 function closeAddModal(){document.getElementById('add-modal-overlay').classList.add('hidden');}
@@ -1316,7 +1324,7 @@ function logCustom(wid){
   w.distance=isSwimCust?toYds(raw):raw;
   w.duration=parseInt(document.getElementById('m-dur')?.value)||0;
   w.done=true;w.loggedAt=new Date().toISOString();
-  saveCustom();renderStats();renderCalendar();openCustomModal(wid);
+  saveCustom();renderStats();renderCalendar();openCustomModal(wid);maybeRefreshChart();
 }
 
 function clearCustomLog(wid){
@@ -1578,6 +1586,10 @@ let chartDiscs={swim:true,bike:true,run:true,total:true};
 const CHART_COLORS={swim:'#38BDF8',bike:'#FCD34D',run:'#F87171',total:'#FB923C'};
 const CHART_TITLES={volume:'Training Volume by Week',cumulative:'Cumulative Volume by Week',pacing:'Pace per Session',speed:'Speed by Week',trendplan:'Trend vs Plan',trendbench:'Trend vs Benchmark'};
 
+function maybeRefreshChart(){
+  const ov=document.getElementById('chart-overlay');
+  if(ov&&ov.style.display!=='none') drawChart();
+}
 function openChartModal(){
   document.getElementById('chart-overlay').style.display='flex';
   requestAnimationFrame(drawChart);
@@ -1675,7 +1687,7 @@ function linReg(pairs){
 }
 
 function chartMouseMove(e){
-  const hoverable=['pacing','speed','trendplan','trendbench'];
+  const hoverable=['pacing','speed','trendplan','trendbench','volume','cumulative'];
   if(!hoverable.includes(chartType)) return;
   const canvas=document.getElementById('chart-canvas');
   const tt=document.getElementById('chart-tooltip');
@@ -1683,23 +1695,34 @@ function chartMouseMove(e){
   const rect=canvas.getBoundingClientRect();
   const mx=(e.clientX-rect.left)*(canvas.width/rect.width);
   const my=(e.clientY-rect.top)*(canvas.height/rect.height);
-  const isTrend=chartType==='trendplan'||chartType==='trendbench';
-  let best=null, bestD=isTrend?40:18;
+  const useXSnap=chartType==='trendplan'||chartType==='trendbench'||chartType==='volume'||chartType==='cumulative';
+  let best=null, bestD=useXSnap?40:18;
   _scatterPts.forEach(p=>{
-    const d=isTrend?Math.abs(p.cx-mx):Math.hypot(p.cx-mx,p.cy-my);
+    const d=useXSnap?Math.abs(p.cx-mx):Math.hypot(p.cx-mx,p.cy-my);
     if(d<bestD){bestD=d;best=p;}
   });
   if(best){
     let html;
-    if(best.isTrend&&best.discs){
+    const fmtYds=v=>Math.round(v*1760).toLocaleString('en-US');
+    const fmtMi=v=>v.toLocaleString('en-US',{minimumFractionDigits:1,maximumFractionDigits:1});
+    if(best.isVolume){
+      const label=chartType==='volume'?'this week':'cumulative';
+      const lines=[];
+      ['swim','bike','run','total'].forEach(d=>{
+        const v=best.vals[d];
+        if(v==null) return;
+        const c=CHART_COLORS[d];
+        const valStr=d==='swim'?`${fmtYds(v)} yds`:`${fmtMi(v)} mi`;
+        lines.push(`<span style="color:${c};font-weight:700">${d.toUpperCase()}</span>  ${valStr}`);
+      });
+      html=`<b>Week ${best.wk}</b> <span style="color:var(--muted);font-size:11px">${label}</span><br>${lines.join('<br>')}`;
+    } else if(best.isTrend&&best.discs){
       const sections=[];
       ['swim','bike','run','total'].forEach(d=>{
         const info=best.discs[d];
         if(!info) return;
         const c=CHART_COLORS[d];
         const isSwim=d==='swim';
-        const fmtYds=v=>Math.round(v*1760).toLocaleString('en-US');
-        const fmtMi=v=>v.toLocaleString('en-US',{minimumFractionDigits:1,maximumFractionDigits:1});
         const actualStr=isSwim?`${fmtYds(info.actual)} yds`:`${fmtMi(info.actual)} mi`;
         const tgtStr=info.target!=null?(isSwim?`${fmtYds(info.target)} yds`:`${fmtMi(info.target)} mi`):'--';
         const diff=info.diff;
@@ -1920,7 +1943,9 @@ function drawChart(){
     _scatterPts=[];
     const scData=getPacingScatterData();
     const discs=['swim','bike','run'];
-    const xMax=Math.max(pw,2);
+    const allWks=[];
+    discs.forEach(d=>{if(chartDiscs[d])scData[d].forEach(p=>allWks.push(p.wk));});
+    const xMax=Math.max(pw,allWks.length?Math.max(...allWks):pw,2);
     const allMph=[];
     discs.forEach(d=>{ if(chartDiscs[d]) scData[d].forEach(p=>allMph.push(p.mph)); });
     const yMax=tightNiceMax(allMph.length?Math.max(...allMph):25);
@@ -1959,8 +1984,9 @@ function drawChart(){
     const RPR=82; // extra right padding for right axis
     const CW2=W-PL-RPR, CH2=CH;
 
+    const effWkTrend=Math.min(Math.max(pw,maxLoggedWeek()),24);
     const cumul=[];
-    for(let wk=1;wk<=pw;wk++){
+    for(let wk=1;wk<=effWkTrend;wk++){
       const s=calcStatsByWeek(wk);
       const sm=s.swimYds/1760;
       cumul.push({wk,swim:sm,bike:s.bikeMi,run:s.runMi,total:sm+s.bikeMi+s.runMi});
@@ -2064,8 +2090,10 @@ function drawChart(){
   }
 
   // ── VOLUME / CUMULATIVE ──
+  _scatterPts=[];
+  const effWkVol=Math.max(pw,maxLoggedWeek());
   const cumul=[];
-  for(let wk=1;wk<=pw;wk++){
+  for(let wk=1;wk<=effWkVol;wk++){
     const s=calcStatsByWeek(wk);
     const sm=s.swimYds/1760;
     cumul.push({wk,swim:sm,bike:s.bikeMi,run:s.runMi,total:sm+s.bikeMi+s.runMi});
@@ -2077,7 +2105,7 @@ function drawChart(){
 
   const isVol=chartType==='volume';
   const actData=isVol?weekly:cumul;
-  const xMax=Math.max(pw,2);
+  const xMax=Math.max(effWkVol,2);
 
   const allV=[];
   const discs=['swim','bike','run','total'];
@@ -2103,6 +2131,13 @@ function drawChart(){
   discs.forEach(d=>{
     if(!chartDiscs[d]) return;
     drawLine(actData.map(r=>({wk:r.wk,v:r[d]})),COLORS[d]);
+  });
+
+  // hover points — one per week, x-snap
+  actData.forEach(r=>{
+    const vals={};
+    discs.forEach(d=>{ if(chartDiscs[d]) vals[d]=r[d]; });
+    _scatterPts.push({cx:tx(r.wk), cy:PT+CH/2, wk:r.wk, isVolume:true, vals});
   });
 }
 
