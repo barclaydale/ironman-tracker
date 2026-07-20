@@ -374,7 +374,7 @@
         color: var(--red);
       }
       .pace-trend.total-behind {
-        color: #fb923c;
+        color: var(--tot);
       }
       .pace-trend.zero {
         color: var(--muted);
@@ -6993,7 +6993,7 @@
         swim: '#38BDF8',
         bike: '#FCD34D',
         run: '#F87171',
-        total: '#FB923C',
+        total: '#b39ddb',
       };
       const CHART_TITLES = {
         volume: 'Training Volume by Week',
@@ -7299,7 +7299,7 @@
           swim: '#38BDF8',
           bike: isLight ? '#c9a800' : '#FCD34D',
           run: '#F87171',
-          total: '#FB923C',
+          total: '#b39ddb',
         };
 
         const pw = currentPaceWeek();
@@ -8122,7 +8122,7 @@
               class="chart-disc-btn on"
               id="cdisc-total"
               onclick="toggleChartDisc('total')"
-              style="color: #fb923c"
+              style="color: #b39ddb"
             >
               Total
             </button>
