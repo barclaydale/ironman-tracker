@@ -39,6 +39,7 @@
         --cf-d: #0d2018;
         --brick: #c084fc;
         --brick-d: #1e1030;
+        --tot: #b39ddb;
         --ar: #9ca3af;
         --ar-d: #1c1c1c;
         --swimrun: #38bdf8;
@@ -183,7 +184,7 @@
         color: var(--run);
       }
       .sn-grp.tot .sn-grp-lbl {
-        color: var(--red);
+        color: var(--tot);
       }
       .sn-grp-vals {
         display: flex;
@@ -246,7 +247,7 @@
         color: var(--run);
       }
       .sn-proj-item.tot .sn-stat-val {
-        color: var(--red);
+        color: var(--tot);
       }
       .sn-proj-item {
         position: relative;
@@ -473,7 +474,7 @@
         color: var(--run);
       }
       .sg-lbl.tot {
-        color: #fb923c;
+        color: var(--tot);
       }
       /* Race projections bar */
       .proj-bar {
@@ -523,7 +524,7 @@
         color: var(--run);
       }
       .proj-bar-item.tot .stat-val {
-        color: #fb923c;
+        color: var(--tot);
       }
       .stat-card.swim .stat-val,
       .stat-card.swim-t .stat-val,
@@ -551,7 +552,7 @@
       .stat-card.total-cnt .stat-val,
       .stat-card.total-avg .stat-val,
       .stat-card.total-avgt .stat-val {
-        color: #fb923c;
+        color: var(--tot);
       }
       .stat-card.swim-tgt .pace-tgt {
         color: var(--swim);
@@ -563,10 +564,10 @@
         color: var(--run);
       }
       .stat-card.total-tgt .pace-tgt {
-        color: #fb923c;
+        color: var(--tot);
       }
       .pace-delta.total-behind {
-        color: #fb923c;
+        color: var(--tot);
       }
       .stat-label-sub {
         font-size: 11px;
@@ -590,7 +591,7 @@
         color: var(--run);
       }
       .stat-card.proj.tot .stat-val {
-        color: #fb923c;
+        color: var(--tot);
       }
       .proj-val-row {
         display: flex;
@@ -757,16 +758,6 @@
         background: var(--red);
         border-radius: 99px;
         transition: width 0.4s;
-      }
-      .removed-note {
-        font-size: 11px;
-        color: var(--dim);
-        margin-top: 5px;
-        cursor: pointer;
-        text-decoration: underline dotted;
-      }
-      .removed-note:hover {
-        color: var(--muted);
       }
 
       /* Today / Tomorrow */
@@ -1626,7 +1617,7 @@
         color: var(--run);
       }
       .proj-form-lbl.tot {
-        color: var(--red);
+        color: var(--tot);
       }
       .proj-inp {
         padding: 6px 10px;
@@ -2163,12 +2154,6 @@
             <div class="progress-track">
               <div class="progress-fill" id="prog-fill" style="width: 0%"></div>
             </div>
-            <div
-              class="removed-note"
-              id="removed-note"
-              style="display: none"
-              onclick="restoreAllSessions()"
-            ></div>
           </div>
         </div>
       </div>
@@ -6141,12 +6126,7 @@
         document.getElementById('prog-fill').style.width = pct + '%';
         document.getElementById('prog-text').textContent =
           `${st.done} / ${st.total} sessions (${pct}%)`;
-        const n = deletedSessions.size;
-        const note = document.getElementById('removed-note');
-        if (note) {
-          note.style.display = n ? 'block' : 'none';
-          note.textContent = `${n} session${n === 1 ? '' : 's'} removed — click to restore all`;
-        }
+
         renderStickyNav();
       }
 
