@@ -370,6 +370,9 @@
       .pace-trend.ahead {
         color: #2fc87a;
       }
+      .pace-trend.close {
+        color: #fbbf24;
+      }
       .pace-trend.behind {
         color: var(--red);
       }
@@ -6079,7 +6082,11 @@
               : Math.round(abs)
             : abs.toFixed(1);
           el.textContent = (trend > 0 ? '↑ ' : '↓ ') + fmt;
-          el.className = 'pace-trend ' + (trend > 0 ? 'ahead' : 'behind');
+          let trendCls;
+          if (trend > 0) trendCls = 'ahead';
+          else if (plannedThisWeek > 0 && abs / plannedThisWeek <= 0.1) trendCls = 'close';
+          else trendCls = 'behind';
+          el.className = 'pace-trend ' + trendCls;
         }
         setTrend(
           'swim',
@@ -6116,8 +6123,11 @@
           const trend = doneThisWeek - plannedThisWeek;
           const abs = Math.abs(trend);
           tTrendEl.textContent = (trend >= 0 ? '↑ ' : '↓ ') + abs.toFixed(1);
-          tTrendEl.className =
-            'pace-trend ' + (trend >= 0 ? 'ahead' : 'behind');
+          let totTrendCls;
+          if (trend >= 0) totTrendCls = 'ahead';
+          else if (plannedThisWeek > 0 && abs / plannedThisWeek <= 0.1) totTrendCls = 'close';
+          else totTrendCls = 'behind';
+          tTrendEl.className = 'pace-trend ' + totTrendCls;
         } else {
           tTrendEl.textContent = '—';
           tTrendEl.className = 'pace-trend zero';
