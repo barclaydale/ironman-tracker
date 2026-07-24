@@ -6178,7 +6178,8 @@
          ${draggable ? 'draggable="true"' : ''} data-id="${s.id}"
          onclick="openModal('${s.id}')"
          ondragstart="onDragStart(event,'${s.id}')"
-         ondragend="onDragEnd(event,'${s.id}')">
+         ondragend="onDragEnd(event,'${s.id}')"
+         ontouchstart="onTouchDragStart(event,'${s.id}')">
       <div class="sc-top">${badge(s.type)}<span class="sc-title">${esc(s.title)}</span></div>
       ${s.type !== 'cf' ? `<div class="sc-s1">${esc(s.summary1)}</div><div class="sc-s2">${esc(s.summary2)}</div>` : ''}
     </div>`;
@@ -6875,6 +6876,83 @@
         dragId = null;
       }
 
+      // ── Touch drag-and-drop (iOS Safari) ──
+      let tdId = null, tdGhost = null, tdStartX = 0, tdStartY = 0,
+          tdActive = false, tdLastCol = null;
+
+      function onTouchDragStart(ev, sid) {
+        tdId = sid;
+        tdActive = false;
+        tdStartX = ev.touches[0].clientX;
+        tdStartY = ev.touches[0].clientY;
+      }
+
+      function tdCommitDrop(dateStr) {
+        const orig = PLAN.find((s) => s.id === tdId);
+        if (orig && orig.date === dateStr) delete positions[tdId];
+        else positions[tdId] = dateStr;
+        savePositions();
+        renderCalendar();
+        renderTodayTomorrow();
+      }
+
+      function tdCleanup() {
+        if (tdGhost) { tdGhost.remove(); tdGhost = null; }
+        if (tdLastCol) { tdLastCol.classList.remove('drag-over'); tdLastCol = null; }
+        const card = tdId && document.getElementById('card-' + tdId);
+        if (card) card.style.opacity = '';
+        tdId = null;
+        tdActive = false;
+      }
+
+      document.addEventListener('touchmove', function (ev) {
+        if (!tdId) return;
+        const t = ev.touches[0];
+        const dx = t.clientX - tdStartX, dy = t.clientY - tdStartY;
+
+        if (!tdActive && Math.sqrt(dx * dx + dy * dy) > 10) {
+          tdActive = true;
+          const card = document.getElementById('card-' + tdId);
+          if (!card) { tdId = null; return; }
+          tdGhost = card.cloneNode(true);
+          tdGhost.removeAttribute('id');
+          tdGhost.style.cssText = 'position:fixed;pointer-events:none;opacity:0.8;z-index:9999;width:' +
+            card.offsetWidth + 'px;transform:scale(1.05);box-shadow:0 8px 24px rgba(0,0,0,0.5);border-radius:8px';
+          document.body.appendChild(tdGhost);
+          card.style.opacity = '0.25';
+        }
+
+        if (!tdActive) return;
+        ev.preventDefault();
+
+        tdGhost.style.left = (t.clientX - tdGhost.offsetWidth / 2) + 'px';
+        tdGhost.style.top  = (t.clientY - tdGhost.offsetHeight / 2) + 'px';
+
+        tdGhost.style.visibility = 'hidden';
+        const el = document.elementFromPoint(t.clientX, t.clientY);
+        tdGhost.style.visibility = '';
+        const col = el && el.closest('[data-date]');
+
+        if (tdLastCol && tdLastCol !== col) tdLastCol.classList.remove('drag-over');
+        if (col) col.classList.add('drag-over');
+        tdLastCol = col || null;
+      }, { passive: false });
+
+      document.addEventListener('touchend', function (ev) {
+        if (!tdId) return;
+        if (tdActive) {
+          const t = ev.changedTouches[0];
+          if (tdGhost) tdGhost.style.visibility = 'hidden';
+          const el = document.elementFromPoint(t.clientX, t.clientY);
+          if (tdGhost) tdGhost.style.visibility = '';
+          const col = el && el.closest('[data-date]');
+          if (col) tdCommitDrop(col.dataset.date);
+        }
+        tdCleanup();
+      });
+
+      document.addEventListener('touchcancel', tdCleanup);
+
       function isWeekComplete(wk) {
         return currentPaceWeek() > wk;
       }
@@ -6971,7 +7049,7 @@
               );
               const isEmpty =
                 daySessions.length === 0 && customDay.length === 0;
-              html += `<div class="day-col" ondragover="onDragOver(event,this)" ondragleave="onDragLeave(event,this)" ondrop="onDrop(event,'${dateStr}',this)">
+              html += `<div class="day-col" data-date="${dateStr}" ondragover="onDragOver(event,this)" ondragleave="onDragLeave(event,this)" ondrop="onDrop(event,'${dateStr}',this)">
           <div class="day-header">${day}</div>
           ${daySessions.map((s) => sessionCardHTML(s)).join('')}
           ${customDay.map((w) => customCardHTML(w)).join('')}
@@ -8011,27 +8089,23 @@
         const c = document.createElement('canvas');
         c.width = c.height = 180;
         const ctx = c.getContext('2d');
-        // Red rounded background
         ctx.fillStyle = '#E8002D';
-        ctx.beginPath();
-        ctx.roundRect(0, 0, 180, 180, 22);
-        ctx.fill();
-        // White M shape
+        ctx.fillRect(0, 0, 180, 180);
         ctx.strokeStyle = '#fff';
-        ctx.lineWidth = 24;
-        ctx.lineCap = 'square';
+        ctx.lineWidth = 26;
+        ctx.lineCap = 'butt';
         ctx.lineJoin = 'miter';
+        ctx.miterLimit = 10;
         ctx.beginPath();
-        ctx.moveTo(28, 150);
-        ctx.lineTo(28, 44);
-        ctx.lineTo(90, 110);
-        ctx.lineTo(152, 44);
-        ctx.lineTo(152, 150);
+        ctx.moveTo(30, 160);
+        ctx.lineTo(30, 42);
+        ctx.lineTo(90, 112);
+        ctx.lineTo(150, 42);
+        ctx.lineTo(150, 160);
         ctx.stroke();
-        // White dot above M
         ctx.fillStyle = '#fff';
         ctx.beginPath();
-        ctx.arc(90, 19, 14, 0, Math.PI * 2);
+        ctx.arc(90, 20, 13, 0, Math.PI * 2);
         ctx.fill();
         const link = document.getElementById('apple-touch-icon');
         if (link) link.href = c.toDataURL('image/png');
