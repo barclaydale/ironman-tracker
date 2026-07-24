@@ -6084,7 +6084,7 @@
           el.textContent = (trend > 0 ? '↑ ' : '↓ ') + fmt;
           let trendCls;
           if (trend > 0) trendCls = 'ahead';
-          else if (plannedThisWeek > 0 && abs / plannedThisWeek <= 0.1) trendCls = 'close';
+          else if (curTgt > 0 && abs / curTgt <= 0.1) trendCls = 'close';
           else trendCls = 'behind';
           el.className = 'pace-trend ' + trendCls;
         }
@@ -6125,7 +6125,7 @@
           tTrendEl.textContent = (trend >= 0 ? '↑ ' : '↓ ') + abs.toFixed(1);
           let totTrendCls;
           if (trend >= 0) totTrendCls = 'ahead';
-          else if (plannedThisWeek > 0 && abs / plannedThisWeek <= 0.1) totTrendCls = 'close';
+          else if (curTotalTgt > 0 && abs / curTotalTgt <= 0.1) totTrendCls = 'close';
           else totTrendCls = 'behind';
           tTrendEl.className = 'pace-trend ' + totTrendCls;
         } else {
