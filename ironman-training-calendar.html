@@ -6881,6 +6881,7 @@
           tdActive = false, tdLastCol = null;
 
       function onTouchDragStart(ev, sid) {
+        ev.preventDefault(); // Block iOS scroll takeover so drag always gets events
         tdId = sid;
         tdActive = false;
         tdStartX = ev.touches[0].clientX;
@@ -6947,6 +6948,10 @@
           if (tdGhost) tdGhost.style.visibility = '';
           const col = el && el.closest('[data-date]');
           if (col) tdCommitDrop(col.dataset.date);
+        } else {
+          // No drag movement — treat as a tap and open the modal manually
+          // (click won't fire because we called preventDefault on touchstart)
+          openModal(tdId);
         }
         tdCleanup();
       });
