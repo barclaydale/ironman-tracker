@@ -7325,7 +7325,11 @@
               let line3 = '';
               if (diff != null) {
                 const status = diff >= 0 ? 'Ahead' : 'Behind';
-                const statusColor = diff >= 0 ? '#2FC87A' : '#E8002D';
+                const statusColor = diff >= 0
+                  ? '#2FC87A'
+                  : (info.target > 0 && Math.abs(diff) / info.target <= 0.1)
+                    ? '#fbbf24'
+                    : '#E8002D';
                 const absDiffStr = isSwim
                   ? `${Math.round(Math.abs(diff) * 1760).toLocaleString('en-US')} yds`
                   : `${fmtMi(Math.abs(diff))} mi`;
