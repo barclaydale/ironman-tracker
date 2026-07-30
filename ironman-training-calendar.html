@@ -606,6 +606,11 @@
         color: var(--dim);
         font-family: var(--mono);
       }
+      .proj-pace {
+        font-size: 12px;
+        color: var(--muted);
+        font-family: var(--mono);
+      }
       .proj-bar .stat-val {
         font-size: 24px;
       }
@@ -1963,6 +1968,7 @@
               <span class="proj-bar-lbl">Swim</span>
               <div class="proj-val-row">
                 <div class="stat-val" id="proj-swim">0:55</div>
+                <span class="proj-pace" id="proj-swim-pace"></span>
                 <span class="proj-conf" id="proj-swim-conf">50%</span>
               </div>
             </div>
@@ -1970,6 +1976,7 @@
               <span class="proj-bar-lbl">Bike</span>
               <div class="proj-val-row">
                 <div class="stat-val" id="proj-bike">5:36</div>
+                <span class="proj-pace" id="proj-bike-pace"></span>
                 <span class="proj-conf" id="proj-bike-conf">68%</span>
               </div>
             </div>
@@ -1977,6 +1984,7 @@
               <span class="proj-bar-lbl">Run</span>
               <div class="proj-val-row">
                 <div class="stat-val" id="proj-run">5:01</div>
+                <span class="proj-pace" id="proj-run-pace"></span>
                 <span class="proj-conf" id="proj-run-conf">72%</span>
               </div>
             </div>
@@ -5646,12 +5654,34 @@
         localStorage.setItem('imfl-projections', JSON.stringify(projections));
       }
 
+      function parseTimeToMins(str) {
+        const parts = str.split(':').map(Number);
+        if (parts.length === 2) return parts[0] * 60 + parts[1];
+        if (parts.length === 3) return parts[0] * 60 + parts[1] + parts[2] / 60;
+        return 0;
+      }
+      function fmtMinSec(m) {
+        if (!isFinite(m) || m <= 0) return '--';
+        const mm = Math.floor(m), ss = Math.round((m - mm) * 60);
+        return ss === 60 ? `${mm + 1}:00` : `${mm}:${String(ss).padStart(2, '0')}`;
+      }
+      function projPace(sport, timeStr) {
+        const mins = parseTimeToMins(timeStr);
+        if (!mins) return '';
+        if (sport === 'swim') return '(' + fmtMinSec(mins / 38.62) + '/100m)';
+        if (sport === 'bike') return '(' + (112 / (mins / 60)).toFixed(1) + ' mph)';
+        if (sport === 'run')  return '(' + fmtMinSec(mins / 26.2) + '/mi)';
+        return '';
+      }
+
       function renderProjections() {
         ['swim', 'bike', 'run', 'total'].forEach((k) => {
           const p = projections[k] || PROJ_DEFAULTS[k];
           document.getElementById('proj-' + k).textContent = p.time;
           document.getElementById('proj-' + k + '-conf').textContent =
             p.conf + '%';
+          const paceEl = document.getElementById('proj-' + k + '-pace');
+          if (paceEl) paceEl.textContent = projPace(k, p.time);
         });
       }
 
