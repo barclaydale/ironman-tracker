@@ -5559,9 +5559,10 @@
         }, // wk 24
       ];
       function currentPaceWeek() {
-        const diffDays = Math.floor(
-          (new Date() - new Date('2026-05-23T12:00:00')) / 864e5,
-        );
+        const now = new Date();
+        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const start = new Date(2026, 4, 23); // May 23, midnight local
+        const diffDays = Math.floor((today - start) / 864e5);
         return Math.min(Math.max(1, Math.floor(diffDays / 7) + 1), 24);
       }
       function maxLoggedWeek() {
