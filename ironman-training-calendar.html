@@ -1310,31 +1310,42 @@
         display: none;
         align-items: center;
         justify-content: center;
-        gap: 80px;
-        padding: 24px;
+        padding: 20px;
       }
       .breakdown-card {
         display: flex;
-        flex-direction: column;
+        flex-direction: row;
         align-items: center;
-        gap: 20px;
+        gap: 52px;
+        height: 100%;
+      }
+      .donut-svg-wrap {
+        height: 100%;
+        max-height: 480px;
+        aspect-ratio: 1;
+        flex-shrink: 0;
+      }
+      .donut-svg-wrap svg {
+        width: 100%;
+        height: 100%;
+        display: block;
       }
       .breakdown-legend {
         display: flex;
         flex-direction: column;
-        gap: 10px;
-        min-width: 200px;
+        gap: 18px;
+        flex-shrink: 0;
       }
       .donut-leg-item {
         display: flex;
         align-items: center;
-        gap: 8px;
-        font-size: 13px;
+        gap: 10px;
+        font-size: 16px;
         font-family: var(--mono);
       }
       .donut-leg-dot {
-        width: 10px;
-        height: 10px;
+        width: 13px;
+        height: 13px;
         border-radius: 50%;
         flex-shrink: 0;
       }
@@ -6475,8 +6486,8 @@
         maybeRefreshChart();
       }
 
-      function buildDonut(segments, centerTop, centerSub, size, thickness) {
-        size = size || 120; thickness = thickness || 22;
+      function buildDonut(segments, centerTop, centerSub) {
+        const size = 200, thickness = 30;
         const r = size / 2 - thickness / 2 - 1;
         const C = 2 * Math.PI * r;
         const cx = size / 2, cy = size / 2;
@@ -6495,13 +6506,13 @@
             cum += f;
           });
         }
-        const fontSize = centerTop.length > 5 ? 11 : 14;
-        return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
+        const fMain = centerTop.length > 5 ? 13 : 16;
+        return `<svg viewBox="0 0 ${size} ${size}">
           <circle r="${r.toFixed(1)}" cx="${cx}" cy="${cy}" fill="none" stroke="#222" stroke-width="${thickness}"/>
           ${arcs}
-          <text x="${cx}" y="${cy - 4}" text-anchor="middle" dominant-baseline="auto"
-            font-size="${fontSize}" font-weight="700" fill="#e4e4e7" font-family="inherit">${centerTop}</text>
-          <text x="${cx}" y="${cy + 13}" text-anchor="middle" dominant-baseline="auto"
+          <text x="${cx}" y="${cy - 5}" text-anchor="middle" dominant-baseline="auto"
+            font-size="${fMain}" font-weight="700" fill="#e4e4e7" font-family="inherit">${centerTop}</text>
+          <text x="${cx}" y="${cy + 14}" text-anchor="middle" dominant-baseline="auto"
             font-size="9" fill="#71717a" font-family="inherit">${centerSub}</text>
         </svg>`;
       }
@@ -7308,13 +7319,13 @@
           const pct = tot > 0 ? Math.round(x.val / tot * 100) : 0;
           return `<div class="donut-leg-item">
             <div class="donut-leg-dot" style="background:${x.color}"></div>
-            <span style="color:var(--text);min-width:36px">${x.label}</span>
-            <span style="color:var(--muted);min-width:72px">${fmtVal(x)}</span>
-            <span style="color:${x.color}">${pct}%</span>
+            <span style="color:var(--text);min-width:40px">${x.label}</span>
+            <span style="color:var(--muted);min-width:88px">${fmtVal(x)}</span>
+            <span style="color:${x.color};font-weight:700">${pct}%</span>
           </div>`;
         }).join('');
         el.innerHTML = `<div class="breakdown-card">
-          ${buildDonut(segs, centerTop, centerSub, 220, 32)}
+          <div class="donut-svg-wrap">${buildDonut(segs, centerTop, centerSub)}</div>
           <div class="breakdown-legend">${legHTML}</div>
         </div>`;
       }
