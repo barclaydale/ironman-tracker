@@ -1304,6 +1304,51 @@
       .modal-restore-btn:hover {
         border-color: #4ade80;
       }
+      /* ── Donut charts in modal ── */
+      .donut-row {
+        display: flex;
+        gap: 0;
+        padding: 14px 20px 12px;
+        border-bottom: 1px solid var(--border);
+        background: var(--s2);
+      }
+      .donut-card {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 6px;
+      }
+      .donut-card + .donut-card {
+        border-left: 1px solid var(--border);
+      }
+      .donut-title {
+        font-size: 9px;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        color: var(--muted);
+        text-transform: uppercase;
+      }
+      .donut-legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 2px 8px;
+        justify-content: center;
+      }
+      .donut-leg-item {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 10px;
+        color: var(--muted);
+        font-family: var(--mono);
+      }
+      .donut-leg-dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        flex-shrink: 0;
+      }
 
       /* ── Detail HTML styles ── */
       .chip {
@@ -2189,6 +2234,7 @@
           </div>
           <button class="modal-close" onclick="closeModal()">&#x2715;</button>
         </div>
+        <div id="modal-donuts"></div>
         <div class="modal-body" id="modal-body"></div>
         <div style="padding: 0 20px 20px" id="modal-log"></div>
       </div>
@@ -5842,6 +5888,7 @@
           swimMin = 0,
           bikeMin = 0,
           runMin = 0,
+          cfMin = 0,
           totalMin = 0,
           done = 0;
         let swimCount = 0,
@@ -5875,6 +5922,8 @@
             runMi += c.distance || 0;
             runMin += dur;
             runCount++;
+          } else if (s.type === 'cf' || s.type === 'ar') {
+            cfMin += dur;
           }
         });
         Object.values(customWorkouts).forEach((w) => {
@@ -5901,6 +5950,8 @@
               runMi += w.distance || 0;
               runMin += dur;
               runCount++;
+            } else if (w.type === 'cf' || w.type === 'ar') {
+              cfMin += dur;
             }
           }
         });
@@ -5936,6 +5987,8 @@
           bikeAvgTime: avgT(bikeMin, bikeCount),
           runAvgTime: avgT(runMin, runCount),
           totalAvgTime: avgT(totalMin, done),
+          swimMinRaw: swimMin, bikeMinRaw: bikeMin, runMinRaw: runMin, cfMinRaw: cfMin,
+          swimMiRaw: swimYds / 1760, bikeMiRaw: bikeMi, runMiRaw: runMi,
         };
       }
 
@@ -6434,6 +6487,37 @@
         maybeRefreshChart();
       }
 
+      function buildDonut(segments, centerTop, centerSub, size, thickness) {
+        size = size || 120; thickness = thickness || 22;
+        const r = size / 2 - thickness / 2 - 1;
+        const C = 2 * Math.PI * r;
+        const cx = size / 2, cy = size / 2;
+        const total = segments.reduce((s, x) => s + x.val, 0);
+        let arcs = '', cum = 0;
+        if (total > 0) {
+          segments.forEach((seg) => {
+            if (seg.val <= 0) return;
+            const f = seg.val / total;
+            const dash = Math.max(0, f * C - 1.5);
+            arcs += `<circle r="${r.toFixed(1)}" cx="${cx}" cy="${cy}" fill="none"
+              stroke="${seg.color}" stroke-width="${thickness}"
+              stroke-dasharray="${dash.toFixed(1)} ${C.toFixed(1)}"
+              stroke-dashoffset="${(-(cum * C)).toFixed(1)}"
+              transform="rotate(-90 ${cx} ${cy})"/>`;
+            cum += f;
+          });
+        }
+        const fontSize = centerTop.length > 5 ? 11 : 14;
+        return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
+          <circle r="${r.toFixed(1)}" cx="${cx}" cy="${cy}" fill="none" stroke="#222" stroke-width="${thickness}"/>
+          ${arcs}
+          <text x="${cx}" y="${cy - 4}" text-anchor="middle" dominant-baseline="auto"
+            font-size="${fontSize}" font-weight="700" fill="#e4e4e7" font-family="inherit">${centerTop}</text>
+          <text x="${cx}" y="${cy + 13}" text-anchor="middle" dominant-baseline="auto"
+            font-size="9" fill="#71717a" font-family="inherit">${centerSub}</text>
+        </svg>`;
+      }
+
       function openModal(sid) {
         const s = PLAN.find((x) => x.id === sid);
         if (!s) return;
@@ -6444,6 +6528,43 @@
         document.getElementById('modal-meta').textContent =
           `${effectiveDayName(s)} · Wk ${effectiveWeek(s)} · ${effectivePhaseName(s)} · ${new Date(effectiveDate(s) + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
         document.getElementById('modal-body').innerHTML = getDetail(s);
+
+        // ── Donut charts ──
+        const st = calcStats();
+        const donutsEl = document.getElementById('modal-donuts');
+        if (st.done > 0) {
+          const distSegs = [
+            { color: '#38BDF8', val: st.swimMiRaw, label: 'Swim' },
+            { color: '#FCD34D', val: st.bikeMiRaw, label: 'Bike' },
+            { color: '#F87171', val: st.runMiRaw,  label: 'Run'  },
+          ];
+          const distTotal = st.swimMiRaw + st.bikeMiRaw + st.runMiRaw;
+          const timeSegs = [
+            { color: '#38BDF8', val: st.swimMinRaw, label: 'Swim' },
+            { color: '#FCD34D', val: st.bikeMinRaw, label: 'Bike' },
+            { color: '#F87171', val: st.runMinRaw,  label: 'Run'  },
+            { color: '#4ADE80', val: st.cfMinRaw,   label: 'CF'   },
+          ];
+          const timeTotal = st.swimMinRaw + st.bikeMinRaw + st.runMinRaw + st.cfMinRaw;
+          const legHTML = (segs, tot) => segs.filter(x => x.val > 0).map(x =>
+            `<div class="donut-leg-item"><div class="donut-leg-dot" style="background:${x.color}"></div>${x.label} ${tot > 0 ? Math.round(x.val / tot * 100) : 0}%</div>`
+          ).join('');
+          donutsEl.innerHTML = `<div class="donut-row">
+            <div class="donut-card">
+              <div class="donut-title">Distance</div>
+              ${buildDonut(distSegs, distTotal.toFixed(1), 'mi total')}
+              <div class="donut-legend">${legHTML(distSegs, distTotal)}</div>
+            </div>
+            <div class="donut-card">
+              <div class="donut-title">Time</div>
+              ${buildDonut(timeSegs, fmtTime(timeTotal), 'hr:min')}
+              <div class="donut-legend">${legHTML(timeSegs, timeTotal)}</div>
+            </div>
+          </div>`;
+        } else {
+          donutsEl.innerHTML = '';
+        }
+
         const logDiv = document.getElementById('modal-log');
         const actionBtn = isDeleted
           ? `<button class="modal-restore-btn" onclick="restoreSession('${sid}');closeModal()">&#x21BA; Restore to calendar</button>`
