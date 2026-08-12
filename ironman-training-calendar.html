@@ -5902,10 +5902,16 @@
           done++;
           const dur = c.duration || 0;
           totalMin += dur;
-          if (s.type === 'swim' || s.type === 'swimrun') {
+          if (s.type === 'swim') {
             swimYds += c.distance || 0;
             swimMin += dur;
             swimCount++;
+          } else if (s.type === 'swimrun') {
+            swimYds += c.swimDist != null ? c.swimDist : c.distance || 0;
+            swimMin += c.swimDur  != null ? c.swimDur  : dur;
+            swimCount++;
+            runMi  += c.runDist || 0;
+            runMin += c.runDur  || 0;
           } else if (s.type === 'brick') {
             bikeMi += c.bikeDist != null ? c.bikeDist : c.distance || 0;
             bikeMin += c.bikeDur || 0;
@@ -6005,9 +6011,12 @@
           if (skipType(s.type)) return;
           const c = completions[s.id];
           if (!c) return;
-          if (s.type === 'swim' || s.type === 'swimrun')
+          if (s.type === 'swim')
             swimYds += c.distance || 0;
-          else if (s.type === 'brick') {
+          else if (s.type === 'swimrun') {
+            swimYds += c.swimDist != null ? c.swimDist : c.distance || 0;
+            runMi += c.runDist || 0;
+          } else if (s.type === 'brick') {
             bikeMi += c.bikeDist != null ? c.bikeDist : c.distance || 0;
             runMi += c.runDist || 0;
           } else if (s.type === 'bike') bikeMi += c.distance || 0;
@@ -6038,8 +6047,11 @@
           const c = completions[s.id];
           if (!c) return;
           const dur = c.duration || 0;
-          if (s.type === 'swim' || s.type === 'swimrun') swimMin += dur;
-          else if (s.type === 'brick') {
+          if (s.type === 'swim') swimMin += dur;
+          else if (s.type === 'swimrun') {
+            swimMin += c.swimDur != null ? c.swimDur : dur;
+            runMin  += c.runDur  || 0;
+          } else if (s.type === 'brick') {
             bikeMin += c.bikeDur || 0;
             runMin += c.runDur || 0;
           } else if (s.type === 'bike') bikeMin += dur;
@@ -6345,6 +6357,61 @@
         return `Bike: ${c.bikeDist || 0} mi &middot; ${c.bikeDur || 0} min &nbsp;|&nbsp; Run: ${c.runDist || 0} mi &middot; ${c.runDur || 0} min`;
       }
 
+      function swimrunFormHTML(saveCall) {
+        return `<div class="log-form-row" style="margin-bottom:5px">
+    <span style="font-size:10px;font-weight:700;color:var(--swim);width:28px;flex-shrink:0">SWIM</span>
+    <input class="log-input" type="number" id="m-swim-dist" placeholder="Dist" step="1" min="0">${swimUnitToggleHTML()}
+    <input class="log-input time-input" type="text" id="m-swim-dur" placeholder="Min"><span class="log-unit">min</span>
+  </div>
+  <div class="log-form-row" style="margin-bottom:6px">
+    <span style="font-size:10px;font-weight:700;color:var(--run);width:28px;flex-shrink:0">RUN</span>
+    <input class="log-input" type="number" id="m-run-dist" placeholder="Dist" step="0.1" min="0"><span class="log-unit">mi</span>
+    <input class="log-input time-input" type="text" id="m-run-dur" placeholder="Min"><span class="log-unit">min</span>
+  </div>
+  <button class="log-btn" onclick="${saveCall}">SAVE</button>`;
+      }
+
+      function swimrunDoneText(c) {
+        const swimDist = c.swimDist != null ? c.swimDist : c.distance || 0;
+        const swimDur  = c.swimDur  != null ? c.swimDur  : c.duration || 0;
+        return `Swim: ${swimDist.toLocaleString()} yds &middot; ${swimDur} min &nbsp;|&nbsp; Run: ${c.runDist || 0} mi &middot; ${c.runDur || 0} min`;
+      }
+
+      function logSwimrun(sid, slot) {
+        const raw = parseFloat(document.getElementById('m-swim-dist')?.value) || 0;
+        const sd  = parseInt(document.getElementById('m-swim-dur')?.value)  || 0;
+        const rd  = parseFloat(document.getElementById('m-run-dist')?.value) || 0;
+        const rr  = parseInt(document.getElementById('m-run-dur')?.value)   || 0;
+        const swimDist = toYds(raw);
+        completions[sid] = {
+          done: true, swimDist, swimDur: sd, runDist: rd, runDur: rr,
+          duration: sd + rr, loggedAt: new Date().toISOString(),
+        };
+        saveCompletions();
+        renderStats();
+        renderTodayTomorrow();
+        renderCalendar();
+        maybeRefreshChart();
+      }
+
+      function logSwimrunFromModal(sid) {
+        const raw = parseFloat(document.getElementById('m-swim-dist')?.value) || 0;
+        const sd  = parseInt(document.getElementById('m-swim-dur')?.value)  || 0;
+        const rd  = parseFloat(document.getElementById('m-run-dist')?.value) || 0;
+        const rr  = parseInt(document.getElementById('m-run-dur')?.value)   || 0;
+        const swimDist = toYds(raw);
+        completions[sid] = {
+          done: true, swimDist, swimDur: sd, runDist: rd, runDur: rr,
+          duration: sd + rr, loggedAt: new Date().toISOString(),
+        };
+        saveCompletions();
+        renderStats();
+        renderTodayTomorrow();
+        renderCalendar();
+        openModal(sid);
+        maybeRefreshChart();
+      }
+
       function renderTodayTomorrow() {
         const { todaySession, tomSession } = getTodayTomorrow();
         renderPreview('today', todaySession, true);
@@ -6366,6 +6433,8 @@
             const doneText =
               s.type === 'brick'
                 ? brickDoneText(done)
+                : s.type === 'swimrun'
+                ? swimrunDoneText(done)
                 : `${esc(String(done.distance || '')) || '&mdash;'} ${esc(s.unit || '')} &middot; ${esc(String(done.duration || '')) || '&mdash;'} min`;
             formHTML = `<div class="log-form"><div class="completed-badge">&#x2713; ${doneText}</div></div>`;
           } else if (s.type === 'brick') {
@@ -6373,6 +6442,11 @@
         <label class="log-check"><input type="checkbox" id="chk-${slot}" onchange="toggleForm('${slot}')"> Mark complete</label>
       </div><div id="form-fields-${slot}" style="display:none;margin-top:6px">
         ${brickFormHTML(`logBrick('${s.id}','${slot}')`)}</div></div>`;
+          } else if (s.type === 'swimrun') {
+            formHTML = `<div class="log-form"><div class="log-form-row">
+        <label class="log-check"><input type="checkbox" id="chk-${slot}" onchange="toggleForm('${slot}')"> Mark complete</label>
+      </div><div id="form-fields-${slot}" style="display:none;margin-top:6px">
+        ${swimrunFormHTML(`logSwimrun('${s.id}','${slot}')`)}</div></div>`;
           } else {
             formHTML = `<div class="log-form"><div class="log-form-row">
         <label class="log-check"><input type="checkbox" id="chk-${slot}" onchange="toggleForm('${slot}')"> Mark complete</label>
@@ -6535,6 +6609,8 @@
           const doneText =
             s.type === 'brick'
               ? brickDoneText(c)
+              : s.type === 'swimrun'
+              ? swimrunDoneText(c)
               : `${esc(String(c.distance || '')) || '&mdash;'} ${esc(s.unit || '')} &middot; ${esc(String(c.duration || '')) || '&mdash;'} min`;
           logDiv.innerHTML = `<div class="completed-badge" style="margin-top:12px">&#x2713; ${doneText}<br><span style="font-size:11px;color:var(--dim);font-weight:400">on ${new Date(c.loggedAt).toLocaleDateString()}</span></div>
       <button onclick="clearLog('${sid}')" style="background:none;border:none;color:var(--dim);font-size:13px;cursor:pointer;margin-top:4px">Clear log</button>${actionBtn}`;
@@ -6543,6 +6619,8 @@
           if (!isDeleted) {
             if (s.type === 'brick') {
               logForm = `<div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--border)">${brickFormHTML(`logBrickFromModal('${sid}')`)}</div>`;
+            } else if (s.type === 'swimrun') {
+              logForm = `<div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--border)">${swimrunFormHTML(`logSwimrunFromModal('${sid}')`)}</div>`;
             } else {
               const isSwimType = s.type === 'swim' || s.type === 'swimrun';
               const hu = s.unit
@@ -7390,8 +7468,12 @@
           const c = completions[s.id];
           if (!c) return;
           const wk = s.week;
-          if (s.type === 'swim' || s.type === 'swimrun')
+          if (s.type === 'swim')
             pushSwim(wk, c.distance || 0, c.duration || 0);
+          else if (s.type === 'swimrun') {
+            pushSwim(wk, c.swimDist != null ? c.swimDist : c.distance || 0, c.swimDur != null ? c.swimDur : c.duration || 0);
+            pushRun(wk, c.runDist || 0, c.runDur || 0);
+          }
           else if (s.type === 'bike')
             pushBike(wk, c.distance || 0, c.duration || 0);
           else if (s.type === 'run')
