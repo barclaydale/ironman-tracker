@@ -7326,8 +7326,6 @@
         time: 'Training Time by Week',
         pacing: 'Pace per Session',
         speed: 'Speed by Week',
-        trendplan: 'Trend vs Plan',
-        trendbench: 'Trend vs Benchmark',
         'breakdown-dist': 'Distance Breakdown',
         'breakdown-time': 'Time Breakdown',
       };
@@ -7541,8 +7539,6 @@
         const hoverable = [
           'pacing',
           'speed',
-          'trendplan',
-          'trendbench',
           'volume',
           'cumulative',
           'time',
@@ -7555,8 +7551,6 @@
         const mx = (e.clientX - rect.left) * (canvas.width / rect.width);
         const my = (e.clientY - rect.top) * (canvas.height / rect.height);
         const useXSnap =
-          chartType === 'trendplan' ||
-          chartType === 'trendbench' ||
           chartType === 'volume' ||
           chartType === 'cumulative' ||
           chartType === 'time';
@@ -7581,18 +7575,28 @@
             });
           if (best.isVolume) {
             const label = chartType === 'volume' ? 'this week' : 'cumulative';
-            const lines = [];
+            const sections = [];
             ['swim', 'bike', 'run', 'total'].forEach((d) => {
               const v = best.vals[d];
               if (v == null) return;
               const c = CHART_COLORS[d];
-              const valStr =
-                d === 'swim' ? `${fmtYds(v)} yds` : `${fmtMi(v)} mi`;
-              lines.push(
-                `<span style="color:${c};font-weight:700">${d.toUpperCase()}</span>  ${valStr}`,
-              );
+              const isSwim = d === 'swim';
+              const valStr = isSwim ? `${fmtYds(v)} yds` : `${fmtMi(v)} mi`;
+              const bv = best.benchVals?.[d];
+              let extra = '';
+              if (bv != null) {
+                const diff = v - bv;
+                const bStr = isSwim ? `${fmtYds(bv)} yds` : `${fmtMi(bv)} mi`;
+                const statusColor = diff >= 0 ? '#2FC87A'
+                  : (bv > 0 && Math.abs(diff) / bv <= 0.1) ? '#fbbf24' : '#E8002D';
+                const absDiffStr = isSwim
+                  ? `${Math.round(Math.abs(diff) * 1760).toLocaleString('en-US')} yds`
+                  : `${fmtMi(Math.abs(diff))} mi`;
+                extra = `<br><span style="color:var(--muted);font-size:10px">bench ${bStr} </span><span style="color:${statusColor};font-size:10px">(${diff >= 0 ? '+' : '-'}${absDiffStr})</span>`;
+              }
+              sections.push(`<span style="color:${c};font-weight:700">${d.toUpperCase()}</span>  ${valStr}${extra}`);
             });
-            html = `<b>Week ${best.wk}</b> <span style="color:var(--muted);font-size:11px">${label}</span><br>${lines.join('<br>')}`;
+            html = `<b>Week ${best.wk}</b> <span style="color:var(--muted);font-size:11px">${label}</span><br>${sections.join('<br>')}`;
           } else if (best.isTime) {
             const fmtHrs = (v) => {
               const h = Math.floor(v), m = Math.round((v - h) * 60);
@@ -8055,221 +8059,6 @@
           return;
         }
 
-        // ── TREND VS PLAN / TREND VS BENCHMARK (dual Y-axis) ──
-        if (chartType === 'trendplan' || chartType === 'trendbench') {
-          const tgtKey = chartType === 'trendplan' ? 'bench' : 'plan';
-          const XMAX = 24;
-          const RPR = 82; // extra right padding for right axis
-          const CW2 = W - PL - RPR,
-            CH2 = CH;
-
-          const effWkTrend = Math.min(Math.max(pw, maxLoggedWeek()), 24);
-          const cumul = [];
-          for (let wk = 1; wk <= effWkTrend; wk++) {
-            const s = calcStatsByWeek(wk);
-            const sm = s.swimYds / 1760;
-            cumul.push({
-              wk,
-              swim: sm,
-              bike: s.bikeMi,
-              run: s.runMi,
-              total: sm + s.bikeMi + s.runMi,
-            });
-          }
-          const tgts = [];
-          for (let wk = 1; wk <= XMAX; wk++) {
-            const row = PACE_TARGETS[wk];
-            if (row) {
-              const pt = row[tgtKey],
-                sm = pt.swim / 1760;
-              tgts.push({
-                wk,
-                swim: sm,
-                bike: pt.bike,
-                run: pt.run,
-                total: sm + pt.bike + pt.run,
-              });
-            }
-          }
-
-          // left axis: swim + run; right axis: bike + total
-          const leftDiscs = ['swim', 'run'],
-            rightDiscs = ['bike', 'total'];
-          const allL = [],
-            allR = [];
-          leftDiscs.forEach((d) => {
-            if (!chartDiscs[d]) return;
-            [...cumul, ...tgts].forEach((r) => allL.push(r[d]));
-          });
-          rightDiscs.forEach((d) => {
-            if (!chartDiscs[d]) return;
-            [...cumul, ...tgts].forEach((r) => allR.push(r[d]));
-          });
-          const yMaxL = tightNiceMax(allL.length ? Math.max(...allL) : 20);
-          const yMaxR = tightNiceMax(allR.length ? Math.max(...allR) : 200);
-
-          const tx = (wk) => PL + ((wk - 1) / (XMAX - 1)) * CW2;
-          const tyL = (v) => PT + CH2 * (1 - v / yMaxL);
-          const tyR = (v) => PT + CH2 * (1 - v / yMaxR);
-          const tyFor = (d) => (['bike', 'total'].includes(d) ? tyR : tyL);
-
-          // left y-axis grid + labels
-          for (let i = 0; i <= 5; i++) {
-            const v = (yMaxL * i) / 5,
-              y = PT + CH2 * (1 - i / 5);
-            ctx.strokeStyle = gridC;
-            ctx.lineWidth = 1;
-            ctx.beginPath();
-            ctx.moveTo(PL, y);
-            ctx.lineTo(PL + CW2, y);
-            ctx.stroke();
-            const lbl =
-              v >= 100
-                ? Math.round(v).toString()
-                : v < 10
-                  ? v.toFixed(1)
-                  : Math.round(v).toString();
-            ctx.fillStyle = numC;
-            ctx.font = '15px monospace';
-            ctx.textAlign = 'right';
-            ctx.fillText(lbl, PL - 10, y + 5);
-          }
-          // right y-axis labels (no extra grid lines)
-          for (let i = 0; i <= 5; i++) {
-            const v = (yMaxR * i) / 5,
-              y = PT + CH2 * (1 - i / 5);
-            const lbl =
-              v >= 1000
-                ? Math.round(v).toString()
-                : v >= 100
-                  ? Math.round(v).toString()
-                  : v < 10
-                    ? v.toFixed(1)
-                    : Math.round(v).toString();
-            ctx.fillStyle = numC;
-            ctx.font = '15px monospace';
-            ctx.textAlign = 'left';
-            ctx.fillText(lbl, PL + CW2 + 10, y + 5);
-          }
-          // x ticks
-          const xStep = XMAX <= 16 ? 2 : 4;
-          for (let wk = 1; wk <= XMAX; wk++) {
-            if (wk === 1 || wk === XMAX || wk % xStep === 0) {
-              const x = tx(wk);
-              ctx.strokeStyle = tickC;
-              ctx.lineWidth = 1;
-              ctx.beginPath();
-              ctx.moveTo(x, PT + CH2);
-              ctx.lineTo(x, PT + CH2 + 5);
-              ctx.stroke();
-              ctx.fillStyle = numC;
-              ctx.font = '15px monospace';
-              ctx.textAlign = 'center';
-              ctx.fillText('W' + wk, x, PT + CH2 + 24);
-            }
-          }
-          // axis box (left + bottom + right)
-          ctx.strokeStyle = axisC;
-          ctx.lineWidth = 1;
-          ctx.beginPath();
-          ctx.moveTo(PL, PT);
-          ctx.lineTo(PL, PT + CH2);
-          ctx.lineTo(PL + CW2, PT + CH2);
-          ctx.lineTo(PL + CW2, PT);
-          ctx.stroke();
-          // axis title labels
-          ctx.fillStyle = lblC;
-          ctx.font = '16px monospace';
-          ctx.textAlign = 'center';
-          ctx.fillText('Training Week', PL + CW2 / 2, H - 14);
-          ctx.save();
-          ctx.translate(20, PT + CH2 / 2);
-          ctx.rotate(-Math.PI / 2);
-          ctx.fillText('Swim / Run (mi)', 0, 0);
-          ctx.restore();
-          ctx.save();
-          ctx.translate(W - 14, PT + CH2 / 2);
-          ctx.rotate(Math.PI / 2);
-          ctx.fillText('Bike / Total (mi)', 0, 0);
-          ctx.restore();
-          // note
-          ctx.fillStyle = noteC;
-          ctx.font = '13px monospace';
-          ctx.textAlign = 'left';
-          ctx.fillText('solid = actual · dashed = target', PL + 6, PT + 16);
-
-          // build target lookup by week
-          _scatterPts = [];
-          const tgtMap = {};
-          tgts.forEach((t) => (tgtMap[t.wk] = t));
-
-          // draw data lines (no scatter push here — we do a per-week summary below)
-          ['swim', 'run', 'bike', 'total'].forEach((d) => {
-            if (!chartDiscs[d]) return;
-            const c = COLORS[d],
-              tyFn = tyFor(d);
-            // dashed target (full 24 wks)
-            ctx.save();
-            ctx.strokeStyle = c;
-            ctx.lineWidth = 1.5;
-            ctx.setLineDash([7, 5]);
-            ctx.globalAlpha = 0.5;
-            ctx.beginPath();
-            tgts.forEach((r, i) => {
-              i
-                ? ctx.lineTo(tx(r.wk), tyFn(r[d]))
-                : ctx.moveTo(tx(r.wk), tyFn(r[d]));
-            });
-            ctx.stroke();
-            ctx.setLineDash([]);
-            ctx.globalAlpha = 1;
-            ctx.restore();
-            // solid actual + dots
-            if (!cumul.length) return;
-            ctx.save();
-            ctx.strokeStyle = c;
-            ctx.lineWidth = 2.5;
-            ctx.lineJoin = 'round';
-            ctx.lineCap = 'round';
-            ctx.beginPath();
-            cumul.forEach((r, i) => {
-              i
-                ? ctx.lineTo(tx(r.wk), tyFn(r[d]))
-                : ctx.moveTo(tx(r.wk), tyFn(r[d]));
-            });
-            ctx.stroke();
-            cumul.forEach((r) => {
-              ctx.beginPath();
-              ctx.fillStyle = c;
-              ctx.arc(tx(r.wk), tyFn(r[d]), 4, 0, Math.PI * 2);
-              ctx.fill();
-            });
-            ctx.restore();
-          });
-
-          // one hover point per week — contains all visible disciplines
-          cumul.forEach((r) => {
-            const wkTgt = tgtMap[r.wk];
-            const discs = {};
-            ['swim', 'run', 'bike', 'total'].forEach((d) => {
-              if (!chartDiscs[d]) return;
-              const tgt = wkTgt ? wkTgt[d] : null;
-              discs[d] = {
-                actual: r[d],
-                target: tgt,
-                diff: tgt != null ? r[d] - tgt : null,
-              };
-            });
-            _scatterPts.push({
-              cx: tx(r.wk),
-              cy: PT + CH2 / 2,
-              wk: r.wk,
-              isTrend: true,
-              discs,
-            });
-          });
-          return;
-        }
 
         // ── TIME BY WEEK ──
         if (chartType === 'time') {
@@ -8327,47 +8116,53 @@
         for (let wk = 1; wk <= effWkVol; wk++) {
           const s = calcStatsByWeek(wk);
           const sm = s.swimYds / 1760;
-          cumul.push({
-            wk,
-            swim: sm,
-            bike: s.bikeMi,
-            run: s.runMi,
-            total: sm + s.bikeMi + s.runMi,
-          });
+          cumul.push({ wk, swim: sm, bike: s.bikeMi, run: s.runMi, total: sm + s.bikeMi + s.runMi });
         }
         const weekly = cumul.map((d, i) => {
-          const p =
-            i > 0 ? cumul[i - 1] : { swim: 0, bike: 0, run: 0, total: 0 };
-          return {
-            wk: d.wk,
-            swim: d.swim - p.swim,
-            bike: d.bike - p.bike,
-            run: d.run - p.run,
-            total: d.total - p.total,
-          };
+          const p = i > 0 ? cumul[i - 1] : { swim: 0, bike: 0, run: 0, total: 0 };
+          return { wk: d.wk, swim: d.swim - p.swim, bike: d.bike - p.bike, run: d.run - p.run, total: d.total - p.total };
+        });
+
+        // benchmark trajectory — full 24 weeks
+        const benchCumul = [];
+        for (let wk = 1; wk <= 24; wk++) {
+          const row = PACE_TARGETS[wk];
+          if (!row) continue;
+          const b = row.bench, sm = b.swim / 1760;
+          benchCumul.push({ wk, swim: sm, bike: b.bike, run: b.run, total: sm + b.bike + b.run });
+        }
+        const benchWeekly = benchCumul.map((d, i) => {
+          const p = i > 0 ? benchCumul[i - 1] : { swim: 0, bike: 0, run: 0, total: 0 };
+          return { wk: d.wk, swim: d.swim - p.swim, bike: d.bike - p.bike, run: d.run - p.run, total: d.total - p.total };
         });
 
         const isVol = chartType === 'volume';
         const actData = isVol ? weekly : cumul;
-        const xMax = Math.max(effWkVol, 2);
+        const benchData = isVol ? benchWeekly : benchCumul;
+        const xMax = 24; // always show full 24-week arc with bench lines
 
         const allV = [];
         const discs = ['swim', 'bike', 'run', 'total'];
         discs.forEach((d) => {
           if (!chartDiscs[d]) return;
           actData.forEach((r) => allV.push(r[d]));
+          benchData.forEach((r) => allV.push(r[d]));
         });
         const niceMax = tightNiceMax(allV.length ? Math.max(...allV) : 10);
 
-        const tx = (wk) => PL + ((wk - 1) / Math.max(xMax - 1, 1)) * CW;
+        const tx = (wk) => PL + ((wk - 1) / (xMax - 1)) * CW;
         const ty = (v) => PT + CH * (1 - v / niceMax);
 
-        drawAxes(
-          xMax,
-          niceMax,
-          'Training Week',
-          isVol ? 'Miles (this week)' : 'Cumulative miles',
-        );
+        drawAxes(xMax, niceMax, 'Training Week', isVol ? 'Miles (this week)' : 'Cumulative miles');
+
+        ctx.fillStyle = noteC;
+        ctx.font = '13px monospace';
+        ctx.textAlign = 'left';
+        ctx.fillText('solid = actual · dashed = benchmark', PL + 6, PT + 16);
+
+        // bench lookup by week for hover
+        const benchMap = {};
+        benchData.forEach((r) => (benchMap[r.wk] = r));
 
         function drawLine(pts, color) {
           if (!pts || !pts.length) return;
@@ -8377,9 +8172,7 @@
           ctx.lineWidth = 2.5;
           ctx.lineJoin = 'round';
           ctx.lineCap = 'round';
-          pts.forEach((p, i) => {
-            i ? ctx.lineTo(tx(p.wk), ty(p.v)) : ctx.moveTo(tx(p.wk), ty(p.v));
-          });
+          pts.forEach((p, i) => { i ? ctx.lineTo(tx(p.wk), ty(p.v)) : ctx.moveTo(tx(p.wk), ty(p.v)); });
           ctx.stroke();
           pts.forEach((p) => {
             ctx.beginPath();
@@ -8390,27 +8183,38 @@
           ctx.restore();
         }
 
+        // dashed benchmark lines (drawn first so solid actual is on top)
         discs.forEach((d) => {
           if (!chartDiscs[d]) return;
-          drawLine(
-            actData.map((r) => ({ wk: r.wk, v: r[d] })),
-            COLORS[d],
-          );
+          ctx.save();
+          ctx.strokeStyle = COLORS[d];
+          ctx.lineWidth = 1.5;
+          ctx.setLineDash([7, 5]);
+          ctx.globalAlpha = 0.5;
+          ctx.beginPath();
+          benchData.forEach((r, i) => { i ? ctx.lineTo(tx(r.wk), ty(r[d])) : ctx.moveTo(tx(r.wk), ty(r[d])); });
+          ctx.stroke();
+          ctx.setLineDash([]);
+          ctx.globalAlpha = 1;
+          ctx.restore();
+        });
+
+        // solid actual lines
+        discs.forEach((d) => {
+          if (!chartDiscs[d]) return;
+          drawLine(actData.map((r) => ({ wk: r.wk, v: r[d] })), COLORS[d]);
         });
 
         // hover points — one per week, x-snap
         actData.forEach((r) => {
-          const vals = {};
+          const vals = {}, benchVals = {};
           discs.forEach((d) => {
-            if (chartDiscs[d]) vals[d] = r[d];
+            if (!chartDiscs[d]) return;
+            vals[d] = r[d];
+            const bRow = benchMap[r.wk];
+            if (bRow) benchVals[d] = bRow[d];
           });
-          _scatterPts.push({
-            cx: tx(r.wk),
-            cy: PT + CH / 2,
-            wk: r.wk,
-            isVolume: true,
-            vals,
-          });
+          _scatterPts.push({ cx: tx(r.wk), cy: PT + CH / 2, wk: r.wk, isVolume: true, vals, benchVals });
         });
       }
 
@@ -8529,18 +8333,6 @@
               onclick="setChartType('speed', this)"
             >
               Speed by Week
-            </button>
-            <button
-              class="chart-type-btn"
-              onclick="setChartType('trendplan', this)"
-            >
-              Trend vs Plan
-            </button>
-            <button
-              class="chart-type-btn"
-              onclick="setChartType('trendbench', this)"
-            >
-              Trend vs Bench
             </button>
             <button
               class="chart-type-btn"
