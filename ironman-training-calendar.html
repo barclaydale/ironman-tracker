@@ -5508,35 +5508,35 @@
         null,
         {
           bench: { swim: 1600, bike: 24.1, run: 7.7 },
-          plan: { swim: 1625, bike: 30.7, run: 8.6 },
+          plan: { swim: 1625, bike: 25.5, run: 8.6 },
         }, // wk 1
         {
           bench: { swim: 3200, bike: 48.2, run: 15.3 },
-          plan: { swim: 3250, bike: 61.5, run: 17.2 },
+          plan: { swim: 3250, bike: 59.5, run: 17.2 },
         }, // wk 2
         {
           bench: { swim: 4800, bike: 72.2, run: 23.0 },
-          plan: { swim: 4875, bike: 92.2, run: 25.8 },
+          plan: { swim: 4875, bike: 89.3, run: 25.8 },
         }, // wk 3
         {
           bench: { swim: 6400, bike: 96.3, run: 30.6 },
-          plan: { swim: 6500, bike: 123.0, run: 34.4 },
+          plan: { swim: 6500, bike: 128.9, run: 34.4 },
         }, // wk 4
         {
           bench: { swim: 8000, bike: 120.4, run: 38.3 },
-          plan: { swim: 8125, bike: 153.7, run: 42.9 },
+          plan: { swim: 8125, bike: 170.0, run: 42.9 },
         }, // wk 5
         {
           bench: { swim: 9600, bike: 144.5, run: 45.9 },
-          plan: { swim: 9750, bike: 184.4, run: 51.5 },
-        }, // wk 6
+          plan: { swim: 9750, bike: 170.0, run: 48.0 },
+        }, // wk 6 — recovery week: no bike, short run
         {
           bench: { swim: 11200, bike: 168.5, run: 53.6 },
-          plan: { swim: 11375, bike: 215.2, run: 60.1 },
+          plan: { swim: 11375, bike: 221.0, run: 57.0 },
         }, // wk 7
         {
           bench: { swim: 12800, bike: 192.6, run: 61.2 },
-          plan: { swim: 13000, bike: 245.9, run: 68.7 },
+          plan: { swim: 13000, bike: 263.5, run: 68.7 },
         }, // wk 8
         {
           bench: { swim: 17000, bike: 253.8, run: 68.6 },
@@ -6069,32 +6069,6 @@
           else if (w.type === 'run') runMin += dur;
         });
         return { swimMin, bikeMin, runMin, totalMin: swimMin + bikeMin + runMin };
-      }
-
-      function calcPlannedByWeek(maxWeek) {
-        const skipType = (t) => t === 'cf' || t === 'ar';
-        let swimYds = 0, bikeMi = 0, runMi = 0;
-        PLAN.forEach((s) => {
-          if (deletedSessions.has(s.id)) return;
-          if (s.week > maxWeek) return;
-          if (skipType(s.type)) return;
-          if (s.type === 'swim') {
-            swimYds += s.targetDistance || 5500;
-          } else if (s.type === 'swimrun') {
-            swimYds += s.targetDistance || 5500;
-            runMi += 3;
-          } else if (s.type === 'bike') {
-            bikeMi += s.targetDistance != null ? s.targetDistance : (s.targetDuration / 60) * 17;
-          } else if (s.type === 'run') {
-            runMi += s.targetDistance != null ? s.targetDistance : s.targetDuration / 10;
-          } else if (s.type === 'brick') {
-            const runMin = 30;
-            const bikeMin = (s.targetDuration || 150) - runMin;
-            bikeMi += (bikeMin / 60) * 17;
-            runMi += 3;
-          }
-        });
-        return { swimYds, bikeMi, runMi };
       }
 
       function renderStats() {
@@ -8149,12 +8123,13 @@
           return { wk: d.wk, swim: d.swim - p.swim, bike: d.bike - p.bike, run: d.run - p.run, total: d.total - p.total };
         });
 
-        // plan trajectory — full 24 weeks, computed from PLAN sessions
+        // plan trajectory — full 24 weeks from PACE_TARGETS.plan
         const planCumul = [];
         for (let wk = 1; wk <= 24; wk++) {
-          const p = calcPlannedByWeek(wk);
-          const sm = p.swimYds / 1760;
-          planCumul.push({ wk, swim: sm, bike: p.bikeMi, run: p.runMi, total: sm + p.bikeMi + p.runMi });
+          const row = PACE_TARGETS[wk];
+          if (!row) continue;
+          const b = row.plan, sm = b.swim / 1760;
+          planCumul.push({ wk, swim: sm, bike: b.bike, run: b.run, total: sm + b.bike + b.run });
         }
         const planWeekly = planCumul.map((d, i) => {
           const p = i > 0 ? planCumul[i - 1] : { swim: 0, bike: 0, run: 0, total: 0 };
