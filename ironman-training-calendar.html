@@ -6071,6 +6071,32 @@
         return { swimMin, bikeMin, runMin, totalMin: swimMin + bikeMin + runMin };
       }
 
+      function calcPlannedByWeek(maxWeek) {
+        const skipType = (t) => t === 'cf' || t === 'ar';
+        let swimYds = 0, bikeMi = 0, runMi = 0;
+        PLAN.forEach((s) => {
+          if (deletedSessions.has(s.id)) return;
+          if (s.week > maxWeek) return;
+          if (skipType(s.type)) return;
+          if (s.type === 'swim') {
+            swimYds += s.targetDistance || 5500;
+          } else if (s.type === 'swimrun') {
+            swimYds += s.targetDistance || 5500;
+            runMi += 3;
+          } else if (s.type === 'bike') {
+            bikeMi += s.targetDistance != null ? s.targetDistance : (s.targetDuration / 60) * 17;
+          } else if (s.type === 'run') {
+            runMi += s.targetDistance != null ? s.targetDistance : s.targetDuration / 10;
+          } else if (s.type === 'brick') {
+            const runMin = 30;
+            const bikeMin = (s.targetDuration || 150) - runMin;
+            bikeMi += (bikeMin / 60) * 17;
+            runMi += 3;
+          }
+        });
+        return { swimYds, bikeMi, runMi };
+      }
+
       function renderStats() {
         const st = calcStats();
         const days = Math.max(
@@ -7582,7 +7608,7 @@
               const c = CHART_COLORS[d];
               const isSwim = d === 'swim';
               const valStr = isSwim ? `${fmtYds(v)} yds` : `${fmtMi(v)} mi`;
-              const bv = best.benchVals?.[d];
+              const bv = best.planVals?.[d];
               let extra = '';
               if (bv != null) {
                 const diff = v - bv;
@@ -7592,7 +7618,7 @@
                 const absDiffStr = isSwim
                   ? `${Math.round(Math.abs(diff) * 1760).toLocaleString('en-US')} yds`
                   : `${fmtMi(Math.abs(diff))} mi`;
-                extra = `<br><span style="color:var(--muted);font-size:10px">bench ${bStr} </span><span style="color:${statusColor};font-size:10px">(${diff >= 0 ? '+' : '-'}${absDiffStr})</span>`;
+                extra = `<br><span style="color:var(--muted);font-size:10px">plan ${bStr} </span><span style="color:${statusColor};font-size:10px">(${diff >= 0 ? '+' : '-'}${absDiffStr})</span>`;
               }
               sections.push(`<span style="color:${c};font-weight:700">${d.toUpperCase()}</span>  ${valStr}${extra}`);
             });
@@ -8123,30 +8149,29 @@
           return { wk: d.wk, swim: d.swim - p.swim, bike: d.bike - p.bike, run: d.run - p.run, total: d.total - p.total };
         });
 
-        // benchmark trajectory — full 24 weeks
-        const benchCumul = [];
+        // plan trajectory — full 24 weeks, computed from PLAN sessions
+        const planCumul = [];
         for (let wk = 1; wk <= 24; wk++) {
-          const row = PACE_TARGETS[wk];
-          if (!row) continue;
-          const b = row.bench, sm = b.swim / 1760;
-          benchCumul.push({ wk, swim: sm, bike: b.bike, run: b.run, total: sm + b.bike + b.run });
+          const p = calcPlannedByWeek(wk);
+          const sm = p.swimYds / 1760;
+          planCumul.push({ wk, swim: sm, bike: p.bikeMi, run: p.runMi, total: sm + p.bikeMi + p.runMi });
         }
-        const benchWeekly = benchCumul.map((d, i) => {
-          const p = i > 0 ? benchCumul[i - 1] : { swim: 0, bike: 0, run: 0, total: 0 };
+        const planWeekly = planCumul.map((d, i) => {
+          const p = i > 0 ? planCumul[i - 1] : { swim: 0, bike: 0, run: 0, total: 0 };
           return { wk: d.wk, swim: d.swim - p.swim, bike: d.bike - p.bike, run: d.run - p.run, total: d.total - p.total };
         });
 
         const isVol = chartType === 'volume';
         const actData = isVol ? weekly : cumul;
-        const benchData = isVol ? benchWeekly : benchCumul;
-        const xMax = 24; // always show full 24-week arc with bench lines
+        const planData = isVol ? planWeekly : planCumul;
+        const xMax = 24; // always show full 24-week arc with plan lines
 
         const allV = [];
         const discs = ['swim', 'bike', 'run', 'total'];
         discs.forEach((d) => {
           if (!chartDiscs[d]) return;
           actData.forEach((r) => allV.push(r[d]));
-          benchData.forEach((r) => allV.push(r[d]));
+          planData.forEach((r) => allV.push(r[d]));
         });
         const niceMax = tightNiceMax(allV.length ? Math.max(...allV) : 10);
 
@@ -8158,11 +8183,11 @@
         ctx.fillStyle = noteC;
         ctx.font = '13px monospace';
         ctx.textAlign = 'left';
-        ctx.fillText('solid = actual · dashed = benchmark', PL + 6, PT + 16);
+        ctx.fillText('solid = actual · dashed = plan', PL + 6, PT + 16);
 
-        // bench lookup by week for hover
-        const benchMap = {};
-        benchData.forEach((r) => (benchMap[r.wk] = r));
+        // plan lookup by week for hover
+        const planMap = {};
+        planData.forEach((r) => (planMap[r.wk] = r));
 
         function drawLine(pts, color) {
           if (!pts || !pts.length) return;
@@ -8183,7 +8208,7 @@
           ctx.restore();
         }
 
-        // dashed benchmark lines (drawn first so solid actual is on top)
+        // dashed plan lines (drawn first so solid actual is on top)
         discs.forEach((d) => {
           if (!chartDiscs[d]) return;
           ctx.save();
@@ -8192,7 +8217,7 @@
           ctx.setLineDash([7, 5]);
           ctx.globalAlpha = 0.5;
           ctx.beginPath();
-          benchData.forEach((r, i) => { i ? ctx.lineTo(tx(r.wk), ty(r[d])) : ctx.moveTo(tx(r.wk), ty(r[d])); });
+          planData.forEach((r, i) => { i ? ctx.lineTo(tx(r.wk), ty(r[d])) : ctx.moveTo(tx(r.wk), ty(r[d])); });
           ctx.stroke();
           ctx.setLineDash([]);
           ctx.globalAlpha = 1;
@@ -8207,14 +8232,14 @@
 
         // hover points — one per week, x-snap
         actData.forEach((r) => {
-          const vals = {}, benchVals = {};
+          const vals = {}, planVals = {};
           discs.forEach((d) => {
             if (!chartDiscs[d]) return;
             vals[d] = r[d];
-            const bRow = benchMap[r.wk];
-            if (bRow) benchVals[d] = bRow[d];
+            const pRow = planMap[r.wk];
+            if (pRow) planVals[d] = pRow[d];
           });
-          _scatterPts.push({ cx: tx(r.wk), cy: PT + CH / 2, wk: r.wk, isVolume: true, vals, benchVals });
+          _scatterPts.push({ cx: tx(r.wk), cy: PT + CH / 2, wk: r.wk, isVolume: true, vals, planVals });
         });
       }
 
