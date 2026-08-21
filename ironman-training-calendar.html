@@ -6309,7 +6309,27 @@
           const m = typeMeta(s.type);
           return `<div class="session-stub" style="background:${m.color}" title="${esc(s.title)} — click to restore" onclick="restoreSession('${s.id}')">Restore: ${esc(s.title)}</div>`;
         }
-        const done = !!completions[s.id];
+        const c = completions[s.id];
+        const done = !!c;
+        let subHTML = '';
+        if (s.type !== 'cf' && s.type !== 'ar') {
+          if (done) {
+            let resultText;
+            if (s.type === 'brick') {
+              resultText = brickDoneText(c);
+            } else if (s.type === 'swimrun') {
+              resultText = swimrunDoneText(c);
+            } else if (s.type === 'swim') {
+              const dist = c.distance != null ? Number(c.distance).toLocaleString() : 0;
+              resultText = `${dist} yds &middot; ${c.duration || 0} min`;
+            } else {
+              resultText = `${c.distance || 0} mi &middot; ${c.duration || 0} min`;
+            }
+            subHTML = `<div class="sc-s1">${resultText}</div>`;
+          } else {
+            subHTML = `<div class="sc-s1">${esc(s.summary1)}</div><div class="sc-s2">${esc(s.summary2)}</div>`;
+          }
+        }
         return `
     <div class="session-card${done ? ' done' : ''}" id="card-${s.id}"
          ${draggable ? 'draggable="true"' : ''} data-id="${s.id}"
@@ -6318,7 +6338,7 @@
          ondragend="onDragEnd(event,'${s.id}')"
          ontouchstart="onTouchDragStart(event,'${s.id}')">
       <div class="sc-top">${badge(s.type)}<span class="sc-title">${esc(s.title)}</span></div>
-      ${s.type !== 'cf' ? `<div class="sc-s1">${esc(s.summary1)}</div><div class="sc-s2">${esc(s.summary2)}</div>` : ''}
+      ${subHTML}
     </div>`;
       }
 
