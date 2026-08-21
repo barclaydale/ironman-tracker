@@ -8102,11 +8102,39 @@
           const xMaxT = Math.max(effWkT, 2);
           const allVT = [];
           const discsT = ['swim', 'bike', 'run', 'total'];
-          discsT.forEach((d) => { if (!chartDiscs[d]) return; weeklyTime.forEach((r) => allVT.push(r[d])); });
+          const TIME_RANGES = { swim: { lo: 1.5, hi: 2.0 }, bike: { lo: 5.5, hi: 6.5 }, run: { lo: 2.5, hi: 3.0 }, total: { lo: 10.0, hi: 11.5 } };
+          discsT.forEach((d) => {
+            if (!chartDiscs[d]) return;
+            weeklyTime.forEach((r) => allVT.push(r[d]));
+            if (TIME_RANGES[d]) { allVT.push(TIME_RANGES[d].lo, TIME_RANGES[d].hi); }
+          });
           const niceMaxT = tightNiceMax(allVT.length ? Math.max(...allVT) : 5);
           const txT = (wk) => PL + ((wk - 1) / Math.max(xMaxT - 1, 1)) * CW;
           const tyT = (v)  => PT + CH * (1 - v / niceMaxT);
           drawAxes(xMaxT, niceMaxT, 'Training Week', 'Hours (this week)');
+          // target range bands — drawn before lines so lines sit on top
+          discsT.forEach((d) => {
+            if (!chartDiscs[d]) return;
+            const rng = TIME_RANGES[d];
+            if (!rng) return;
+            const yTop = tyT(rng.hi);
+            const yBot = tyT(rng.lo);
+            ctx.save();
+            ctx.fillStyle = COLORS[d];
+            ctx.globalAlpha = 0.1;
+            ctx.fillRect(PL, yTop, CW, yBot - yTop);
+            ctx.globalAlpha = 0.35;
+            ctx.strokeStyle = COLORS[d];
+            ctx.lineWidth = 1;
+            ctx.setLineDash([5, 4]);
+            ctx.beginPath();
+            ctx.moveTo(PL, yTop); ctx.lineTo(PL + CW, yTop);
+            ctx.moveTo(PL, yBot); ctx.lineTo(PL + CW, yBot);
+            ctx.stroke();
+            ctx.setLineDash([]);
+            ctx.globalAlpha = 1;
+            ctx.restore();
+          });
           function drawTimeLine(pts, color) {
             if (!pts.length) return;
             ctx.save();
