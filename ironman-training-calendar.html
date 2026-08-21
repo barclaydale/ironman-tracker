@@ -61,28 +61,7 @@
 
       /* ── Sticky nav ── */
       .sticky-nav {
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        z-index: 200;
-        background: var(--s1);
-        border-bottom: 1px solid var(--border2);
-        padding: 7px 20px;
-        display: flex;
-        align-items: center;
-        gap: 20px;
-        transform: translateY(-100%);
-        opacity: 0;
-        transition:
-          transform 0.2s,
-          opacity 0.2s;
-        pointer-events: none;
-      }
-      .sticky-nav.visible {
-        transform: translateY(0);
-        opacity: 1;
-        pointer-events: auto;
+        display: none;
       }
       .sn-brand {
         display: flex;
@@ -284,6 +263,9 @@
         background: var(--s1);
         border-bottom: 2px solid var(--red);
         margin-bottom: 0;
+        position: sticky;
+        top: 0;
+        z-index: 150;
       }
       .panel-hdr {
         font-family: var(--oswald);
@@ -6976,24 +6958,11 @@
         });
       }
 
-      function updateStickyVisibility() {
+      function updatePhaseOffset() {
         const tp = document.getElementById('top-panel');
-        const nav = document.getElementById('sticky-nav');
-        if (!tp || !nav) return;
-        if (tp.getBoundingClientRect().bottom < 0) {
-          nav.classList.add('visible');
-          document.documentElement.style.setProperty(
-            '--ph-top',
-            nav.offsetHeight + 'px',
-          );
-        } else {
-          nav.classList.remove('visible');
-          document.documentElement.style.setProperty('--ph-top', '0px');
-        }
+        if (tp) document.documentElement.style.setProperty('--ph-top', tp.offsetHeight + 'px');
       }
-      window.addEventListener('scroll', updateStickyVisibility, {
-        passive: true,
-      });
+      window.addEventListener('resize', updatePhaseOffset, { passive: true });
 
       // ── Calendar ──
       const PHASE_CONFIG = [
@@ -8325,6 +8294,26 @@
       renderTodayTomorrow();
       renderCalendar();
       renderProjections();
+      setTimeout(() => {
+        updatePhaseOffset();
+        const tp = document.getElementById('top-panel');
+        const topH = tp ? tp.offsetHeight : 0;
+        const currentWk = currentPaceWeek();
+        let targetPhaseIdx = PHASE_CONFIG.findIndex(ph => {
+          const numericWeeks = ph.weeks.filter(w => typeof w === 'number');
+          return numericWeeks.some(w => w >= currentWk);
+        });
+        if (targetPhaseIdx < 0) targetPhaseIdx = PHASE_CONFIG.length - 1;
+        const sections = document.querySelectorAll('.phase-section');
+        const targetSection = sections[targetPhaseIdx];
+        if (targetSection) {
+          const banner = targetSection.querySelector('.phase-banner');
+          if (banner) {
+            const top = banner.getBoundingClientRect().top + window.scrollY - topH;
+            window.scrollTo({ top: Math.max(0, top), behavior: 'instant' });
+          }
+        }
+      }, 0);
 
       // Generate PNG apple-touch-icon for iPhone home screen
       (function () {
