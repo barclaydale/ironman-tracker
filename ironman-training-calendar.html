@@ -7627,9 +7627,15 @@
               const v = best.vals[d];
               if (v == null) return;
               const c = CHART_COLORS[d];
-              lines.push(
-                `<span style="color:${c};font-weight:700">${d.toUpperCase()}</span>  ${fmtHrs(v)}`,
-              );
+              const rng = best.timeRanges?.[d];
+              let status = '';
+              if (rng) {
+                const met = v >= rng.lo;
+                const close = !met && v > 0 && v >= rng.lo * 0.85;
+                const sc = met ? '#2FC87A' : close ? '#fbbf24' : '#E8002D';
+                status = `<br><span style="color:var(--muted);font-size:10px">target ${fmtHrs(rng.lo)}–${fmtHrs(rng.hi)} </span><span style="color:${sc};font-size:10px">${met ? '✓ met' : close ? '~ close' : '✗ short'}</span>`;
+              }
+              lines.push(`<span style="color:${c};font-weight:700">${d.toUpperCase()}</span>  ${fmtHrs(v)}${status}`);
             });
             html = `<b>Week ${best.wk}</b> <span style="color:var(--muted);font-size:11px">this week</span><br>${lines.join('<br>')}`;
           } else if (best.isTrend && best.discs) {
@@ -8135,24 +8141,37 @@
             ctx.globalAlpha = 1;
             ctx.restore();
           });
-          function drawTimeLine(pts, color) {
+          function drawTimeLine(pts, color, rangeLo) {
             if (!pts.length) return;
             ctx.save();
             ctx.strokeStyle = color; ctx.lineWidth = 2.5; ctx.lineJoin = 'round'; ctx.lineCap = 'round';
             ctx.beginPath();
             pts.forEach((p, i) => i ? ctx.lineTo(txT(p.wk), tyT(p.v)) : ctx.moveTo(txT(p.wk), tyT(p.v)));
             ctx.stroke();
-            pts.forEach((p) => { ctx.beginPath(); ctx.fillStyle = color; ctx.arc(txT(p.wk), tyT(p.v), 3.5, 0, Math.PI * 2); ctx.fill(); });
+            pts.forEach((p) => {
+              const met = rangeLo != null && p.v >= rangeLo;
+              const cx = txT(p.wk), cy = tyT(p.v);
+              ctx.beginPath();
+              ctx.fillStyle = color;
+              ctx.arc(cx, cy, met ? 5.5 : 3.5, 0, Math.PI * 2);
+              ctx.fill();
+              if (met) {
+                ctx.beginPath();
+                ctx.fillStyle = isLight ? '#f4f4f4' : '#080808';
+                ctx.arc(cx, cy, 2.5, 0, Math.PI * 2);
+                ctx.fill();
+              }
+            });
             ctx.restore();
           }
           discsT.forEach((d) => {
             if (!chartDiscs[d]) return;
-            drawTimeLine(weeklyTime.map((r) => ({ wk: r.wk, v: r[d] })), COLORS[d]);
+            drawTimeLine(weeklyTime.map((r) => ({ wk: r.wk, v: r[d] })), COLORS[d], TIME_RANGES[d]?.lo);
           });
           weeklyTime.forEach((r) => {
             const vals = {};
             discsT.forEach((d) => { if (chartDiscs[d]) vals[d] = r[d]; });
-            _scatterPts.push({ cx: txT(r.wk), cy: PT + CH / 2, wk: r.wk, isTime: true, vals });
+            _scatterPts.push({ cx: txT(r.wk), cy: PT + CH / 2, wk: r.wk, isTime: true, vals, timeRanges: TIME_RANGES });
           });
           return;
         }
