@@ -8294,7 +8294,7 @@
       renderTodayTomorrow();
       renderCalendar();
       renderProjections();
-      setTimeout(() => {
+      requestAnimationFrame(() => requestAnimationFrame(() => {
         updatePhaseOffset();
         const tp = document.getElementById('top-panel');
         const topH = tp ? tp.offsetHeight : 0;
@@ -8313,7 +8313,7 @@
             window.scrollTo({ top: Math.max(0, top), behavior: 'instant' });
           }
         }
-      }, 0);
+      }));
 
       // Generate PNG apple-touch-icon for iPhone home screen
       (function () {
