@@ -7567,25 +7567,34 @@
             const sections = [];
             ['swim', 'bike', 'run', 'total'].forEach((d) => {
               const v = best.vals[d];
-              if (v == null) return;
+              const bv = best.planVals?.[d];
+              if (v == null && bv == null) return;
               const c = CHART_COLORS[d];
               const isSwim = d === 'swim';
-              const valStr = isSwim ? `${fmtYds(v)} yds` : `${fmtMi(v)} mi`;
-              const bv = best.planVals?.[d];
-              let extra = '';
-              if (bv != null) {
-                const diff = v - bv;
+              if (v == null) {
+                // future week — plan only
                 const bStr = isSwim ? `${fmtYds(bv)} yds` : `${fmtMi(bv)} mi`;
-                const statusColor = diff >= 0 ? '#2FC87A'
-                  : (bv > 0 && Math.abs(diff) / bv <= 0.1) ? '#fbbf24' : '#E8002D';
-                const absDiffStr = isSwim
-                  ? `${Math.round(Math.abs(diff) * 1760).toLocaleString('en-US')} yds`
-                  : `${fmtMi(Math.abs(diff))} mi`;
-                extra = `<br><span style="color:var(--muted);font-size:10px">plan ${bStr} </span><span style="color:${statusColor};font-size:10px">(${diff >= 0 ? '+' : '-'}${absDiffStr})</span>`;
+                sections.push(`<span style="color:${c};font-weight:700">${d.toUpperCase()}</span>  ${bStr}`);
+              } else {
+                const valStr = isSwim ? `${fmtYds(v)} yds` : `${fmtMi(v)} mi`;
+                let extra = '';
+                if (bv != null) {
+                  const diff = v - bv;
+                  const bStr = isSwim ? `${fmtYds(bv)} yds` : `${fmtMi(bv)} mi`;
+                  const statusColor = diff >= 0 ? '#2FC87A'
+                    : (bv > 0 && Math.abs(diff) / bv <= 0.1) ? '#fbbf24' : '#E8002D';
+                  const absDiffStr = isSwim
+                    ? `${Math.round(Math.abs(diff) * 1760).toLocaleString('en-US')} yds`
+                    : `${fmtMi(Math.abs(diff))} mi`;
+                  extra = `<br><span style="color:var(--muted);font-size:10px">plan ${bStr} </span><span style="color:${statusColor};font-size:10px">(${diff >= 0 ? '+' : '-'}${absDiffStr})</span>`;
+                }
+                sections.push(`<span style="color:${c};font-weight:700">${d.toUpperCase()}</span>  ${valStr}${extra}`);
               }
-              sections.push(`<span style="color:${c};font-weight:700">${d.toUpperCase()}</span>  ${valStr}${extra}`);
             });
-            html = `<b>Week ${best.wk}</b> <span style="color:var(--muted);font-size:11px">${label}</span><br>${sections.join('<br>')}`;
+            const sublabel = best.planOnly
+              ? `<span style="color:var(--muted);font-size:11px">planned</span>`
+              : `<span style="color:var(--muted);font-size:11px">${label}</span>`;
+            html = `<b>Week ${best.wk}</b> ${sublabel}<br>${sections.join('<br>')}`;
           } else if (best.isTime) {
             const fmtHrs = (v) => {
               const h = Math.floor(v), m = Math.round((v - h) * 60);
@@ -8242,6 +8251,7 @@
         });
 
         // hover points — one per week, x-snap
+        const actWeeks = new Set(actData.map((r) => r.wk));
         actData.forEach((r) => {
           const vals = {}, planVals = {};
           discs.forEach((d) => {
@@ -8251,6 +8261,13 @@
             if (pRow) planVals[d] = pRow[d];
           });
           _scatterPts.push({ cx: tx(r.wk), cy: PT + CH / 2, wk: r.wk, isVolume: true, vals, planVals });
+        });
+        // plan-only hover points for future weeks with no logged data
+        planData.forEach((r) => {
+          if (actWeeks.has(r.wk)) return;
+          const planVals = {};
+          discs.forEach((d) => { if (chartDiscs[d]) planVals[d] = r[d]; });
+          _scatterPts.push({ cx: tx(r.wk), cy: PT + CH / 2, wk: r.wk, isVolume: true, vals: {}, planVals, planOnly: true });
         });
       }
 
