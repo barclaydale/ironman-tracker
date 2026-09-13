@@ -6076,26 +6076,26 @@
             : '—';
         document.getElementById('stat-swim-avg-time').textContent =
           st.swimAvgTime || '—';
-        document.getElementById('stat-bike').textContent = st.bikeMi + ' mi';
+        document.getElementById('stat-bike').textContent = parseFloat(st.bikeMi).toLocaleString('en-US', {minimumFractionDigits:1, maximumFractionDigits:1}) + ' mi';
         document.getElementById('stat-bike-cnt').textContent = st.bikeCount;
         document.getElementById('stat-bike-time').textContent = st.bikeTime;
         document.getElementById('stat-bike-avg').textContent =
-          st.bikeAvg != null ? st.bikeAvg + ' mi' : '—';
+          st.bikeAvg != null ? parseFloat(st.bikeAvg).toLocaleString('en-US', {minimumFractionDigits:1, maximumFractionDigits:1}) + ' mi' : '—';
         document.getElementById('stat-bike-avg-time').textContent =
           st.bikeAvgTime || '—';
-        document.getElementById('stat-run').textContent = st.runMi + ' mi';
+        document.getElementById('stat-run').textContent = parseFloat(st.runMi).toLocaleString('en-US', {minimumFractionDigits:1, maximumFractionDigits:1}) + ' mi';
         document.getElementById('stat-run-cnt').textContent = st.runCount;
         document.getElementById('stat-run-time').textContent = st.runTime;
         document.getElementById('stat-run-avg').textContent =
-          st.runAvg != null ? st.runAvg + ' mi' : '—';
+          st.runAvg != null ? parseFloat(st.runAvg).toLocaleString('en-US', {minimumFractionDigits:1, maximumFractionDigits:1}) + ' mi' : '—';
         document.getElementById('stat-run-avg-time').textContent =
           st.runAvgTime || '—';
         document.getElementById('stat-total-dist').textContent =
-          st.totalMi + ' mi';
+          parseFloat(st.totalMi).toLocaleString('en-US', {minimumFractionDigits:1, maximumFractionDigits:1}) + ' mi';
         document.getElementById('stat-total-cnt').textContent = st.done;
         document.getElementById('stat-time').textContent = st.totalTime;
         document.getElementById('stat-total-avg').textContent =
-          st.totalAvg != null ? st.totalAvg + ' mi' : '—';
+          st.totalAvg != null ? parseFloat(st.totalAvg).toLocaleString('en-US', {minimumFractionDigits:1, maximumFractionDigits:1}) + ' mi' : '—';
         document.getElementById('stat-total-avg-time').textContent =
           st.totalAvgTime || '—';
         // pace column
@@ -6121,7 +6121,7 @@
           }
           const fmtTgt = isYds
             ? Math.round(tgt).toLocaleString()
-            : tgt.toFixed(1);
+            : tgt.toLocaleString('en-US', {minimumFractionDigits:1, maximumFractionDigits:1});
           tgtEl.textContent = fmtTgt + (isYds ? ' yds' : ' mi');
           const delta = actual - tgt;
           const absDelta = Math.abs(delta);
@@ -6129,7 +6129,7 @@
             ? absDelta >= 1000
               ? (absDelta / 1000).toFixed(1) + 'k'
               : Math.round(absDelta)
-            : absDelta.toFixed(1);
+            : absDelta.toLocaleString('en-US', {minimumFractionDigits:1, maximumFractionDigits:1});
           dEl.textContent = (delta >= 0 ? '↑ ' : '↓ ') + fmtD;
           let cls;
           if (delta >= 0) cls = 'ahead';
@@ -6146,11 +6146,11 @@
         if (pt) {
           const totalTgt = pt.swim / 1760 + pt.bike + pt.run;
           const totalActual = parseFloat(st.totalMi);
-          tTgtEl.textContent = totalTgt.toFixed(1) + ' mi';
+          tTgtEl.textContent = totalTgt.toLocaleString('en-US', {minimumFractionDigits:1, maximumFractionDigits:1}) + ' mi';
           const delta = totalActual - totalTgt;
           const absDelta = Math.abs(delta);
           tDeltaEl.textContent =
-            (delta >= 0 ? '↑ ' : '↓ ') + absDelta.toFixed(1);
+            (delta >= 0 ? '↑ ' : '↓ ') + absDelta.toLocaleString('en-US', {minimumFractionDigits:1, maximumFractionDigits:1});
           let cls;
           if (delta >= 0) cls = 'ahead';
           else if (absDelta / totalTgt <= 0.1) cls = 'close';
@@ -6189,7 +6189,7 @@
             ? abs >= 1000
               ? (abs / 1000).toFixed(1) + 'k'
               : Math.round(abs)
-            : abs.toFixed(1);
+            : abs.toLocaleString('en-US', {minimumFractionDigits:1, maximumFractionDigits:1});
           el.textContent = (trend > 0 ? '↑ ' : '↓ ') + fmt;
           let trendCls;
           if (trend > 0) trendCls = 'ahead';
@@ -6231,7 +6231,7 @@
           const plannedThisWeek = curTotalTgt - prvTotalTgt;
           const trend = doneThisWeek - plannedThisWeek;
           const abs = Math.abs(trend);
-          tTrendEl.textContent = (trend >= 0 ? '↑ ' : '↓ ') + abs.toFixed(1);
+          tTrendEl.textContent = (trend >= 0 ? '↑ ' : '↓ ') + abs.toLocaleString('en-US', {minimumFractionDigits:1, maximumFractionDigits:1});
           let totTrendCls;
           if (trend >= 0) totTrendCls = 'ahead';
           else if (curTotalTgt > 0 && abs / curTotalTgt <= 0.1) totTrendCls = 'close';
@@ -6376,7 +6376,7 @@
       function swimrunDoneText(c) {
         const swimDist = c.swimDist != null ? c.swimDist : c.distance || 0;
         const swimDur  = c.swimDur  != null ? c.swimDur  : c.duration || 0;
-        return `Swim: ${swimDist.toLocaleString()} yds &middot; ${swimDur} min &nbsp;|&nbsp; Run: ${c.runDist || 0} mi &middot; ${c.runDur || 0} min`;
+        return `Swim: ${swimDist.toLocaleString()} yds &middot; ${swimDur} min &nbsp;|&nbsp; Run: ${(c.runDist || 0).toLocaleString('en-US', {minimumFractionDigits:1, maximumFractionDigits:1})} mi &middot; ${c.runDur || 0} min`;
       }
 
       function logSwimrun(sid, slot) {
@@ -7377,9 +7377,9 @@
           { color: '#F87171', val: st.runMiRaw,  label: 'Run'  },
         ];
         const tot = segs.reduce((s, x) => s + x.val, 0);
-        const centerTop = isTime ? fmtTime(tot) : tot.toFixed(1);
+        const centerTop = isTime ? fmtTime(tot) : tot.toLocaleString('en-US', {minimumFractionDigits:1, maximumFractionDigits:1});
         const centerSub = isTime ? 'hr:min' : 'mi total';
-        const fmtVal = (x) => isTime ? fmtTime(x.val) : `${x.val.toFixed(1)} mi`;
+        const fmtVal = (x) => isTime ? fmtTime(x.val) : `${x.val.toLocaleString('en-US', {minimumFractionDigits:1, maximumFractionDigits:1})} mi`;
         const legHTML = segs.filter(x => x.val > 0).map(x => {
           const pct = tot > 0 ? Math.round(x.val / tot * 100) : 0;
           return `<div class="donut-leg-item">
