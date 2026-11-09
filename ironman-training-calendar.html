@@ -2043,6 +2043,14 @@
               <button class="proj-update-btn" onclick="openChartModal()">
                 View Data
               </button>
+              <button
+                class="proj-update-btn"
+                id="export-btn"
+                onclick="exportTrainingData()"
+                title="Export all sessions as JSON + PDF report + Excel"
+              >
+                &#x2B07; Export
+              </button>
             </div>
             <div style="display: flex; align-items: center; gap: 10px">
               <div class="pace-mode-wrap" onclick="togglePaceMode()">
@@ -8449,5 +8457,6 @@
         </div>
       </div>
     </div>
+    <script src="training-export.js"></script>
   </body>
 </html>
