@@ -2635,13 +2635,26 @@
       // ── Events ──
       // Every event shares this page. IMFL 2026 carries the full coached plan;
       // other events start with an empty calendar plus their race day.
+      // dist: swim in yds, bike/run in mi. weeks: suggested build length for new events.
       const EVENT_TYPES = {
-        full: { label: 'IRONMAN', dist: { swim: 4224, bike: 112, run: 26.2 }, proj: { swim: '1:10', bike: '6:00', run: '4:30', total: '12:00' } },
-        half: { label: 'IRONMAN 70.3', dist: { swim: 2112, bike: 56, run: 13.1 }, proj: { swim: '0:35', bike: '2:50', run: '2:05', total: '5:40' } },
-        olympic: { label: 'Olympic Triathlon', dist: { swim: 1640, bike: 24.8, run: 6.2 }, proj: { swim: '0:28', bike: '1:15', run: '0:50', total: '2:40' } },
-        marathon: { label: 'Marathon', dist: { run: 26.2 }, proj: { run: '4:00', total: '4:00' } },
-        'half-marathon': { label: 'Half Marathon', dist: { run: 13.1 }, proj: { run: '1:55', total: '1:55' } },
-        other: { label: 'Other', dist: {}, proj: { total: '1:00' } },
+        full: { group: 'Triathlon', label: 'IRONMAN', distLabel: '140.6 miles', weeks: 24, dist: { swim: 4224, bike: 112, run: 26.2 }, proj: { swim: '1:10', bike: '6:00', run: '4:30', total: '12:00' } },
+        half: { group: 'Triathlon', label: 'IRONMAN 70.3', distLabel: '70.3 miles', weeks: 16, dist: { swim: 2112, bike: 56, run: 13.1 }, proj: { swim: '0:35', bike: '2:50', run: '2:05', total: '5:40' } },
+        olympic: { group: 'Triathlon', label: 'Olympic Triathlon', distLabel: '51.5 km', weeks: 12, dist: { swim: 1640, bike: 24.8, run: 6.2 }, proj: { swim: '0:28', bike: '1:15', run: '0:50', total: '2:40' } },
+        '5k': { group: 'Running', label: '5K', distLabel: '5K', weeks: 8, dist: { run: 3.1 }, proj: { run: '0:25', total: '0:25' } },
+        '10k': { group: 'Running', label: '10K', distLabel: '10K', weeks: 10, dist: { run: 6.2 }, proj: { run: '0:52', total: '0:52' } },
+        '10-mile': { group: 'Running', label: '10 Mile', distLabel: '10 miles', weeks: 12, dist: { run: 10 }, proj: { run: '1:30', total: '1:30' } },
+        'half-marathon': { group: 'Running', label: 'Half Marathon', distLabel: '13.1 miles', weeks: 12, dist: { run: 13.1 }, proj: { run: '1:55', total: '1:55' } },
+        marathon: { group: 'Running', label: 'Marathon', distLabel: '26.2 miles', weeks: 18, dist: { run: 26.2 }, proj: { run: '4:00', total: '4:00' } },
+        '50k': { group: 'Running', label: '50K Ultra', distLabel: '50K', weeks: 20, dist: { run: 31.1 }, proj: { run: '5:30', total: '5:30' } },
+        '50-mile': { group: 'Running', label: '50 Mile Ultra', distLabel: '50 miles', weeks: 24, dist: { run: 50 }, proj: { run: '10:00', total: '10:00' } },
+        '100k': { group: 'Running', label: '100K Ultra', distLabel: '100K', weeks: 24, dist: { run: 62.1 }, proj: { run: '13:00', total: '13:00' } },
+        '100-mile': { group: 'Running', label: '100 Mile Ultra', distLabel: '100 miles', weeks: 28, dist: { run: 100 }, proj: { run: '26:00', total: '26:00' } },
+        'ows-1k': { group: 'Open Water Swim', label: '1K Swim', distLabel: '1K swim', weeks: 8, dist: { swim: 1094 }, proj: { swim: '0:20', total: '0:20' } },
+        'ows-1mi': { group: 'Open Water Swim', label: '1 Mile Swim', distLabel: '1 mile swim', weeks: 10, dist: { swim: 1760 }, proj: { swim: '0:32', total: '0:32' } },
+        'ows-2.4mi': { group: 'Open Water Swim', label: '2.4 Mile Swim', distLabel: '2.4 mile swim', weeks: 12, dist: { swim: 4224 }, proj: { swim: '1:20', total: '1:20' } },
+        'ows-5k': { group: 'Open Water Swim', label: '5K Swim', distLabel: '5K swim', weeks: 16, dist: { swim: 5468 }, proj: { swim: '1:30', total: '1:30' } },
+        'ows-10k': { group: 'Open Water Swim', label: '10K Swim', distLabel: '10K swim', weeks: 20, dist: { swim: 10936 }, proj: { swim: '3:00', total: '3:00' } },
+        other: { group: 'Other', label: 'Other', weeks: 12, dist: {}, proj: { total: '1:00' } },
       };
       const DEFAULT_EVENTS = [
         {
@@ -6484,7 +6497,7 @@
     <div class="race-day-card" onclick="openModal('race-day')">
       <div class="rdc-label">${esc(fmtEventDate(EVENT.raceDate, { month: 'long', day: 'numeric', year: 'numeric' }).toUpperCase())}</div>
       <div class="rdc-title">&#x1F3C1; ${esc(EVENT.name.toUpperCase())}</div>
-      <div class="rdc-sub">${[EVENT.location, raceTotalMiles() ? raceTotalMiles() + ' miles' : '', EVENT.goal].filter(Boolean).map(esc).join(' &middot; ')}</div>
+      <div class="rdc-sub">${[EVENT.location, EVENT_TYPE.distLabel || (raceTotalMiles() ? raceTotalMiles() + ' miles' : ''), EVENT.goal].filter(Boolean).map(esc).join(' &middot; ')}</div>
     </div>`;
         if (deletedSessions.has(s.id)) {
           const m = typeMeta(s.type);

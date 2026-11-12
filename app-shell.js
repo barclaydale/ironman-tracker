@@ -301,7 +301,6 @@ function switchEvent(id) {
 }
 
 // ── Add / edit events ──
-const DEFAULT_BUILD_WEEKS = { full: 24, half: 16, olympic: 12, marathon: 18, 'half-marathon': 12, other: 12 };
 function slugify(str) {
   return (
     String(str)
@@ -316,8 +315,17 @@ function openEventModal(id) {
   // IMFL's dates and type are baked into its coached plan
   const fixed = ev && ev.id === 'imfl-2026';
   const v = ev || { name: '', type: 'full', raceDate: '', startDate: '', location: '', goal: '' };
-  const typeOpts = Object.entries(EVENT_TYPES)
-    .map(([k, t]) => `<option value="${k}"${k === v.type ? ' selected' : ''}>${esc(t.label)}</option>`)
+  const groups = [...new Set(Object.values(EVENT_TYPES).map((t) => t.group))];
+  const typeOpts = groups
+    .map(
+      (g) =>
+        `<optgroup label="${esc(g)}">` +
+        Object.entries(EVENT_TYPES)
+          .filter(([, t]) => t.group === g)
+          .map(([k, t]) => `<option value="${k}"${k === v.type ? ' selected' : ''}>${esc(t.label)}</option>`)
+          .join('') +
+        '</optgroup>',
+    )
     .join('');
   const m = shellModal(
     ev ? 'Edit event' : 'New event',
@@ -343,7 +351,7 @@ function openEventModal(id) {
   const suggest = () => {
     const race = document.getElementById('ev-race').value;
     if (startTouched || !race) return;
-    startEl.value = addDays(race, -7 * DEFAULT_BUILD_WEEKS[document.getElementById('ev-type').value]);
+    startEl.value = addDays(race, -7 * (EVENT_TYPES[document.getElementById('ev-type').value] || EVENT_TYPES.other).weeks);
   };
   document.getElementById('ev-race').addEventListener('input', suggest);
   document.getElementById('ev-type').addEventListener('change', suggest);
