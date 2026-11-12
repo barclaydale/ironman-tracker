@@ -16,9 +16,15 @@ remembered per device).
 
 ## Moving existing data in
 
-On the old site (or wherever your data lives): **Export**. On the Vercel site:
-open the sidebar, **Unlock**, then **Import** and pick the exported
-`*-raw-data.json` (or the whole `.zip`). The file knows which event it belongs to.
+**⚙ Settings** (Training Totals header, or the sidebar) works on the event you're viewing:
+
+- **Export** – PDF report + Excel + raw JSON for that event.
+- **Upload…** – pick an export's `*-raw-data.json` (or the export `.zip`). It shows
+  what's in the file, then replaces that event's training with it.
+
+To move from the old GitHub Pages site: export there, then on the Vercel site
+open IRONMAN Florida 2026 → Settings → Upload… and choose that file (you'll be
+asked to unlock).
 
 ## Local development
 

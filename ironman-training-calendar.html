@@ -263,6 +263,72 @@
       .ev-form .proj-inp:disabled {
         opacity: 0.5;
       }
+      .sb-settings {
+        margin: 0 16px 8px;
+        padding: 8px;
+        border: none;
+        border-radius: 8px;
+        background: none;
+        color: var(--muted);
+        font-size: 14px;
+        font-family: var(--body);
+        text-align: left;
+        cursor: pointer;
+      }
+      .sb-settings:hover {
+        background: var(--s2);
+        color: var(--text);
+      }
+      .set-card {
+        margin-top: 14px;
+        padding: 14px;
+        border: 1px solid var(--border2);
+        border-radius: 8px;
+      }
+      .set-card h3 {
+        font-size: 15px;
+        font-weight: 600;
+        color: var(--text);
+      }
+      .set-card p {
+        margin: 4px 0 12px;
+        font-size: 13px;
+        line-height: 1.5;
+        color: var(--muted);
+      }
+      .set-card strong,
+      .shell-msg strong {
+        color: var(--text);
+      }
+      .set-file {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        margin-top: 14px;
+        font-size: 12px;
+        color: var(--muted);
+      }
+      .set-file input {
+        font-size: 13px;
+        color: var(--text);
+      }
+      .set-preview {
+        margin-top: 12px;
+        padding: 10px 12px;
+        border: 1px solid var(--border2);
+        border-radius: 6px;
+        background: var(--s2);
+        font-size: 13px;
+        line-height: 1.5;
+        color: var(--text);
+      }
+      .set-warn {
+        color: var(--bike);
+      }
+      .log-btn:disabled {
+        opacity: 0.5;
+        cursor: default;
+      }
       .shell-msg {
         font-size: 13px;
         color: var(--muted);
@@ -2076,6 +2142,7 @@
       </div>
       <div class="sb-list" id="sb-list"></div>
       <button class="sb-add" onclick="openEventModal()">+ New event</button>
+      <button class="sb-settings" onclick="openSettings()">&#x2699; Settings</button>
       <div class="sb-foot">
         <div class="sb-sync" id="sb-sync"></div>
         <button class="proj-update-btn" id="sb-lock-btn" onclick="toggleLock()"></button>
@@ -2257,19 +2324,10 @@
               </button>
               <button
                 class="proj-update-btn"
-                id="export-btn"
-                onclick="exportTrainingData()"
-                title="Export all sessions as JSON + PDF report + Excel"
+                onclick="openSettings()"
+                title="Export, back up or upload your training data"
               >
-                &#x2B07; Export
-              </button>
-              <button
-                class="proj-update-btn"
-                id="import-btn"
-                onclick="openImportPicker()"
-                title="Import a training export (.json or .zip) into this event"
-              >
-                &#x2B06; Import
+                &#x2699; Settings
               </button>
             </div>
           </div>

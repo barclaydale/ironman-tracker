@@ -1,4 +1,4 @@
-// ── App shell: event sidebar, cloud sync, passcode lock, import ──
+// ── App shell: event sidebar, cloud sync, passcode lock, event settings (export / upload) ──
 // On Vercel the page saves each event to /api/state (Upstash Redis). With no API
 // (opened from disk, GitHub Pages) everything keeps working from localStorage.
 // Relies on globals from the main script (EVENT, EVENTS, completions, ...).
@@ -245,10 +245,10 @@ async function ensureEditable() {
 }
 
 // ── Small modal helper (reuses the projection modal styles) ──
-function shellModal(title, bodyHTML, actions) {
+function shellModal(title, bodyHTML, actions, width = 420) {
   const root = document.createElement('div');
   root.className = 'proj-modal-overlay';
-  root.innerHTML = `<div class="proj-modal" style="width:min(420px,92vw)">
+  root.innerHTML = `<div class="proj-modal" style="width:min(${width}px,92vw)">
     <div class="proj-modal-hdr"><div style="font-family:var(--oswald);font-size:21px;font-weight:700;letter-spacing:0.04em">${esc(title)}</div>
     <button class="sb-close" aria-label="Close">&#x2715;</button></div>
     <div class="proj-modal-body">${bodyHTML}</div>
@@ -262,6 +262,8 @@ function shellModal(title, bodyHTML, actions) {
     b.className = a.primary ? 'log-btn' : 'proj-update-btn';
     if (a.primary) b.style.marginLeft = 'auto';
     if (a.danger) b.style.color = 'var(--run)';
+    if (a.id) b.id = a.id;
+    if (a.disabled) b.disabled = true;
     b.textContent = a.label;
     b.onclick = a.onClick;
     bar.appendChild(b);
@@ -417,14 +419,45 @@ async function deleteEvent(ev, m) {
   else renderSidebar();
 }
 
-// ── Import (from the Export button's raw-data JSON, or its .zip) ──
-function openImportPicker() {
-  const inp = document.createElement('input');
-  inp.type = 'file';
-  inp.accept = '.json,.zip,application/json,application/zip';
-  inp.onchange = () => inp.files[0] && importFile(inp.files[0]).catch((e) => alert('Import failed: ' + e.message));
-  inp.click();
+// ── Settings for the event being viewed: export it, or upload a file into it ──
+// Mirrors coaching-dash's Settings page: download/upload sections, and an upload
+// dialog that shows what's in the file before anything gets replaced.
+
+function openSettings() {
+  toggleSidebar(false);
+  const editNote =
+    shell.mode === 'cloud'
+      ? shell.locked
+        ? 'View only on this device — uploading will ask for your passcode.'
+        : 'Unlocked on this device · changes save to the cloud.'
+      : 'This copy saves to this browser only.';
+  const m = shellModal(
+    `${EVENT.name} · Settings`,
+    `<p class="shell-msg">${esc(editNote)}</p>
+     <section class="set-card">
+       <h3>Export ${esc(EVENT.name)}</h3>
+       <p>A folder with a PDF report (session log, weekly charts and tables, key insights),
+       an Excel workbook and the raw data JSON for this event. Upload the JSON later to restore it.</p>
+       <button class="log-btn" id="export-btn" onclick="exportTrainingData()">Export</button>
+     </section>
+     <section class="set-card">
+       <h3>Upload to ${esc(EVENT.name)}</h3>
+       <p>Restore from an export downloaded above. <strong>This replaces all training saved
+       for ${esc(EVENT.name)}</strong> with what's in the file. Your other events aren't touched.</p>
+       <button class="proj-update-btn" onclick="openUploadModal()">Upload…</button>
+     </section>
+     <p class="shell-err" id="set-msg" role="status"></p>`,
+    [{ label: 'Close', onClick: () => m.close() }],
+    520,
+  );
 }
+function settingsMsg(text, ok) {
+  const el = document.getElementById('set-msg');
+  if (!el) return alert(text);
+  el.textContent = text;
+  el.style.color = ok ? '#2fc87a' : 'var(--run)';
+}
+
 async function readExportFile(file) {
   if (/\.zip$/i.test(file.name) || /zip/.test(file.type)) {
     await exLoadScript(EX_LIBS.jszip);
@@ -434,52 +467,109 @@ async function readExportFile(file) {
     if (!entry) throw new Error('No .json export found inside the zip');
     return JSON.parse(await entry.async('string'));
   }
-  return JSON.parse(await file.text());
+  try {
+    return JSON.parse(await file.text());
+  } catch (e) {
+    throw new Error("That file isn't valid JSON.");
+  }
 }
-async function importFile(file) {
-  const data = await readExportFile(file);
-  const raw = data && data.raw;
-  if (!raw || typeof raw.completions !== 'object') throw new Error("This doesn't look like a training export (no raw data)");
-  // Exports name their event; the first export format only had race info (IMFL 2026)
-  const fileEvent =
-    data.event || (data.race && data.race.date === '2026-11-07' ? DEFAULT_EVENTS[0] : null);
-  const target = fileEvent ? EVENTS.find((e) => e.id === fileEvent.id) || fileEvent : EVENT;
-  const isNew = !EVENTS.some((e) => e.id === target.id);
-  const nLogged =
-    Object.keys(raw.completions || {}).length +
-    Object.values(raw.customWorkouts || {}).filter((w) => w.done).length;
-  const when = data.exportedAt ? new Date(data.exportedAt).toLocaleDateString('en-US', { dateStyle: 'medium' }) : 'unknown date';
-  const msg =
-    `Import ${nLogged} logged sessions (exported ${when}) into "${target.name}"?` +
-    (isNew ? '\n\nThis event will be added to your events.' : `\n\nThis replaces all training data currently saved for "${target.name}".`);
-  if (!confirm(msg)) return;
-  if (!(await ensureEditable())) return;
-
-  const st = {
+function countLogged(st) {
+  return (
+    Object.keys(st.completions || {}).length +
+    Object.values(st.customWorkouts || {}).filter((w) => w.done).length
+  );
+}
+function stateFromRaw(raw) {
+  return {
     completions: raw.completions || {},
     positions: raw.positions || {},
     customWorkouts: raw.customWorkouts || {},
     deletedSessions: raw.deletedSessions || [],
     projections: raw.projections,
   };
-  if (isNew) {
-    EVENTS = [...EVENTS, target];
-    saveEventsLocal();
-    if (shell.mode === 'cloud') await pushEvents();
+}
+// Checks the file and describes what uploading it would do, without changing anything
+function describeUpload(data) {
+  const raw = data && data.raw;
+  if (!raw || typeof raw.completions !== 'object')
+    throw new Error("This isn't a training export from this site.");
+  const when = data.exportedAt ? ` on ${new Date(data.exportedAt).toLocaleDateString()}` : '';
+  // Exports name their event; the first export format only had race info (IMFL 2026)
+  const from = data.event || (data.race && data.race.date === '2026-11-07' ? DEFAULT_EVENTS[0] : null);
+  const other = from && from.id !== EVENT.id;
+  return {
+    summary: `${other ? from.name : EVENT.name}: ${countLogged(raw)} logged sessions${when}.`,
+    warning:
+      (other ? `This was exported from “${from.name}”, not the event you're viewing. ` : '') +
+      `It will replace all training saved for “${EVENT.name}”.`,
+    apply: () => uploadIntoEvent(stateFromRaw(raw)),
+  };
+}
+async function uploadIntoEvent(st) {
+  applyEventState(st);
+  if (shell.mode === 'cloud') {
+    await pushState();
+    if (shell.error) throw new Error(shell.error);
   }
-  if (target.id === EVENT.id) {
-    applyEventState(st);
-    if (shell.mode === 'cloud') {
-      await pushState();
-      if (shell.error) throw new Error(shell.error);
+  return `Replaced ${EVENT.name} with ${countLogged(st)} logged sessions.`;
+}
+
+function openUploadModal() {
+  let plan = null;
+  const m = shellModal(
+    `Upload to ${EVENT.name}`,
+    `<p class="shell-msg">Choose a file from Settings → Export (<code>…-raw-data.json</code> or the
+     export <code>.zip</code>). You’ll see what’s in it before anything changes.
+     <strong>Replacing can’t be undone.</strong></p>
+     <label class="set-file"><span>File</span>
+       <input type="file" id="up-file" accept=".json,.zip,application/json,application/zip" /></label>
+     <div class="set-preview" id="up-preview" hidden></div>
+     <p class="shell-err" id="up-err" role="alert"></p>`,
+    [
+      { label: 'Cancel', onClick: () => m.close() },
+      {
+        label: 'Replace my data',
+        primary: true,
+        id: 'up-go',
+        disabled: true,
+        onClick: async () => {
+          if (!plan || !(await ensureEditable())) return;
+          const go = document.getElementById('up-go');
+          go.disabled = true;
+          go.textContent = 'Replacing…';
+          try {
+            const summary = await plan.apply();
+            m.close();
+            settingsMsg(summary, true);
+          } catch (e) {
+            document.getElementById('up-err').textContent = 'Upload failed: ' + e.message;
+            go.disabled = false;
+            go.textContent = 'Replace my data';
+          }
+        },
+      },
+    ],
+    480,
+  );
+  document.getElementById('up-file').addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    const prev = document.getElementById('up-preview');
+    const err = document.getElementById('up-err');
+    const go = document.getElementById('up-go');
+    plan = null;
+    go.disabled = true;
+    prev.hidden = true;
+    err.textContent = '';
+    if (!file) return;
+    try {
+      plan = describeUpload(await readExportFile(file));
+      prev.innerHTML = `<strong>${esc(file.name)}</strong>: ${esc(plan.summary)}<br><span class="set-warn">${esc(plan.warning)}</span>`;
+      prev.hidden = false;
+      go.disabled = false;
+    } catch (ex) {
+      err.textContent = ex.message;
     }
-    alert(`Imported ${nLogged} sessions into "${target.name}".`);
-    return;
-  }
-  writeLocalState(lsPrefixFor(target.id), st);
-  if (shell.mode === 'cloud')
-    await api('state?event=' + encodeURIComponent(target.id), { method: 'PUT', body: JSON.stringify({ state: st }) });
-  switchEvent(target.id);
+  });
 }
 
 if (localStorage.getItem(SB_KEY)) document.body.classList.add('sb-open');
