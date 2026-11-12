@@ -1,0 +1,14 @@
+{
+  "name": "training-tracker",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node dev-server.mjs"
+  },
+  "dependencies": {
+    "@upstash/redis": "^1.41.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

@@ -1,0 +1,3 @@
+{
+  "rewrites": [{ "source": "/", "destination": "/ironman-training-calendar.html" }]
+}

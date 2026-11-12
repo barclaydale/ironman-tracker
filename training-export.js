@@ -1,8 +1,8 @@
 // ── Training export ──
-// Builds a dated export folder with three files:
-//   imfl-2026-raw-data.json        raw localStorage state + normalized sessions/weeks/insights
-//   imfl-2026-training-report.pdf  session log, weekly charts + tables, key insights
-//   imfl-2026-training-data.xlsx   same data as sortable/filterable sheets
+// Builds a dated export folder for the active event with three files:
+//   <event>-raw-data.json        raw saved state + normalized sessions/weeks/insights (re-importable)
+//   <event>-training-report.pdf  session log, weekly charts + tables, key insights
+//   <event>-training-data.xlsx   same data as sortable/filterable sheets
 // Chromium browsers write a real folder via the File System Access API;
 // everything else gets a .zip containing that folder.
 // Relies on globals from the main script (PLAN, completions, customWorkouts, ...).
@@ -14,8 +14,8 @@ const EX_LIBS = {
   xlsx: 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js',
   jszip: 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js',
 };
-const EX_START = '2026-05-23';
-const EX_RACE_DIST = { swim: 4224, bike: 112, run: 26.2 }; // yds, mi, mi
+const EX_START = EVENT.startDate;
+const EX_RACE_DIST = EVENT_TYPE.dist; // yds, mi, mi — only the disciplines this event has
 // Print palette (validated on white): swim, bike, run, other
 const EX_COLOR = {
   swim: '#0284c7',
@@ -79,7 +79,7 @@ function exWeekOf(dateStr) {
   return Math.floor(diff / 7) + 1;
 }
 function exPhaseOf(wk) {
-  if (wk >= 25) return 'Race';
+  if (wk > TRAINING_WEEKS) return 'Race';
   const ph = PHASE_CONFIG.find((p) => p.weeks.includes(wk));
   return ph ? ph.name : '';
 }
@@ -223,7 +223,7 @@ function exCollect() {
 }
 
 function exWeekly(rows, sessions) {
-  const maxWk = Math.min(25, Math.max(1, ...rows.map((r) => r.week)));
+  const maxWk = Math.min(RACE_WEEK, Math.max(1, ...rows.map((r) => r.week)));
   const weeks = [];
   let cum = { swim: 0, bike: 0, run: 0 };
   for (let w = 1; w <= maxWk; w++) {
@@ -271,8 +271,7 @@ function exWeekly(rows, sessions) {
     wk.cumSwim = cum.swim;
     wk.cumBike = cum.bike;
     wk.cumRun = cum.run;
-    const t = PACE_TARGETS[Math.min(w, 24)];
-    wk.target = t ? { bench: t.bench, plan: t.plan } : null;
+    wk.target = PACE_TARGETS[Math.min(w, TRAINING_WEEKS)] || null;
     weeks.push(wk);
   }
   weeks.forEach((wk, i) => {
@@ -345,11 +344,11 @@ function exInsights(rows, sessions, weeks) {
   ].forEach(([m, label, unit]) => {
     const r = byMod(m).reduce((a, b) => ((b.distance || 0) > (a?.distance || 0) ? b : a), null);
     if (!r || !r.distance) return;
-    const pct = (r.distance / EX_RACE_DIST[m]) * 100;
+    const pct = EX_RACE_DIST[m] ? (r.distance / EX_RACE_DIST[m]) * 100 : null;
     out.push({
       title: label,
       value: `${exNum(r.distance, m === 'swim' ? 0 : 1)} ${unit}`,
-      detail: `${exFmtDate(r.date, { weekday: 'short', month: 'short', day: 'numeric' })} in ${exHM(r.minutes)} - ${exNum(pct)}% of race distance.`,
+      detail: `${exFmtDate(r.date, { weekday: 'short', month: 'short', day: 'numeric' })} in ${exHM(r.minutes)}` + (pct != null ? ` - ${exNum(pct)}% of race distance.` : '.'),
     });
     bench.push([label, `${exNum(r.distance, m === 'swim' ? 0 : 1)} ${unit} (${exHM(r.minutes)})`]);
   });
@@ -440,7 +439,7 @@ function exInsights(rows, sessions, weeks) {
   // Where the time went vs where race-day time goes
   const modMin = (m) => byMod(m).reduce((t, r) => t + r.minutes, 0);
   const tri = modMin('swim') + modMin('bike') + modMin('run');
-  if (tri) {
+  if (tri && eventHas('swim') && eventHas('bike') && eventHas('run')) {
     const pj = ['swim', 'bike', 'run'].map((k) => parseTimeToMins((projections[k] || PROJ_DEFAULTS[k]).time));
     const pjT = pj.reduce((a, b) => a + b, 0) || 1;
     const pc = (v, t) => exNum((v / t) * 100) + '%';
@@ -454,7 +453,7 @@ function exInsights(rows, sessions, weeks) {
   // Hours per phase
   const phases = {};
   weeks.forEach((w) => {
-    if (w.week > 24) return; // race week isn't a training phase
+    if (w.week > TRAINING_WEEKS) return; // race week isn't a training phase
     if (!phases[w.phase]) phases[w.phase] = { min: 0, n: 0 };
     phases[w.phase].min += w.totalMin;
     phases[w.phase].n++;
@@ -471,13 +470,13 @@ function exInsights(rows, sessions, weeks) {
   });
 
   // Cumulative volume vs plan targets at the last training week
-  const lastTgt = [...weeks].reverse().find((w) => w.target && w.week <= 24);
+  const lastTgt = [...weeks].reverse().find((w) => w.target && w.week <= TRAINING_WEEKS);
   if (lastTgt) {
-    const t = lastTgt.target.plan;
+    const t = lastTgt.target;
     out.push({
       title: `Volume vs plan (thru wk ${lastTgt.week})`,
       value: `${exNum((lastTgt.cumSwim / t.swim) * 100)}% / ${exNum((lastTgt.cumBike / t.bike) * 100)}% / ${exNum((lastTgt.cumRun / t.run) * 100)}%`,
-      detail: `Swim / bike / run cumulative volume vs plan target - swim ${exNum((lastTgt.cumSwim / t.swim) * 100)}%, bike ${exNum((lastTgt.cumBike / t.bike) * 100)}%, run ${exNum((lastTgt.cumRun / t.run) * 100)}%. Vs benchmark target - swim ${exNum((lastTgt.cumSwim / lastTgt.target.bench.swim) * 100)}%, bike ${exNum((lastTgt.cumBike / lastTgt.target.bench.bike) * 100)}%, run ${exNum((lastTgt.cumRun / lastTgt.target.bench.run) * 100)}%.`,
+      detail: `Swim / bike / run cumulative volume vs plan target - swim ${exNum((lastTgt.cumSwim / t.swim) * 100)}%, bike ${exNum((lastTgt.cumBike / t.bike) * 100)}%, run ${exNum((lastTgt.cumRun / t.run) * 100)}%.`,
     });
   }
 
@@ -718,7 +717,7 @@ function exHeatmap(sessions, weeks) {
     top = 28,
     cols = weeks.length;
   const cell = Math.min(22, (W - left - 10) / cols);
-  const dows = ['Sat', 'Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
+  const dows = DAYS.map((d) => d[0] + d.slice(1).toLowerCase());
   ctx.font = font(9);
   ctx.textBaseline = 'middle';
   dows.forEach((d, r) => {
@@ -830,10 +829,10 @@ function exBuildPdf(data) {
   doc.setTextColor(255);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(34);
-  T('IRONMAN FLORIDA 2026', M, 92);
+  T(EVENT.name.toUpperCase(), M, 92);
   doc.setFontSize(16);
   doc.setFont('helvetica', 'normal');
-  T('Training Export  |  Panama City Beach  |  Nov 7, 2026', M, 122);
+  T(['Training Export', EVENT.location, exFmtDate(EVENT.raceDate, { month: 'short', day: 'numeric', year: 'numeric' })].filter(Boolean).join('  |  '), M, 122);
   doc.setFontSize(10);
   doc.setTextColor(170);
   T(
@@ -975,7 +974,7 @@ function exBuildPdf(data) {
   );
 
   doc.addPage();
-  const tgt = (m, kind) => weeks.map((w) => (w.target ? w.target[kind][m] : null));
+  const tgt = (m) => weeks.map((w) => (w.target ? w.target[m] : null));
   stackOf3(
     sub('Cumulative distance vs targets', 56),
     [
@@ -986,25 +985,24 @@ function exBuildPdf(data) {
       kind: 'line', title: t, yFmt: f,
       series: [
         { name: 'Actual', color: col, data: weeks.map((w) => w[k]) },
-        { name: 'Plan target', color: EX_COLOR.target, dash: [5, 3], data: tgt(m, 'plan') },
-        { name: 'Bench target', color: '#a3a3a3', dash: [2, 3], data: tgt(m, 'bench') },
+        ...(PACE_TARGETS.length > 1 ? [{ name: 'Plan target', color: EX_COLOR.target, dash: [5, 3], data: tgt(m) }] : []),
       ],
     })),
   );
   const pct = (a, b) => (b ? exNum((a / b) * 100) + '%' : '-');
   tablePage(
     'Cumulative distance vs targets',
-    ['Week', 'Swim yds', 'Plan', 'Bench', '% plan', 'Bike mi', 'Plan', 'Bench', '% plan', 'Run mi', 'Plan', 'Bench', '% plan'],
+    ['Week', 'Swim yds', 'Plan', '% plan', 'Bike mi', 'Plan', '% plan', 'Run mi', 'Plan', '% plan'],
     weeks.map((w) => {
       const t = w.target;
       return [
         w.week,
-        exNum(w.cumSwim), t ? exNum(t.plan.swim) : '-', t ? exNum(t.bench.swim) : '-', t ? pct(w.cumSwim, t.plan.swim) : '-',
-        exNum(w.cumBike, 1), t ? exNum(t.plan.bike, 1) : '-', t ? exNum(t.bench.bike, 1) : '-', t ? pct(w.cumBike, t.plan.bike) : '-',
-        exNum(w.cumRun, 1), t ? exNum(t.plan.run, 1) : '-', t ? exNum(t.bench.run, 1) : '-', t ? pct(w.cumRun, t.plan.run) : '-',
+        exNum(w.cumSwim), t ? exNum(t.swim) : '-', t ? pct(w.cumSwim, t.swim) : '-',
+        exNum(w.cumBike, 1), t ? exNum(t.bike, 1) : '-', t ? pct(w.cumBike, t.bike) : '-',
+        exNum(w.cumRun, 1), t ? exNum(t.run, 1) : '-', t ? pct(w.cumRun, t.run) : '-',
       ];
     }),
-    { styles: { ...tableBase.styles, halign: 'right' }, columnStyles: { 1: { fontStyle: 'bold' }, 5: { fontStyle: 'bold' }, 9: { fontStyle: 'bold' } } },
+    { styles: { ...tableBase.styles, halign: 'right' }, columnStyles: { 1: { fontStyle: 'bold' }, 4: { fontStyle: 'bold' }, 7: { fontStyle: 'bold' } } },
   );
 
   doc.addPage();
@@ -1097,13 +1095,13 @@ function exBuildPdf(data) {
   y = img(
     exChart({
       w: 720, h: 220, kind: 'line', title: 'Longest session vs race distance',
-      subtitle: 'Swim 2.4 mi (4,224 yds) | Bike 112 mi | Run 26.2 mi', labels,
+      subtitle: [eventHas('swim') && `Swim ${exNum(EX_RACE_DIST.swim)} yds`, eventHas('bike') && `Bike ${EX_RACE_DIST.bike} mi`, eventHas('run') && `Run ${EX_RACE_DIST.run} mi`].filter(Boolean).join(' | '), labels,
       yFmt: (v) => exNum(v) + '%', refLine: 100, refLabel: 'Race distance',
       series: [
-        { name: 'Swim', color: EX_COLOR.swim, data: weeks.map((w) => (w.longestSwim ? (w.longestSwim / EX_RACE_DIST.swim) * 100 : null)) },
-        { name: 'Bike', color: EX_COLOR.bike, data: weeks.map((w) => (w.longestRide ? (w.longestRide / EX_RACE_DIST.bike) * 100 : null)) },
-        { name: 'Run', color: EX_COLOR.run, data: weeks.map((w) => (w.longestRun ? (w.longestRun / EX_RACE_DIST.run) * 100 : null)) },
-      ],
+        { name: 'Swim', key: 'swim', color: EX_COLOR.swim, data: weeks.map((w) => (w.longestSwim ? (w.longestSwim / EX_RACE_DIST.swim) * 100 : null)) },
+        { name: 'Bike', key: 'bike', color: EX_COLOR.bike, data: weeks.map((w) => (w.longestRide ? (w.longestRide / EX_RACE_DIST.bike) * 100 : null)) },
+        { name: 'Run', key: 'run', color: EX_COLOR.run, data: weeks.map((w) => (w.longestRun ? (w.longestRun / EX_RACE_DIST.run) * 100 : null)) },
+      ].filter((sr) => eventHas(sr.key)),
     }),
     M, y, PW - 2 * M,
   );
@@ -1122,7 +1120,7 @@ function exBuildPdf(data) {
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(8);
     doc.setTextColor(...rgb(EX_COLOR.muted));
-    T('IRONMAN Florida 2026 | Training Export', M, PH - 18);
+    T(`${EVENT.name} | Training Export`, M, PH - 18);
     T(`${p} / ${pages}`, PW - M, PH - 18, { align: 'right' });
   }
   return doc.output('blob');
@@ -1155,18 +1153,17 @@ function exBuildXlsx(data) {
   add(
     'Weekly',
     [
-      ['Week', 'Dates', 'Phase', 'Swim yds', 'Bike mi', 'Run mi', 'Swim min', 'Bike min', 'Run min', 'Other min', 'Total hrs', 'WoW %', 'Swim /100yd (min)', 'Bike mph', 'Run /mi (min)', 'Longest swim', 'Longest ride', 'Longest run', 'Cum swim', 'Cum bike', 'Cum run', 'Plan swim', 'Plan bike', 'Plan run', 'Bench swim', 'Bench bike', 'Bench run', 'Planned', 'Planned done', 'Extra', 'Completion %'],
+      ['Week', 'Dates', 'Phase', 'Swim yds', 'Bike mi', 'Run mi', 'Swim min', 'Bike min', 'Run min', 'Other min', 'Total hrs', 'WoW %', 'Swim /100yd (min)', 'Bike mph', 'Run /mi (min)', 'Longest swim', 'Longest ride', 'Longest run', 'Cum swim', 'Cum bike', 'Cum run', 'Plan swim', 'Plan bike', 'Plan run', 'Planned', 'Planned done', 'Extra', 'Completion %'],
       ...weeks.map((w) => [
         w.week, w.dates, w.phase, w.swimYds, r1(w.bikeMi), r1(w.runMi), w.swimMin, w.bikeMin, w.runMin, w.otherMin,
         exHrs(w.totalMin), r1(w.wowPct), r1(w.swimPace, 3), r1(w.bikeMph, 2), r1(w.runPace, 3),
         w.longestSwim || null, w.longestRide || null, w.longestRun || null,
         w.cumSwim, r1(w.cumBike), r1(w.cumRun),
-        w.target?.plan.swim ?? null, w.target?.plan.bike ?? null, w.target?.plan.run ?? null,
-        w.target?.bench.swim ?? null, w.target?.bench.bike ?? null, w.target?.bench.run ?? null,
+        w.target?.swim ?? null, w.target?.bike ?? null, w.target?.run ?? null,
         w.planned, w.plannedDone, w.extra, r1(w.completionPct),
       ]),
     ],
-    [6, 16, 13, ...Array(28).fill(11)],
+    [6, 16, 13, ...Array(25).fill(11)],
   );
   add('Insights', [['Insight', 'Value', 'Detail'], ...insights.map((i) => [i.title, i.value, i.detail])], [28, 26, 120]);
   add('Benchmarks', [['Benchmark', 'This build'], ...benchmarks], [28, 26]);
@@ -1181,9 +1178,9 @@ function exBuildJson(data) {
     [
       JSON.stringify(
         {
-          schema: 'imfl-training-export/1',
+          schema: 'imfl-training-export/2',
           exportedAt: new Date().toISOString(),
-          race: { name: 'IRONMAN Florida', date: '2026-11-07', location: 'Panama City Beach', trainingStart: EX_START },
+          event: EVENT,
           units: { swim: 'yds', bike: 'mi', run: 'mi', duration: 'minutes', swimPace: 'min per 100 yds', runPace: 'min per mi' },
           // Exactly what the tracker keeps in localStorage, so it can be restored later
           raw: {
@@ -1199,7 +1196,7 @@ function exBuildJson(data) {
           insights: data.insights,
           benchmarks: data.benchmarks,
           plan: PLAN.map(({ detail, ...s }) => s),
-          paceTargets: PACE_TARGETS.slice(1),
+          planTargets: PACE_TARGETS.slice(1),
         },
         null,
         2,
@@ -1212,12 +1209,12 @@ function exBuildJson(data) {
 async function exportTrainingData() {
   const btn = document.getElementById('export-btn');
   const label = btn ? btn.innerHTML : '';
-  const folder = `IMFL-2026-Training-Export_${localDate(0)}`;
+  const folder = `${EVENT.id}-training-export_${localDate(0)}`;
   // Ask for the destination first — the picker needs the click's user activation
   let dir = null;
   if (window.showDirectoryPicker) {
     try {
-      dir = await window.showDirectoryPicker({ id: 'imfl-export', mode: 'readwrite', startIn: 'documents' });
+      dir = await window.showDirectoryPicker({ id: 'training-export', mode: 'readwrite', startIn: 'documents' });
     } catch (e) {
       if (e.name === 'AbortError') return;
       dir = null;
@@ -1241,9 +1238,9 @@ async function exportTrainingData() {
     const { insights, benchmarks } = exInsights(rows, sessions, weeks);
     const data = { sessions, rows, weeks, insights, benchmarks };
     const files = {
-      'imfl-2026-raw-data.json': exBuildJson(data),
-      'imfl-2026-training-report.pdf': exBuildPdf(data),
-      'imfl-2026-training-data.xlsx': exBuildXlsx(data),
+      [`${EVENT.id}-raw-data.json`]: exBuildJson(data),
+      [`${EVENT.id}-training-report.pdf`]: exBuildPdf(data),
+      [`${EVENT.id}-training-data.xlsx`]: exBuildXlsx(data),
     };
     if (dir) {
       const sub = await dir.getDirectoryHandle(folder, { create: true });

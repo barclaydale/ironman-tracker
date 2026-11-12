@@ -3,13 +3,10 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>IRONMAN Florida 2026 · Training Calendar</title>
-    <link rel="icon" type="image/svg+xml" href="ironman-favicon.svg" />
-    <link
-      rel="apple-touch-icon"
-      id="apple-touch-icon"
-      href="ironman-favicon.svg"
-    />
+    <title>Training Calendar</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png" />
+    <link rel="icon" type="image/png" sizes="64x64" href="favicon-64.png" />
+    <link rel="apple-touch-icon" href="apple-touch-icon.png" />
     <style>
       @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600;700&display=swap');
       * {
@@ -57,6 +54,225 @@
         color: var(--text);
         font-size: 18px;
         min-height: 100vh;
+      }
+
+      /* ── Event sidebar ── */
+      .race-id {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        min-width: 0;
+      }
+      .sb-toggle {
+        position: relative;
+        flex-shrink: 0;
+        width: 36px;
+        height: 36px;
+        border: 1px solid var(--border2);
+        border-radius: 8px;
+        background: var(--s2);
+        color: var(--text);
+        font-size: 18px;
+        cursor: pointer;
+      }
+      .sb-toggle:hover {
+        border-color: #aaa;
+      }
+      .sync-dot {
+        position: absolute;
+        top: -3px;
+        right: -3px;
+        width: 9px;
+        height: 9px;
+        border-radius: 50%;
+        border: 2px solid var(--s1);
+        background: var(--dim);
+      }
+      .sync-dot.saved {
+        background: #2fc87a;
+      }
+      .sync-dot.pending {
+        background: #fbbf24;
+      }
+      .sync-dot.error {
+        background: var(--red);
+      }
+      .sidebar {
+        position: fixed;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        width: 272px;
+        max-width: 85vw;
+        z-index: 1001;
+        display: flex;
+        flex-direction: column;
+        background: var(--s1);
+        border-right: 1px solid var(--border2);
+        transform: translateX(-100%);
+        transition: transform 0.2s ease;
+      }
+      .sb-open .sidebar {
+        transform: none;
+      }
+      .sb-backdrop {
+        display: none;
+        position: fixed;
+        inset: 0;
+        z-index: 1000;
+        background: rgba(0, 0, 0, 0.55);
+      }
+      .sb-open .sb-backdrop {
+        display: block;
+      }
+      /* Wide screens: the open sidebar pushes the page instead of covering it */
+      @media (min-width: 1600px) {
+        body {
+          transition: padding-left 0.2s ease;
+        }
+        body.sb-open {
+          padding-left: 272px;
+        }
+        .sb-open .sb-backdrop {
+          display: none;
+        }
+      }
+      .sb-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 14px 16px;
+        border-bottom: 1px solid var(--border);
+      }
+      .sb-title {
+        font-family: var(--oswald);
+        font-size: 17px;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--red);
+      }
+      .sb-close {
+        background: none;
+        border: none;
+        color: var(--muted);
+        font-size: 16px;
+        cursor: pointer;
+      }
+      .sb-list {
+        flex: 1;
+        overflow-y: auto;
+        padding: 6px 8px;
+      }
+      .sb-group {
+        padding: 12px 8px 4px;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--dim);
+      }
+      .sb-item {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 9px 8px;
+        border-radius: 8px;
+        cursor: pointer;
+        border: 1px solid transparent;
+      }
+      .sb-item:hover {
+        background: var(--s2);
+      }
+      .sb-item.active {
+        background: var(--s2);
+        border-color: var(--red);
+      }
+      .sb-item-main {
+        flex: 1;
+        min-width: 0;
+      }
+      .sb-item-name {
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--text);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .sb-item-meta {
+        font-size: 12px;
+        color: var(--muted);
+      }
+      .sb-edit {
+        background: none;
+        border: none;
+        color: var(--dim);
+        font-size: 14px;
+        cursor: pointer;
+        padding: 4px;
+      }
+      .sb-item:hover .sb-edit {
+        color: var(--muted);
+      }
+      .sb-add {
+        margin: 8px 16px;
+        padding: 9px;
+        border: 1px dashed var(--border2);
+        border-radius: 8px;
+        background: none;
+        color: var(--muted);
+        font-size: 14px;
+        font-family: var(--body);
+        cursor: pointer;
+      }
+      .sb-add:hover {
+        color: var(--text);
+        border-color: #aaa;
+      }
+      .sb-foot {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        padding: 12px 16px;
+        border-top: 1px solid var(--border);
+      }
+      .sb-sync {
+        font-size: 12px;
+        color: var(--muted);
+        line-height: 1.35;
+      }
+      .ev-form {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px 10px;
+      }
+      .ev-form label {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        font-size: 12px;
+        color: var(--muted);
+      }
+      .ev-form label.wide {
+        grid-column: 1 / -1;
+      }
+      .ev-form .proj-inp {
+        font-family: var(--body);
+      }
+      .ev-form .proj-inp:disabled {
+        opacity: 0.5;
+      }
+      .shell-msg {
+        font-size: 13px;
+        color: var(--muted);
+        line-height: 1.5;
+      }
+      .shell-err {
+        color: var(--run);
+        font-size: 12px;
+        min-height: 16px;
+        margin-top: 8px;
       }
 
       /* ── Sticky nav ── */
@@ -393,50 +609,6 @@
         text-align: center;
         padding: 0 2px 3px;
         align-self: end;
-      }
-      .pace-mode-wrap {
-        display: flex;
-        align-items: center;
-        gap: 7px;
-        cursor: pointer;
-        user-select: none;
-      }
-      .pace-mode-lbl {
-        font-size: 12px;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.06em;
-        color: var(--dim);
-        transition: color 0.2s;
-      }
-      .pace-mode-lbl.active {
-        color: var(--red);
-      }
-      .toggle-track {
-        position: relative;
-        width: 40px;
-        height: 22px;
-        background: var(--border2);
-        border-radius: 99px;
-        transition: background 0.2s;
-        flex-shrink: 0;
-      }
-      .toggle-track.on {
-        background: var(--red);
-      }
-      .toggle-thumb {
-        position: absolute;
-        top: 3px;
-        left: 3px;
-        width: 16px;
-        height: 16px;
-        background: #fff;
-        border-radius: 50%;
-        transition: transform 0.2s;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
-      }
-      .toggle-track.on .toggle-thumb {
-        transform: translateX(18px);
       }
       .sg-lbl {
         font-family: var(--oswald);
@@ -1681,6 +1853,23 @@
         gap: 8px;
         padding: 0 16px 16px;
       }
+      .no-swim .proj-bar-item.swim,
+      .no-swim .sn-proj-item.swim,
+      .no-bike .proj-bar-item.bike,
+      .no-bike .sn-proj-item.bike,
+      .no-run .proj-bar-item.run,
+      .no-run .sn-proj-item.run,
+      .no-swim .proj-form-lbl.swim,
+      .no-swim #pi-swim-time,
+      .no-swim #pi-swim-conf,
+      .no-bike .proj-form-lbl.bike,
+      .no-bike #pi-bike-time,
+      .no-bike #pi-bike-conf,
+      .no-run .proj-form-lbl.run,
+      .no-run #pi-run-time,
+      .no-run #pi-run-conf {
+        display: none;
+      }
       .proj-update-btn {
         background: none;
         border: 1px solid var(--border2);
@@ -1877,13 +2066,27 @@
     </style>
   </head>
   <body>
+    <!-- Event sidebar (populated by app-shell.js) -->
+    <aside class="sidebar" id="sidebar" aria-label="Events">
+      <div class="sb-head">
+        <span class="sb-title">Events</span>
+        <button class="sb-close" onclick="toggleSidebar(false)" aria-label="Close">
+          &#x2715;
+        </button>
+      </div>
+      <div class="sb-list" id="sb-list"></div>
+      <button class="sb-add" onclick="openEventModal()">+ New event</button>
+      <div class="sb-foot">
+        <div class="sb-sync" id="sb-sync"></div>
+        <button class="proj-update-btn" id="sb-lock-btn" onclick="toggleLock()"></button>
+      </div>
+    </aside>
+    <div class="sb-backdrop" id="sb-backdrop" onclick="toggleSidebar(false)"></div>
     <!-- Sticky highlight nav -->
     <div id="sticky-nav" class="sticky-nav">
       <div class="sn-brand">
-        <span class="sn-brand-title">IRONMAN FLORIDA</span>
-        <span class="sn-brand-meta"
-          >Nov 7, 2026 &middot; Panama City Beach</span
-        >
+        <span class="sn-brand-title" id="sn-brand-title"></span>
+        <span class="sn-brand-meta" id="sn-brand-meta"></span>
       </div>
       <div class="sn-countdown" id="sn-countdown">&#8212; days</div>
       <div class="sn-prog">
@@ -1979,10 +2182,19 @@
       <!-- Stats -->
       <div class="stats-col">
         <div class="race-info-row">
-          <div>
-            <div class="race-title">IRONMAN FLORIDA</div>
-            <div class="race-sub">
-              Panama City Beach &middot; November 7, 2026
+          <div class="race-id">
+            <button
+              class="sb-toggle"
+              id="sb-toggle"
+              onclick="toggleSidebar()"
+              title="Events"
+              aria-label="Show events"
+            >
+              &#9776;<span class="sync-dot" id="sync-dot"></span>
+            </button>
+            <div>
+              <div class="race-title" id="race-title"></div>
+              <div class="race-sub" id="race-sub"></div>
             </div>
           </div>
           <div class="race-countdown" id="countdown">&#8212; days</div>
@@ -2051,30 +2263,14 @@
               >
                 &#x2B07; Export
               </button>
-            </div>
-            <div style="display: flex; align-items: center; gap: 10px">
-              <div class="pace-mode-wrap" onclick="togglePaceMode()">
-                <span class="pace-mode-lbl" id="pace-lbl-plan">Plan</span>
-                <div class="toggle-track" id="pace-toggle-track">
-                  <div class="toggle-thumb"></div>
-                </div>
-                <span class="pace-mode-lbl" id="pace-lbl-bench">Bench</span>
-              </div>
-              <div
-                style="
-                  width: 1px;
-                  height: 18px;
-                  background: var(--border2);
-                  flex-shrink: 0;
-                "
-              ></div>
-              <div class="pace-mode-wrap" onclick="toggleExcludeCfAr()">
-                <span class="pace-mode-lbl" id="cf-lbl-incl">Incl CF</span>
-                <div class="toggle-track" id="cf-toggle-track">
-                  <div class="toggle-thumb"></div>
-                </div>
-                <span class="pace-mode-lbl" id="cf-lbl-excl">Excl CF</span>
-              </div>
+              <button
+                class="proj-update-btn"
+                id="import-btn"
+                onclick="openImportPicker()"
+                title="Import a training export (.json or .zip) into this event"
+              >
+                &#x2B06; Import
+              </button>
             </div>
           </div>
           <div class="stat-grid">
@@ -2436,7 +2632,116 @@
     </div>
 
     <script>
-      const PLAN = [
+      // ── Events ──
+      // Every event shares this page. IMFL 2026 carries the full coached plan;
+      // other events start with an empty calendar plus their race day.
+      const EVENT_TYPES = {
+        full: { label: 'IRONMAN', dist: { swim: 4224, bike: 112, run: 26.2 }, proj: { swim: '1:10', bike: '6:00', run: '4:30', total: '12:00' } },
+        half: { label: 'IRONMAN 70.3', dist: { swim: 2112, bike: 56, run: 13.1 }, proj: { swim: '0:35', bike: '2:50', run: '2:05', total: '5:40' } },
+        olympic: { label: 'Olympic Triathlon', dist: { swim: 1640, bike: 24.8, run: 6.2 }, proj: { swim: '0:28', bike: '1:15', run: '0:50', total: '2:40' } },
+        marathon: { label: 'Marathon', dist: { run: 26.2 }, proj: { run: '4:00', total: '4:00' } },
+        'half-marathon': { label: 'Half Marathon', dist: { run: 13.1 }, proj: { run: '1:55', total: '1:55' } },
+        other: { label: 'Other', dist: {}, proj: { total: '1:00' } },
+      };
+      const DEFAULT_EVENTS = [
+        {
+          id: 'imfl-2026',
+          name: 'IRONMAN Florida 2026',
+          type: 'full',
+          raceDate: '2026-11-07',
+          startDate: '2026-05-23',
+          location: 'Panama City Beach',
+          goal: 'Sub-12:00:00',
+        },
+      ];
+      function loadEvents() {
+        try {
+          const e = JSON.parse(localStorage.getItem('events') || 'null');
+          if (Array.isArray(e) && e.length) return e;
+        } catch (err) {}
+        return DEFAULT_EVENTS;
+      }
+      let EVENTS = loadEvents();
+      const EVENT = (() => {
+        const m = location.hash.match(/event=([^&]+)/);
+        const want = m ? decodeURIComponent(m[1]) : localStorage.getItem('active-event');
+        return EVENTS.find((e) => e.id === want) || EVENTS.find((e) => e.id === 'imfl-2026') || EVENTS[0];
+      })();
+      localStorage.setItem('active-event', EVENT.id);
+      const IS_IMFL = EVENT.id === 'imfl-2026';
+      const EVENT_TYPE = EVENT_TYPES[EVENT.type] || EVENT_TYPES.other;
+      // IMFL keeps its original storage keys so existing browser data still loads
+      function lsPrefixFor(id) {
+        return id === 'imfl-2026' ? 'imfl-' : `ev-${id}-`;
+      }
+      const LS = lsPrefixFor(EVENT.id);
+      const RACE_DAYS = Math.max(
+        1,
+        Math.round((new Date(EVENT.raceDate + 'T12:00:00') - new Date(EVENT.startDate + 'T12:00:00')) / 864e5),
+      );
+      const RACE_WEEK = Math.floor(RACE_DAYS / 7) + 1;
+      const TRAINING_WEEKS = RACE_DAYS % 7 === 0 ? RACE_WEEK - 1 : RACE_WEEK;
+      // Calendar columns start on the training start date's weekday
+      const DAYS = (() => {
+        const all = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+        const d0 = new Date(EVENT.startDate + 'T12:00:00').getDay();
+        return all.slice(d0).concat(all.slice(0, d0));
+      })();
+      function eventHas(disc) {
+        return EVENT_TYPE.dist[disc] != null;
+      }
+      ['swim', 'bike', 'run'].forEach((d) => {
+        if (!eventHas(d)) document.body.classList.add('no-' + d);
+      });
+      function fmtEventDate(str, opts) {
+        return new Date(str + 'T12:00:00').toLocaleDateString('en-US', opts);
+      }
+      function raceTotalMiles() {
+        const d = EVENT_TYPE.dist;
+        return Math.round(((d.swim || 0) / 1760 + (d.bike || 0) + (d.run || 0)) * 10) / 10;
+      }
+      function genericPlan() {
+        return [
+          {
+            id: 'race-day',
+            week: RACE_WEEK,
+            phase: 1,
+            phaseName: 'Race Day',
+            phaseColor: '#E8002D',
+            date: EVENT.raceDate,
+            dayName: DAYS[RACE_DAYS % 7],
+            type: 'race',
+            title: EVENT.name,
+            summary1: [EVENT.location, fmtEventDate(EVENT.raceDate, { month: 'short', day: 'numeric', year: 'numeric' })].filter(Boolean).join(' · '),
+            summary2: EVENT.goal ? 'Goal: ' + EVENT.goal : '',
+            detail: '',
+            targetDuration: null,
+            targetDistance: raceTotalMiles() || null,
+            unit: 'mi',
+          },
+        ];
+      }
+      function genericPhases() {
+        const weeks = [];
+        for (let w = 1; w <= TRAINING_WEEKS; w++) weeks.push(w);
+        return [{ phase: 1, name: 'Training Block', color: '#22C55E', weeks: [...weeks, 'race'] }];
+      }
+      function daysToRaceText() {
+        const days = Math.ceil((new Date(EVENT.raceDate + 'T00:00:00') - new Date()) / 864e5);
+        if (days > 0) return days + ' days';
+        return days === 0 ? 'Race day' : 'Complete';
+      }
+      function renderEventHeader() {
+        const full = fmtEventDate(EVENT.raceDate, { month: 'long', day: 'numeric', year: 'numeric' });
+        const short = fmtEventDate(EVENT.raceDate, { month: 'short', day: 'numeric', year: 'numeric' });
+        document.title = EVENT.name + ' · Training Calendar';
+        document.getElementById('race-title').textContent = EVENT.name.toUpperCase();
+        document.getElementById('race-sub').innerHTML = [EVENT.location, full].filter(Boolean).map(esc).join(' &middot; ');
+        document.getElementById('sn-brand-title').textContent = EVENT.name.toUpperCase();
+        document.getElementById('sn-brand-meta').innerHTML = [short, EVENT.location].filter(Boolean).map(esc).join(' &middot; ');
+      }
+
+      const IMFL_PLAN = [
         {
           id: 'w1-sat',
           week: 1,
@@ -5463,127 +5768,58 @@
           unit: 'mi',
         },
       ];
+      const PLAN = IS_IMFL ? IMFL_PLAN : genericPlan();
 
       let completions = JSON.parse(
-        localStorage.getItem('imfl-completions') || '{}',
+        localStorage.getItem(LS + 'completions') || '{}',
       );
       let positions = JSON.parse(
-        localStorage.getItem('imfl-positions') || '{}',
+        localStorage.getItem(LS + 'positions') || '{}',
       );
       let customWorkouts = JSON.parse(
-        localStorage.getItem('imfl-custom') || '{}',
+        localStorage.getItem(LS + 'custom') || '{}',
       );
       let deletedSessions = new Set(
-        JSON.parse(localStorage.getItem('imfl-deleted') || '[]'),
+        JSON.parse(localStorage.getItem(LS + 'deleted') || '[]'),
       );
-      const PACE_TARGETS = [
+      // Cumulative plan volume at the end of each week (swim yds, bike/run mi)
+      const IMFL_PACE_TARGETS = [
         null,
-        {
-          bench: { swim: 1600, bike: 24.1, run: 7.7 },
-          plan: { swim: 1625, bike: 25.5, run: 8.6 },
-        }, // wk 1
-        {
-          bench: { swim: 3200, bike: 48.2, run: 15.3 },
-          plan: { swim: 3250, bike: 59.5, run: 17.2 },
-        }, // wk 2
-        {
-          bench: { swim: 4800, bike: 72.2, run: 23.0 },
-          plan: { swim: 4875, bike: 89.3, run: 25.8 },
-        }, // wk 3
-        {
-          bench: { swim: 6400, bike: 96.3, run: 30.6 },
-          plan: { swim: 6500, bike: 128.9, run: 34.4 },
-        }, // wk 4
-        {
-          bench: { swim: 8000, bike: 120.4, run: 38.3 },
-          plan: { swim: 8125, bike: 170.0, run: 42.9 },
-        }, // wk 5
-        {
-          bench: { swim: 9600, bike: 144.5, run: 45.9 },
-          plan: { swim: 9750, bike: 170.0, run: 48.0 },
-        }, // wk 6 — recovery week: no bike, short run
-        {
-          bench: { swim: 11200, bike: 168.5, run: 53.6 },
-          plan: { swim: 11375, bike: 221.0, run: 57.0 },
-        }, // wk 7
-        {
-          bench: { swim: 12800, bike: 192.6, run: 61.2 },
-          plan: { swim: 13000, bike: 263.5, run: 68.7 },
-        }, // wk 8
-        {
-          bench: { swim: 17000, bike: 253.8, run: 68.6 },
-          plan: { swim: 17438, bike: 338.7, run: 80.7 },
-        }, // wk 9
-        {
-          bench: { swim: 21200, bike: 306.3, run: 78.7 },
-          plan: { swim: 21875, bike: 418.2, run: 97.2 },
-        }, // wk 10
-        {
-          bench: { swim: 25700, bike: 367.6, run: 86.7 },
-          plan: { swim: 26629, bike: 511.1, run: 110.2 },
-        }, // wk 11
-        {
-          bench: { swim: 29200, bike: 402.6, run: 90.4 },
-          plan: { swim: 30328, bike: 564.2, run: 116.2 },
-        }, // wk 12
-        {
-          bench: { swim: 33700, bike: 463.8, run: 103.7 },
-          plan: { swim: 35082, bike: 656.9, run: 137.8 },
-        }, // wk 13
-        {
-          bench: { swim: 38500, bike: 533.8, run: 114.3 },
-          plan: { swim: 40155, bike: 763.0, run: 155.0 },
-        }, // wk 14
-        {
-          bench: { swim: 40400, bike: 631.8, run: 125.9 },
-          plan: { swim: 42163, bike: 881.5, run: 173.9 },
-        }, // wk 15
-        {
-          bench: { swim: 43900, bike: 666.8, run: 129.7 },
-          plan: { swim: 45862, bike: 964.6, run: 180.1 },
-        }, // wk 16
-        {
-          bench: { swim: 48900, bike: 745.5, run: 146.1 },
-          plan: { swim: 51146, bike: 1083.9, run: 209.7 },
-        }, // wk 17
-        {
-          bench: { swim: 53900, bike: 833.0, run: 164.7 },
-          plan: { swim: 56430, bike: 1216.5, run: 245.5 },
-        }, // wk 18
-        {
-          bench: { swim: 58900, bike: 929.3, run: 187.0 },
-          plan: { swim: 61715, bike: 1362.4, run: 281.8 },
-        }, // wk 19
-        {
-          bench: { swim: 62700, bike: 1008.0, run: 202.9 },
-          plan: { swim: 65731, bike: 1481.7, run: 307.6 },
-        }, // wk 20
-        {
-          bench: { swim: 67200, bike: 1095.5, run: 217.8 },
-          plan: { swim: 70485, bike: 1614.3, run: 331.8 },
-        }, // wk 21
-        {
-          bench: { swim: 71200, bike: 1156.8, run: 225.7 },
-          plan: { swim: 74713, bike: 1707.2, run: 344.7 },
-        }, // wk 22
-        {
-          bench: { swim: 74200, bike: 1200.5, run: 232.1 },
-          plan: { swim: 77884, bike: 1773.5, run: 355.1 },
-        }, // wk 23
-        {
-          bench: { swim: 76200, bike: 1218.0, run: 234.2 },
-          plan: { swim: 80000, bike: 1800.0, run: 358.5 },
-        }, // wk 24
+        { swim: 1625, bike: 25.5, run: 8.6 }, // wk 1
+        { swim: 3250, bike: 59.5, run: 17.2 }, // wk 2
+        { swim: 4875, bike: 89.3, run: 25.8 }, // wk 3
+        { swim: 6500, bike: 128.9, run: 34.4 }, // wk 4
+        { swim: 8125, bike: 170.0, run: 42.9 }, // wk 5
+        { swim: 9750, bike: 170.0, run: 48.0 }, // wk 6 — recovery week: no bike, short run
+        { swim: 11375, bike: 221.0, run: 57.0 }, // wk 7
+        { swim: 13000, bike: 263.5, run: 68.7 }, // wk 8
+        { swim: 17438, bike: 338.7, run: 80.7 }, // wk 9
+        { swim: 21875, bike: 418.2, run: 97.2 }, // wk 10
+        { swim: 26629, bike: 511.1, run: 110.2 }, // wk 11
+        { swim: 30328, bike: 564.2, run: 116.2 }, // wk 12
+        { swim: 35082, bike: 656.9, run: 137.8 }, // wk 13
+        { swim: 40155, bike: 763.0, run: 155.0 }, // wk 14
+        { swim: 42163, bike: 881.5, run: 173.9 }, // wk 15
+        { swim: 45862, bike: 964.6, run: 180.1 }, // wk 16
+        { swim: 51146, bike: 1083.9, run: 209.7 }, // wk 17
+        { swim: 56430, bike: 1216.5, run: 245.5 }, // wk 18
+        { swim: 61715, bike: 1362.4, run: 281.8 }, // wk 19
+        { swim: 65731, bike: 1481.7, run: 307.6 }, // wk 20
+        { swim: 70485, bike: 1614.3, run: 331.8 }, // wk 21
+        { swim: 74713, bike: 1707.2, run: 344.7 }, // wk 22
+        { swim: 77884, bike: 1773.5, run: 355.1 }, // wk 23
+        { swim: 80000, bike: 1800.0, run: 358.5 }, // wk 24
       ];
+      const PACE_TARGETS = IS_IMFL ? IMFL_PACE_TARGETS : [null];
       function currentPaceWeek() {
         const now = new Date();
         const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-        const start = new Date(2026, 4, 23); // May 23, midnight local
+        const start = new Date(EVENT.startDate + 'T00:00:00');
         const diffDays = Math.floor((today - start) / 864e5);
-        return Math.min(Math.max(1, Math.floor(diffDays / 7) + 1), 24);
+        return Math.min(Math.max(1, Math.floor(diffDays / 7) + 1), TRAINING_WEEKS);
       }
       function maxLoggedWeek() {
-        const trainStart = new Date('2026-05-23T00:00:00Z');
+        const trainStart = new Date(EVENT.startDate + 'T00:00:00Z');
         const dateWeek = (d) =>
           Math.max(1, Math.floor((new Date(d) - trainStart) / 864e5 / 7) + 1);
         let mx = 0;
@@ -5596,40 +5832,40 @@
         });
         return mx;
       }
-      const PROJ_DEFAULTS = {
-        swim: { time: '0:55', conf: 50 },
-        bike: { time: '5:36', conf: 68 },
-        run: { time: '5:01', conf: 72 },
-        total: { time: '11:42', conf: 71 },
-      };
+      const PROJ_DEFAULTS = IS_IMFL
+        ? {
+            swim: { time: '0:55', conf: 50 },
+            bike: { time: '5:36', conf: 68 },
+            run: { time: '5:01', conf: 72 },
+            total: { time: '11:42', conf: 71 },
+          }
+        : Object.fromEntries(
+            Object.entries(EVENT_TYPE.proj).map(([k, t]) => [k, { time: t, conf: 50 }]),
+          );
       let projections = JSON.parse(
-        localStorage.getItem('imfl-projections') ||
+        localStorage.getItem(LS + 'projections') ||
           JSON.stringify(PROJ_DEFAULTS),
       );
-      let excludeCfAr = JSON.parse(
-        localStorage.getItem('imfl-exclude-cf-ar') || 'false',
-      );
-      let paceMode = localStorage.getItem('imfl-pace-mode') || 'bench';
       let collapsedWeeks = new Set(
-        JSON.parse(localStorage.getItem('imfl-collapsed-weeks') || '[]'),
+        JSON.parse(localStorage.getItem(LS + 'collapsed-weeks') || '[]'),
       );
       let expandedWeeks = new Set(
-        JSON.parse(localStorage.getItem('imfl-expanded-weeks') || '[]'),
+        JSON.parse(localStorage.getItem(LS + 'expanded-weeks') || '[]'),
       );
       let collapsedPhases = new Set(
-        JSON.parse(localStorage.getItem('imfl-collapsed-phases') || '[]'),
+        JSON.parse(localStorage.getItem(LS + 'collapsed-phases') || '[]'),
       );
       let expandedPhases = new Set(
-        JSON.parse(localStorage.getItem('imfl-expanded-phases') || '[]'),
+        JSON.parse(localStorage.getItem(LS + 'expanded-phases') || '[]'),
       );
-      let swimUnit = localStorage.getItem('imfl-swim-unit') || 'yds';
+      let swimUnit = localStorage.getItem(LS + 'swim-unit') || 'yds';
 
       function swimUnitToggleHTML() {
         return `<span class="swim-unit-tog"><span class="swim-unit-opt${swimUnit === 'yds' ? ' su-active' : ''}" data-u="yds" onclick="setSwimUnit('yds')">YDS</span><span class="swim-unit-opt${swimUnit === 'm' ? ' su-active' : ''}" data-u="m" onclick="setSwimUnit('m')">M</span></span>`;
       }
       function setSwimUnit(u) {
         swimUnit = u;
-        localStorage.setItem('imfl-swim-unit', u);
+        localStorage.setItem(LS + 'swim-unit', u);
         document
           .querySelectorAll('.swim-unit-opt')
           .forEach((el) =>
@@ -5640,36 +5876,28 @@
         return swimUnit === 'm' ? Math.round(val * 1.09361) : val;
       }
 
-      function saveExcludeCfAr() {
-        localStorage.setItem('imfl-exclude-cf-ar', JSON.stringify(excludeCfAr));
-      }
-      function toggleExcludeCfAr() {
-        excludeCfAr = !excludeCfAr;
-        saveExcludeCfAr();
-        renderStats();
-      }
-      function togglePaceMode() {
-        paceMode = paceMode === 'bench' ? 'plan' : 'bench';
-        localStorage.setItem('imfl-pace-mode', paceMode);
-        renderStats();
-      }
       function saveCompletions() {
-        localStorage.setItem('imfl-completions', JSON.stringify(completions));
+        localStorage.setItem(LS + 'completions', JSON.stringify(completions));
+        queueSync();
       }
       function savePositions() {
-        localStorage.setItem('imfl-positions', JSON.stringify(positions));
+        localStorage.setItem(LS + 'positions', JSON.stringify(positions));
+        queueSync();
       }
       function saveCustom() {
-        localStorage.setItem('imfl-custom', JSON.stringify(customWorkouts));
+        localStorage.setItem(LS + 'custom', JSON.stringify(customWorkouts));
+        queueSync();
       }
       function saveDeleted() {
         localStorage.setItem(
-          'imfl-deleted',
+          LS + 'deleted',
           JSON.stringify([...deletedSessions]),
         );
+        queueSync();
       }
       function saveProjections() {
-        localStorage.setItem('imfl-projections', JSON.stringify(projections));
+        localStorage.setItem(LS + 'projections', JSON.stringify(projections));
+        queueSync();
       }
 
       function parseTimeToMins(str) {
@@ -5686,14 +5914,17 @@
       function projPace(sport, timeStr) {
         const mins = parseTimeToMins(timeStr);
         if (!mins) return '';
-        if (sport === 'swim') return '(' + fmtMinSec(mins / 38.62) + '/100m)';
-        if (sport === 'bike') return '(' + (112 / (mins / 60)).toFixed(1) + ' mph)';
-        if (sport === 'run')  return '(' + fmtMinSec(mins / 26.2) + '/mi)';
+        if (sport === 'swim') return '(' + fmtMinSec(mins / ((EVENT_TYPE.dist.swim * 0.9144) / 100)) + '/100m)';
+        if (sport === 'bike') return '(' + (EVENT_TYPE.dist.bike / (mins / 60)).toFixed(1) + ' mph)';
+        if (sport === 'run')  return '(' + fmtMinSec(mins / EVENT_TYPE.dist.run) + '/mi)';
         return '';
       }
 
+      function projKeys() {
+        return ['swim', 'bike', 'run'].filter(eventHas).concat('total');
+      }
       function renderProjections() {
-        ['swim', 'bike', 'run', 'total'].forEach((k) => {
+        projKeys().forEach((k) => {
           const p = projections[k] || PROJ_DEFAULTS[k];
           document.getElementById('proj-' + k).textContent = p.time;
           document.getElementById('proj-' + k + '-conf').textContent =
@@ -5704,7 +5935,7 @@
       }
 
       function openProjModal() {
-        ['swim', 'bike', 'run', 'total'].forEach((k) => {
+        projKeys().forEach((k) => {
           const p = projections[k] || PROJ_DEFAULTS[k];
           document.getElementById('pi-' + k + '-time').value = p.time;
           document.getElementById('pi-' + k + '-conf').value = p.conf;
@@ -5719,7 +5950,7 @@
       }
 
       function saveProjUpdate() {
-        ['swim', 'bike', 'run', 'total'].forEach((k) => {
+        projKeys().forEach((k) => {
           const t = document.getElementById('pi-' + k + '-time').value.trim();
           const c = parseInt(
             document.getElementById('pi-' + k + '-conf').value,
@@ -5736,21 +5967,26 @@
       }
       function saveCollapsed() {
         localStorage.setItem(
-          'imfl-collapsed-weeks',
+          LS + 'collapsed-weeks',
           JSON.stringify([...collapsedWeeks]),
         );
         localStorage.setItem(
-          'imfl-expanded-weeks',
+          LS + 'expanded-weeks',
           JSON.stringify([...expandedWeeks]),
         );
         localStorage.setItem(
-          'imfl-collapsed-phases',
+          LS + 'collapsed-phases',
           JSON.stringify([...collapsedPhases]),
         );
         localStorage.setItem(
-          'imfl-expanded-phases',
+          LS + 'expanded-phases',
           JSON.stringify([...expandedPhases]),
         );
+      }
+
+      // Replaced by app-shell.js once it loads; saves before then stay local
+      function queueSync() {
+        if (window.cloudQueueSync) window.cloudQueueSync();
       }
 
       function esc(s) {
@@ -5808,7 +6044,7 @@
         if (!positions[s.id]) return s.week;
         const diff = Math.round(
           (new Date(effectiveDate(s) + 'T12:00:00') -
-            new Date('2026-05-23T12:00:00')) /
+            new Date(EVENT.startDate + 'T12:00:00')) /
             864e5,
         );
         return Math.floor(diff / 7) + 1;
@@ -5865,10 +6101,8 @@
         let swimCount = 0,
           bikeCount = 0,
           runCount = 0;
-        const skipType = (t) => excludeCfAr && (t === 'cf' || t === 'ar');
         PLAN.forEach((s) => {
           if (deletedSessions.has(s.id)) return;
-          if (skipType(s.type)) return;
           const c = completions[s.id];
           if (!c) return;
           done++;
@@ -5904,7 +6138,7 @@
           }
         });
         Object.values(customWorkouts).forEach((w) => {
-          if (w.done && !skipType(w.type)) {
+          if (w.done) {
             done++;
             const dur = w.duration || 0;
             totalMin += dur;
@@ -5933,10 +6167,8 @@
           }
         });
         const totalMi = swimYds / 1760 + bikeMi + runMi;
-        const planTotal = activePlan().filter((s) => !skipType(s.type)).length;
-        const customTotal = Object.values(customWorkouts).filter(
-          (w) => !skipType(w.type),
-        ).length;
+        const planTotal = activePlan().length;
+        const customTotal = Object.values(customWorkouts).length;
         const total = planTotal + customTotal;
         const avg = (val, cnt, dec) =>
           cnt > 0 ? (val / cnt).toFixed(dec) : null;
@@ -5970,8 +6202,7 @@
       }
 
       function calcStatsByWeek(maxWeek) {
-        const skipType = (t) => excludeCfAr && (t === 'cf' || t === 'ar');
-        const trainStart = new Date('2026-05-23T00:00:00Z');
+        const trainStart = new Date(EVENT.startDate + 'T00:00:00Z');
         const dateWeek = (d) =>
           Math.floor((new Date(d) - trainStart) / 864e5 / 7) + 1;
         let swimYds = 0,
@@ -5980,7 +6211,6 @@
         PLAN.forEach((s) => {
           if (deletedSessions.has(s.id)) return;
           if (s.week > maxWeek) return;
-          if (skipType(s.type)) return;
           const c = completions[s.id];
           if (!c) return;
           if (s.type === 'swim')
@@ -5996,7 +6226,6 @@
         });
         Object.values(customWorkouts).forEach((w) => {
           if (!w.done || !w.date) return;
-          if (skipType(w.type)) return;
           if (dateWeek(w.date) > maxWeek) return;
           if (w.type === 'swim') swimYds += w.distance || 0;
           else if (w.type === 'brick') {
@@ -6009,7 +6238,7 @@
       }
 
       function calcTimeByWeek(maxWeek) {
-        const trainStart = new Date('2026-05-23T00:00:00Z');
+        const trainStart = new Date(EVENT.startDate + 'T00:00:00Z');
         const dateWeek = (d) =>
           Math.floor((new Date(d) - trainStart) / 864e5 / 7) + 1;
         let swimMin = 0, bikeMin = 0, runMin = 0;
@@ -6045,17 +6274,7 @@
 
       function renderStats() {
         const st = calcStats();
-        const days = Math.max(
-          0,
-          Math.ceil((new Date('2026-11-07') - new Date()) / 864e5),
-        );
-        document.getElementById('countdown').textContent = days + ' days';
-        const _cfTrack = document.getElementById('cf-toggle-track');
-        if (_cfTrack) _cfTrack.classList.toggle('on', excludeCfAr);
-        const _cfIncl = document.getElementById('cf-lbl-incl');
-        const _cfExcl = document.getElementById('cf-lbl-excl');
-        if (_cfIncl) _cfIncl.classList.toggle('active', !excludeCfAr);
-        if (_cfExcl) _cfExcl.classList.toggle('active', excludeCfAr);
+        document.getElementById('countdown').textContent = daysToRaceText();
         document.getElementById('stat-swim').textContent =
           st.swimYds.toLocaleString() + ' yds';
         document.getElementById('stat-swim-cnt').textContent = st.swimCount;
@@ -6091,15 +6310,7 @@
         // pace column
         const pw = currentPaceWeek();
         const ptRow = PACE_TARGETS[pw];
-        const _modeKey = paceMode === 'plan' ? 'bench' : 'plan';
-        const pt = ptRow ? ptRow[_modeKey] : null;
-        // sync toggle UI
-        const _track = document.getElementById('pace-toggle-track');
-        if (_track) _track.classList.toggle('on', paceMode === 'bench');
-        const _lbB = document.getElementById('pace-lbl-bench');
-        const _lbP = document.getElementById('pace-lbl-plan');
-        if (_lbP) _lbP.classList.toggle('active', paceMode === 'plan');
-        if (_lbB) _lbB.classList.toggle('active', paceMode === 'bench');
+        const pt = ptRow || null;
         function setPace(sport, actual, tgt, isYds) {
           const tgtEl = document.getElementById('pace-' + sport + '-tgt');
           const dEl = document.getElementById('pace-' + sport + '-delta');
@@ -6154,9 +6365,7 @@
         // trend column
         const prevPw = pw > 1 ? pw - 1 : 0;
         const prevPtRow = prevPw > 0 ? PACE_TARGETS[prevPw] : null;
-        const prevPt = prevPtRow
-          ? prevPtRow[_modeKey]
-          : { swim: 0, bike: 0, run: 0 };
+        const prevPt = prevPtRow || { swim: 0, bike: 0, run: 0 };
         const cur = calcStatsByWeek(pw);
         const prev = calcStatsByWeek(prevPw);
         function setTrend(sport, curActual, curTgt, prvActual, prvTgt, isYds) {
@@ -6273,9 +6482,9 @@
         if (s.id === 'race-day')
           return `
     <div class="race-day-card" onclick="openModal('race-day')">
-      <div class="rdc-label">NOVEMBER 7, 2026</div>
-      <div class="rdc-title">&#x1F3C1; IRONMAN FLORIDA</div>
-      <div class="rdc-sub">Panama City Beach &middot; 140.6 miles &middot; Sub-12:00:00</div>
+      <div class="rdc-label">${esc(fmtEventDate(EVENT.raceDate, { month: 'long', day: 'numeric', year: 'numeric' }).toUpperCase())}</div>
+      <div class="rdc-title">&#x1F3C1; ${esc(EVENT.name.toUpperCase())}</div>
+      <div class="rdc-sub">${[EVENT.location, raceTotalMiles() ? raceTotalMiles() + ' miles' : '', EVENT.goal].filter(Boolean).map(esc).join(' &middot; ')}</div>
     </div>`;
         if (deletedSessions.has(s.id)) {
           const m = typeMeta(s.type);
@@ -6909,12 +7118,8 @@
       // ── Sticky nav ──
       function renderStickyNav() {
         const st = calcStats();
-        const days = Math.max(
-          0,
-          Math.ceil((new Date('2026-11-07') - new Date()) / 864e5),
-        );
-        const pct = Math.round((st.done / st.total) * 100);
-        document.getElementById('sn-countdown').textContent = days + ' days';
+        const pct = st.total ? Math.round((st.done / st.total) * 100) : 0;
+        document.getElementById('sn-countdown').textContent = daysToRaceText();
         document.getElementById('sn-prog-fill').style.width = pct + '%';
         document.getElementById('sn-prog-pct').textContent = pct + '%';
         const { todaySession, tomSession } = getTodayTomorrow();
@@ -6939,7 +7144,7 @@
         document.getElementById('sn-bike-time').textContent = st.bikeTime;
         document.getElementById('sn-run').textContent = st.runMi;
         document.getElementById('sn-run-time').textContent = st.runTime;
-        ['swim', 'bike', 'run', 'total'].forEach((k) => {
+        projKeys().forEach((k) => {
           const p = projections[k] || PROJ_DEFAULTS[k];
           document.getElementById('sn-proj-' + k).textContent = p.time;
           document
@@ -6955,7 +7160,7 @@
       window.addEventListener('resize', updatePhaseOffset, { passive: true });
 
       // ── Calendar ──
-      const PHASE_CONFIG = [
+      const IMFL_PHASE_CONFIG = [
         {
           phase: 1,
           name: 'Foundation',
@@ -6982,14 +7187,15 @@
           weeks: [22, 23, 24, 'race'],
         },
       ];
-      const DAYS = ['SAT', 'SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI'];
+      const PHASE_CONFIG = IS_IMFL ? IMFL_PHASE_CONFIG : genericPhases();
 
       function getWeekSessions(wk) {
-        const wkStartStr = addDays('2026-05-23', (wk - 1) * 7);
+        const wkStartStr = addDays(EVENT.startDate, (wk - 1) * 7);
         const wkEndStr = addDays(wkStartStr, 7);
         const sessions = {};
         DAYS.forEach((d) => (sessions[d] = []));
         PLAN.forEach((s) => {
+          if (s.id === 'race-day') return; // race day renders as its own card
           const movedTo = positions[s.id];
           if (movedTo) {
             // Moved: only show at new location, never original
@@ -7011,7 +7217,7 @@
       }
 
       function weekDateRange(wk) {
-        const sStr = addDays('2026-05-23', (wk - 1) * 7);
+        const sStr = addDays(EVENT.startDate, (wk - 1) * 7);
         const eStr = addDays(sStr, 6);
         const fmt = (str) =>
           new Date(str + 'T12:00:00').toLocaleDateString('en-US', {
@@ -7080,8 +7286,8 @@
       // PLAN .date fields diverge from column data-dates starting at week 9, so
       // we must use the formula, not s.date, to detect "dropped back home".
       function planDefaultDate(s) {
-        const di = ['SAT','SUN','MON','TUE','WED','THU','FRI'].indexOf(s.dayName);
-        return addDays('2026-05-23', (s.week - 1) * 7 + di);
+        const di = DAYS.indexOf(s.dayName);
+        return addDays(EVENT.startDate, (s.week - 1) * 7 + di);
       }
 
       function onDrop(ev, dateStr, colEl) {
@@ -7268,7 +7474,7 @@
         </div>
         <div class="week-grid">`;
             DAYS.forEach((day, di) => {
-              const dateStr = addDays('2026-05-23', (wk - 1) * 7 + di);
+              const dateStr = addDays(EVENT.startDate, (wk - 1) * 7 + di);
               const daySessions = sessions[day] || [];
               const customDay = Object.values(customWorkouts).filter(
                 (w) => w.date === dateStr,
@@ -7396,7 +7602,7 @@
       let _scatterPts = [];
 
       function getPacingScatterData() {
-        const trainStart = new Date('2026-05-23T00:00:00Z');
+        const trainStart = new Date(EVENT.startDate + 'T00:00:00Z');
         const dateWeek = (d) =>
           Math.floor((new Date(d) - trainStart) / 864e5 / 7) + 1;
         const pts = { swim: [], bike: [], run: [] };
@@ -8076,7 +8282,7 @@
           const xMaxT = Math.max(effWkT, 2);
           const allVT = [];
           const discsT = ['swim', 'bike', 'run', 'total'];
-          const TIME_RANGES = { swim: { lo: 1.5, hi: 2.0 }, bike: { lo: 5.5, hi: 6.5 }, run: { lo: 2.5, hi: 3.0 }, total: { lo: 10.0, hi: 11.5 } };
+          const TIME_RANGES = !IS_IMFL ? {} : { swim: { lo: 1.5, hi: 2.0 }, bike: { lo: 5.5, hi: 6.5 }, run: { lo: 2.5, hi: 3.0 }, total: { lo: 10.0, hi: 11.5 } };
           discsT.forEach((d) => {
             if (!chartDiscs[d]) return;
             weeklyTime.forEach((r) => allVT.push(r[d]));
@@ -8158,12 +8364,12 @@
           return { wk: d.wk, swim: d.swim - p.swim, bike: d.bike - p.bike, run: d.run - p.run, total: d.total - p.total };
         });
 
-        // plan trajectory — full 24 weeks from PACE_TARGETS.plan
+        // plan trajectory — every training week from PACE_TARGETS
         const planCumul = [];
-        for (let wk = 1; wk <= 24; wk++) {
-          const row = PACE_TARGETS[wk];
-          if (!row) continue;
-          const b = row.plan, sm = b.swim / 1760;
+        for (let wk = 1; wk <= TRAINING_WEEKS; wk++) {
+          const b = PACE_TARGETS[wk];
+          if (!b) continue;
+          const sm = b.swim / 1760;
           planCumul.push({ wk, swim: sm, bike: b.bike, run: b.run, total: sm + b.bike + b.run });
         }
         const planWeekly = planCumul.map((d, i) => {
@@ -8174,7 +8380,7 @@
         const isVol = chartType === 'volume';
         const actData = isVol ? weekly : cumul;
         const planData = isVol ? planWeekly : planCumul;
-        const xMax = 24; // always show full 24-week arc with plan lines
+        const xMax = Math.max(TRAINING_WEEKS, 2); // always show the full training arc
 
         const allV = [];
         const discs = ['swim', 'bike', 'run', 'total'];
@@ -8297,6 +8503,7 @@
         });
         if (changed) saveCollapsed();
       })();
+      renderEventHeader();
       renderStats();
       renderTodayTomorrow();
       renderCalendar();
@@ -8322,32 +8529,6 @@
         }
       }));
 
-      // Generate PNG apple-touch-icon for iPhone home screen
-      (function () {
-        const c = document.createElement('canvas');
-        c.width = c.height = 180;
-        const ctx = c.getContext('2d');
-        ctx.fillStyle = '#E8002D';
-        ctx.fillRect(0, 0, 180, 180);
-        ctx.strokeStyle = '#fff';
-        ctx.lineWidth = 26;
-        ctx.lineCap = 'butt';
-        ctx.lineJoin = 'miter';
-        ctx.miterLimit = 10;
-        ctx.beginPath();
-        ctx.moveTo(30, 160);
-        ctx.lineTo(30, 42);
-        ctx.lineTo(90, 112);
-        ctx.lineTo(150, 42);
-        ctx.lineTo(150, 160);
-        ctx.stroke();
-        ctx.fillStyle = '#fff';
-        ctx.beginPath();
-        ctx.arc(90, 20, 13, 0, Math.PI * 2);
-        ctx.fill();
-        const link = document.getElementById('apple-touch-icon');
-        if (link) link.href = c.toDataURL('image/png');
-      })();
     </script>
 
     <div
@@ -8458,5 +8639,6 @@
       </div>
     </div>
     <script src="training-export.js"></script>
+    <script src="app-shell.js"></script>
   </body>
 </html>
