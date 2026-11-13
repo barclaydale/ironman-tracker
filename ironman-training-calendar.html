@@ -1827,6 +1827,7 @@
         border: 1px solid var(--border2);
         border-radius: 12px;
         width: 360px;
+        max-width: calc(100vw - 24px);
         overflow: hidden;
       }
 
@@ -1849,6 +1850,7 @@
         border: 1px solid var(--border2);
         border-radius: 12px;
         width: 360px;
+        max-width: calc(100vw - 24px);
         overflow: hidden;
       }
       .proj-modal-hdr {
@@ -2075,14 +2077,256 @@
           grid-column: 1/-1;
         }
       }
+      /* Phone week view (rendered only under 700px) */
+      .mw-nav {
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin: 12px 0 10px;
+        padding: 8px;
+        background: var(--bg);
+        border: 1px solid color-mix(in srgb, var(--ph) 45%, transparent);
+        border-radius: 10px;
+        box-shadow: inset 0 0 0 999px color-mix(in srgb, var(--ph) 8%, transparent);
+      }
+      .mw-arrow {
+        flex-shrink: 0;
+        width: 44px;
+        height: 44px;
+        border-radius: 8px;
+        border: 1px solid var(--border2);
+        background: var(--s2);
+        color: var(--text);
+        font-size: 28px;
+        line-height: 1;
+        cursor: pointer;
+      }
+      .mw-arrow:disabled {
+        opacity: 0.3;
+        cursor: default;
+      }
+      .mw-title {
+        flex: 1;
+        min-width: 0;
+        text-align: center;
+      }
+      .mw-wk {
+        font-family: var(--oswald);
+        font-size: 20px;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+      }
+      .mw-wk > span:first-child {
+        color: var(--dim);
+        font-size: 14px;
+        font-weight: 500;
+      }
+      .mw-sub {
+        font-size: 12px;
+        color: var(--muted);
+        margin-top: 1px;
+      }
+      .mw-ph {
+        color: var(--ph);
+        font-weight: 700;
+      }
+      .mw-jump {
+        margin-top: 5px;
+        background: none;
+        border: 1px solid var(--border2);
+        border-radius: 99px;
+        color: var(--muted);
+        font-size: 11px;
+        padding: 2px 10px;
+        cursor: pointer;
+      }
+      .mw-days {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .mw-days .day-col {
+        min-height: 0;
+        padding: 8px;
+        overflow: visible;
+        background: var(--s1);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        gap: 6px;
+      }
+      .mw-days .day-col.is-today {
+        border-color: var(--red);
+      }
+      .mw-days .day-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        text-align: left;
+        font-size: 12px;
+        color: var(--muted);
+        padding: 0 2px;
+      }
+      .mw-today {
+        color: var(--red);
+        letter-spacing: 0.08em;
+      }
+      .mw-days .drop-placeholder {
+        height: auto;
+        border: none;
+        justify-content: flex-start;
+        padding: 2px;
+        font-size: 12px;
+      }
+      .mw-days .day-header {
+        padding-right: 40px;
+        min-height: 26px;
+      }
+      /* + sits in the day's header corner (no hover on touch screens) */
+      .mw-days .day-add-btn {
+        top: 7px;
+        right: 8px;
+        bottom: auto;
+        left: auto;
+        width: 34px;
+        opacity: 1;
+        pointer-events: auto;
+      }
+      .mw-days .add-btn {
+        padding: 3px 0;
+      }
+      .mw-days .session-card,
+      .mw-days .custom-card {
+        padding: 10px 12px;
+      }
+      .mw-days .sc-title {
+        font-size: 14px;
+      }
+      .mw-days .sc-s1 {
+        font-size: 12px;
+      }
+      .mw-days .sc-s2 {
+        font-size: 11px;
+      }
+      .mw-days + .race-day-wrapper {
+        margin-top: 12px;
+      }
       @media (max-width: 700px) {
         .top-panel {
-          grid-template-columns: 1fr;
+          position: static;
+          padding: 8px 12px 10px;
         }
-        .week-grid {
-          grid-template-columns: repeat(4, 1fr);
+        .race-info-row {
+          flex-wrap: wrap;
+          gap: 4px 12px;
         }
-        .day-col:last-child {
+        .race-title {
+          font-size: 20px;
+        }
+        .race-sub {
+          font-size: 12px;
+        }
+        .race-countdown {
+          font-size: 20px;
+          margin-left: auto;
+        }
+        .proj-bar {
+          width: auto;
+          margin: 0 0 4px;
+          flex-wrap: wrap;
+          gap: 6px 12px;
+          padding: 8px 10px;
+        }
+        .proj-bar-hdr,
+        .panel-hdr {
+          font-size: 16px;
+        }
+        .proj-bar > .proj-update-btn {
+          margin-left: auto;
+        }
+        .proj-bar-items {
+          order: 1;
+          width: 100%;
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 4px 12px;
+        }
+        .proj-bar-item {
+          flex-wrap: wrap;
+          gap: 2px 6px;
+        }
+        .proj-bar-lbl {
+          font-size: 13px;
+          width: 100%;
+        }
+        .proj-bar-item .stat-val {
+          font-size: 20px;
+        }
+        .proj-pace {
+          white-space: nowrap;
+          font-size: 11px;
+        }
+        .tt-head {
+          flex-wrap: wrap;
+        }
+        /* Totals table scrolls sideways with the sport column pinned */
+        .stat-grid {
+          grid-template-columns: auto repeat(8, minmax(max-content, 1fr));
+          overflow-x: auto;
+          padding-bottom: 4px;
+          scrollbar-width: thin;
+        }
+        .stat-grid > .sg-lbl,
+        .stat-grid > .sg-hdr:first-child {
+          position: sticky;
+          left: 0;
+          z-index: 1;
+          background: var(--s1);
+        }
+        .stat-val,
+        .pace-tgt,
+        .pace-delta,
+        .pace-trend {
+          font-size: 15px;
+          white-space: nowrap;
+        }
+        .sg-hdr {
+          font-size: 11px;
+        }
+        .sg-lbl {
+          font-size: 14px;
+        }
+        .main-wrap {
+          padding: 0 10px 40px;
+        }
+        .modal-overlay {
+          padding: 8px;
+        }
+        .chart-modal-box {
+          width: 100vw;
+          height: 100dvh;
+          border-radius: 0;
+        }
+        .chart-overlay {
+          align-items: stretch;
+        }
+        .chart-ctrl-bar {
+          padding: 8px 12px;
+          gap: 8px;
+        }
+        .chart-type-grp {
+          width: 100%;
+          overflow-x: auto;
+          scrollbar-width: none;
+        }
+        .chart-ctrl-sep {
           display: none;
         }
       }
@@ -2315,7 +2559,7 @@
               margin-bottom: 8px;
             "
           >
-            <div style="display: flex; align-items: center; gap: 10px">
+            <div class="tt-head" style="display: flex; align-items: center; gap: 10px">
               <div class="panel-hdr" style="margin-bottom: 0">
                 Training Totals
               </div>
@@ -7511,8 +7755,94 @@
         renderCalendar();
       }
 
+      function dayColHTML(wk, day, di, sessions, mobile) {
+        const dateStr = addDays(EVENT.startDate, (wk - 1) * 7 + di);
+        const daySessions = sessions[day] || [];
+        const customDay = Object.values(customWorkouts).filter(
+          (w) => w.date === dateStr,
+        );
+        const isEmpty = daySessions.length === 0 && customDay.length === 0;
+        const header = mobile
+          ? `<span>${day} &middot; ${fmtEventDate(dateStr, { month: 'short', day: 'numeric' })}</span>${dateStr === localDate(0) ? '<span class="mw-today">Today</span>' : ''}`
+          : day;
+        return `<div class="day-col${mobile && dateStr === localDate(0) ? ' is-today' : ''}" data-date="${dateStr}" ondragover="onDragOver(event,this)" ondragleave="onDragLeave(event,this)" ondrop="onDrop(event,'${dateStr}',this)">
+          <div class="day-header">${header}</div>
+          ${daySessions.map((s) => sessionCardHTML(s)).join('')}
+          ${customDay.map((w) => customCardHTML(w)).join('')}
+          ${isEmpty ? `<div class="drop-placeholder">${mobile ? 'Rest' : '+'}</div>` : ''}
+          <div class="day-add-btn"><button class="add-btn" onclick="openAddModal('${dateStr}')">+</button></div>
+        </div>`;
+      }
+
+      // ── Phone layout: one week at a time, days stacked ──
+      const MOBILE_MQ = window.matchMedia('(max-width: 700px)');
+      const MOBILE_WEEKS = PHASE_CONFIG.flatMap((ph) =>
+        ph.weeks.filter((w) => typeof w === 'number'),
+      );
+      let mobileWeek = null;
+      function todayWeek() {
+        const days = Math.round(
+          (new Date(localDate(0) + 'T12:00:00') - new Date(EVENT.startDate + 'T12:00:00')) / 864e5,
+        );
+        const wk = Math.floor(days / 7) + 1;
+        return Math.min(Math.max(wk, MOBILE_WEEKS[0]), MOBILE_WEEKS[MOBILE_WEEKS.length - 1]);
+      }
+      function shiftMobileWeek(dir) {
+        const i = MOBILE_WEEKS.indexOf(mobileWeek) + dir;
+        if (i < 0 || i >= MOBILE_WEEKS.length) return;
+        mobileWeek = MOBILE_WEEKS[i];
+        renderCalendar();
+        const nav = document.querySelector('.mw-nav');
+        if (nav && nav.getBoundingClientRect().top < 0) nav.scrollIntoView();
+      }
+      function gotoTodayWeek() {
+        mobileWeek = null;
+        renderCalendar();
+      }
+      function renderMobileWeek(cal) {
+        if (!MOBILE_WEEKS.includes(mobileWeek)) mobileWeek = todayWeek();
+        const wk = mobileWeek;
+        const i = MOBILE_WEEKS.indexOf(wk);
+        const ph = PHASE_CONFIG.find((p) => p.weeks.includes(wk));
+        const sessions = getWeekSessions(wk);
+        const isLast = i === MOBILE_WEEKS.length - 1;
+        let html = `<div class="mw-nav" style="--ph:${ph.color}">
+          <button class="mw-arrow" onclick="shiftMobileWeek(-1)" ${i === 0 ? 'disabled' : ''} aria-label="Previous week">&#8249;</button>
+          <div class="mw-title">
+            <div class="mw-wk">Week ${wk}<span> / ${MOBILE_WEEKS[MOBILE_WEEKS.length - 1]}</span>${isWeekComplete(wk) ? '<span class="wk-done">&#x2713; Done</span>' : ''}</div>
+            <div class="mw-sub"><span class="mw-ph">${esc(ph.name)}</span> &middot; ${weekDateRange(wk)}</div>
+            ${wk !== todayWeek() ? '<button class="mw-jump" onclick="gotoTodayWeek()">This week</button>' : ''}
+          </div>
+          <button class="mw-arrow" onclick="shiftMobileWeek(1)" ${isLast ? 'disabled' : ''} aria-label="Next week">&#8250;</button>
+        </div>
+        <div class="mw-days">`;
+        DAYS.forEach((day, di) => (html += dayColHTML(wk, day, di, sessions, true)));
+        html += '</div>';
+        if (isLast) {
+          const rs = PLAN.find((s) => s.id === 'race-day');
+          if (rs) html += `<div class="race-day-wrapper">${sessionCardHTML(rs, false)}</div>`;
+        }
+        cal.innerHTML = html;
+      }
+      MOBILE_MQ.addEventListener('change', () => renderCalendar());
+      // Swipe left/right on the week to change weeks
+      (() => {
+        let x0 = null, y0 = 0;
+        document.addEventListener('touchstart', (e) => {
+          x0 = e.target.closest('.mw-days') ? e.touches[0].clientX : null;
+          y0 = e.touches[0].clientY;
+        }, { passive: true });
+        document.addEventListener('touchend', (e) => {
+          if (x0 == null || !MOBILE_MQ.matches) return;
+          const dx = e.changedTouches[0].clientX - x0, dy = e.changedTouches[0].clientY - y0;
+          x0 = null;
+          if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5) shiftMobileWeek(dx < 0 ? 1 : -1);
+        }, { passive: true });
+      })();
+
       function renderCalendar() {
         const cal = document.getElementById('calendar');
+        if (MOBILE_MQ.matches) return renderMobileWeek(cal);
         let html = '';
         PHASE_CONFIG.forEach((ph) => {
           const nw = ph.weeks.filter((w) => w !== 'race');
@@ -7544,22 +7874,7 @@
           ${wkComplete ? '<span class="wk-done">&#x2713; Done</span>' : ''}
         </div>
         <div class="week-grid">`;
-            DAYS.forEach((day, di) => {
-              const dateStr = addDays(EVENT.startDate, (wk - 1) * 7 + di);
-              const daySessions = sessions[day] || [];
-              const customDay = Object.values(customWorkouts).filter(
-                (w) => w.date === dateStr,
-              );
-              const isEmpty =
-                daySessions.length === 0 && customDay.length === 0;
-              html += `<div class="day-col" data-date="${dateStr}" ondragover="onDragOver(event,this)" ondragleave="onDragLeave(event,this)" ondrop="onDrop(event,'${dateStr}',this)">
-          <div class="day-header">${day}</div>
-          ${daySessions.map((s) => sessionCardHTML(s)).join('')}
-          ${customDay.map((w) => customCardHTML(w)).join('')}
-          ${isEmpty ? '<div class="drop-placeholder">+</div>' : ''}
-          <div class="day-add-btn"><button class="add-btn" onclick="openAddModal('${dateStr}')">+</button></div>
-        </div>`;
-            });
+            DAYS.forEach((day, di) => (html += dayColHTML(wk, day, di, sessions)));
             html += '</div></div>';
           });
           html += `</div>`; // close .phase-section
