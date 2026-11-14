@@ -338,6 +338,7 @@ function openEventModal(id) {
       <label>Training starts<input class="proj-inp" id="ev-start" type="date" value="${esc(v.startDate)}"${fixed ? ' disabled' : ''} /></label>
       <label>Location<input class="proj-inp" id="ev-loc" value="${esc(v.location || '')}" placeholder="Geneva, NY" /></label>
       <label class="wide">Goal<input class="proj-inp" id="ev-goal" value="${esc(v.goal || '')}" placeholder="Sub-12:00:00" /></label>
+      <label class="wide">Race website<input class="proj-inp" id="ev-url" type="url" inputmode="url" value="${esc(v.url || '')}" placeholder="https://www.ironman.com/races/…" /></label>
     </div>
     <div class="shell-err" id="ev-err"></div>`,
     [
@@ -370,7 +371,11 @@ async function saveEvent(ev, m) {
     startDate: val('ev-start'),
     location: val('ev-loc'),
     goal: val('ev-goal'),
+    url: val('ev-url'),
   };
+  if (next.url && !/^[a-z][a-z0-9+.-]*:/i.test(next.url)) next.url = 'https://' + next.url;
+  if (next.url && !safeUrl(next.url)) return (err.textContent = "That race website doesn't look like a web address");
+  if (!next.url) delete next.url;
   if (!next.name) return (err.textContent = 'Give the event a name');
   if (!next.raceDate || !next.startDate) return (err.textContent = 'Race date and training start are required');
   if (next.startDate >= next.raceDate) return (err.textContent = 'Training has to start before race day');
@@ -419,43 +424,36 @@ async function deleteEvent(ev, m) {
   else renderSidebar();
 }
 
-// ── Settings for the event being viewed: export it, or upload a file into it ──
-// Mirrors coaching-dash's Settings page: download/upload sections, and an upload
-// dialog that shows what's in the file before anything gets replaced.
-
-function openSettings() {
-  toggleSidebar(false);
-  const editNote =
-    shell.mode === 'cloud'
-      ? shell.locked
-        ? 'View only on this device — uploading will ask for your passcode.'
-        : 'Unlocked on this device · changes save to the cloud.'
-      : 'This copy saves to this browser only.';
-  const m = shellModal(
-    `${EVENT.name} · Settings`,
-    `<p class="shell-msg">${esc(editNote)}</p>
-     <section class="set-card">
-       <h3>Export ${esc(EVENT.name)}</h3>
-       <p>A folder with a PDF report (session log, weekly charts and tables, key insights),
-       an Excel workbook and the raw data JSON for this event. Upload the JSON later to restore it.</p>
-       <button class="log-btn" id="export-btn" onclick="exportTrainingData()">Export</button>
-     </section>
-     <section class="set-card">
-       <h3>Upload to ${esc(EVENT.name)}</h3>
-       <p>Restore from an export downloaded above. <strong>This replaces all training saved
-       for ${esc(EVENT.name)}</strong> with what's in the file. Your other events aren't touched.</p>
-       <button class="proj-update-btn" onclick="openUploadModal()">Upload…</button>
-     </section>
-     <p class="shell-err" id="set-msg" role="status"></p>`,
-    [{ label: 'Close', onClick: () => m.close() }],
-    520,
-  );
+// ── Gear menu (top row): export or import the event being viewed ──
+function toggleGearMenu(open) {
+  const pop = document.getElementById('gear-pop');
+  const btn = document.getElementById('gear-btn');
+  open = open ?? pop.hidden;
+  pop.hidden = !open;
+  btn.setAttribute('aria-expanded', open);
+  if (open) pop.querySelector('button').focus();
 }
-function settingsMsg(text, ok) {
-  const el = document.getElementById('set-msg');
-  if (!el) return alert(text);
-  el.textContent = text;
-  el.style.color = ok ? '#2fc87a' : 'var(--run)';
+function gearPick(fn) {
+  toggleGearMenu(false);
+  fn();
+}
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('#gear-menu')) toggleGearMenu(false);
+});
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && !document.getElementById('gear-pop').hidden) {
+    toggleGearMenu(false);
+    document.getElementById('gear-btn').focus();
+  }
+});
+// Brief confirmation at the bottom of the screen
+function shellToast(text) {
+  const t = document.createElement('div');
+  t.className = 'shell-toast';
+  t.setAttribute('role', 'status');
+  t.textContent = text;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 4000);
 }
 
 async function readExportFile(file) {
@@ -517,9 +515,10 @@ async function uploadIntoEvent(st) {
 function openUploadModal() {
   let plan = null;
   const m = shellModal(
-    `Upload to ${EVENT.name}`,
-    `<p class="shell-msg">Choose a file from Settings → Export (<code>…-raw-data.json</code> or the
-     export <code>.zip</code>). You’ll see what’s in it before anything changes.
+    `Import into ${EVENT.name}`,
+    `<p class="shell-msg">Choose a file from ⚙ → Export (<code>…-raw-data.json</code> or the
+     export <code>.zip</code>). You’ll see what’s in it before anything changes. It replaces all
+     training saved for ${esc(EVENT.name)}; your other events aren’t touched.
      <strong>Replacing can’t be undone.</strong></p>
      <label class="set-file"><span>File</span>
        <input type="file" id="up-file" accept=".json,.zip,application/json,application/zip" /></label>
@@ -540,7 +539,7 @@ function openUploadModal() {
           try {
             const summary = await plan.apply();
             m.close();
-            settingsMsg(summary, true);
+            shellToast(summary);
           } catch (e) {
             document.getElementById('up-err').textContent = 'Upload failed: ' + e.message;
             go.disabled = false;

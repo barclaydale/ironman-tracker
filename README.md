@@ -16,15 +16,20 @@ remembered per device).
 
 ## Moving existing data in
 
-**⚙ Settings** (Training Totals header, or the sidebar) works on the event you're viewing:
+The **⚙** menu (top right, next to the countdown) works on the event you're viewing:
 
 - **Export** – PDF report + Excel + raw JSON for that event.
-- **Upload…** – pick an export's `*-raw-data.json` (or the export `.zip`). It shows
+- **Import** – pick an export's `*-raw-data.json` (or the export `.zip`). It shows
   what's in the file, then replaces that event's training with it.
 
 To move from the old GitHub Pages site: export there, then on the Vercel site
-open IRONMAN Florida 2026 → Settings → Upload… and choose that file (you'll be
-asked to unlock).
+open IRONMAN Florida 2026 → ⚙ → Import and choose that file (you'll be asked to
+unlock).
+
+## Race website
+
+Edit an event (✎ in the sidebar) and fill in **Race website**; the event title
+in the top left then links to it in a new tab.
 
 ## Local development
 
@@ -39,6 +44,6 @@ saves to the browser only.
 ## Files
 
 - `ironman-training-calendar.html` – the app (IMFL 2026 coached plan + event layer)
-- `app-shell.js` – event sidebar, cloud sync, passcode lock, import
+- `app-shell.js` – event sidebar, cloud sync, passcode lock, ⚙ menu, import
 - `training-export.js` – Export button (JSON + PDF report + Excel)
 - `api/state.js`, `api/auth.js` – storage + passcode check

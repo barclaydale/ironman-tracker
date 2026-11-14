@@ -34,6 +34,9 @@ const EX_MOD_LABEL = {
   run: 'Run',
   cf: 'CrossFit',
   ar: 'Recovery',
+  str: 'Strength',
+  mob: 'Mobility',
+  pt: 'PT',
   race: 'Race',
 };
 
@@ -131,7 +134,7 @@ function exLegsOf(type, c) {
     ];
   if (type === 'bike' || type === 'run' || type === 'race')
     return [{ mod: type, dist: c.distance || 0, min: dur }];
-  return [{ mod: type === 'ar' ? 'ar' : 'cf', dist: 0, min: dur }];
+  return [{ mod: EX_MOD_LABEL[type] ? type : 'cf', dist: 0, min: dur }];
 }
 
 function exCollect() {
@@ -240,7 +243,9 @@ function exWeekly(rows, sessions) {
       swimMin: sum('swim', 'minutes'),
       bikeMin: sum('bike', 'minutes'),
       runMin: sum('run', 'minutes'),
-      otherMin: sum('cf', 'minutes') + sum('ar', 'minutes') + sum('race', 'minutes'),
+      otherMin: wr
+        .filter((r) => !['swim', 'bike', 'run'].includes(r.modality))
+        .reduce((t, r) => t + (r.minutes || 0), 0),
     };
     wk.totalMin = wk.swimMin + wk.bikeMin + wk.runMin + wk.otherMin;
     // Speed from distance-and-time legs only, so time-only logs don't skew it
@@ -446,7 +451,7 @@ function exInsights(rows, sessions, weeks) {
     out.push({
       title: 'Time split vs race split',
       value: `${pc(modMin('swim'), tri)} / ${pc(modMin('bike'), tri)} / ${pc(modMin('run'), tri)}`,
-      detail: `Swim / bike / run share of training time. Your race projection splits ${pc(pj[0], pjT)} / ${pc(pj[1], pjT)} / ${pc(pj[2], pjT)}. CrossFit + recovery added ${exNum((modMin('cf') + modMin('ar')) / 60, 1)} hrs on top.`,
+      detail: `Swim / bike / run share of training time. Your race projection splits ${pc(pj[0], pjT)} / ${pc(pj[1], pjT)} / ${pc(pj[2], pjT)}. Strength, CrossFit, mobility, PT and recovery added ${exNum(['cf', 'str', 'mob', 'pt', 'ar'].reduce((t, m) => t + modMin(m), 0) / 60, 1)} hrs on top.`,
     });
   }
 
@@ -940,7 +945,7 @@ function exBuildPdf(data) {
         { name: 'Swim', color: EX_COLOR.swim, data: weeks.map((w) => w.swimMin / 60) },
         { name: 'Bike', color: EX_COLOR.bike, data: weeks.map((w) => w.bikeMin / 60) },
         { name: 'Run', color: EX_COLOR.run, data: weeks.map((w) => w.runMin / 60) },
-        { name: 'CrossFit / recovery / race', color: EX_COLOR.other, data: weeks.map((w) => w.otherMin / 60) },
+        { name: 'Strength / CrossFit / other', color: EX_COLOR.other, data: weeks.map((w) => w.otherMin / 60) },
       ],
     }),
     M,

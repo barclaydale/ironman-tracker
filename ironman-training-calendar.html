@@ -39,6 +39,9 @@
         --tot: #b39ddb;
         --ar: #9ca3af;
         --ar-d: #1c1c1c;
+        --str: #fb923c;
+        --mob: #2dd4bf;
+        --pt: #f472b6;
         --swimrun: #38bdf8;
         --swimrun-d: #0c2d3e;
         --race: #e8002d;
@@ -263,40 +266,80 @@
       .ev-form .proj-inp:disabled {
         opacity: 0.5;
       }
-      .sb-settings {
-        margin: 0 16px 8px;
-        padding: 8px;
-        border: none;
+      .race-actions {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-shrink: 0;
+      }
+      .gear-menu {
+        position: relative;
+      }
+      .gear-btn {
+        width: 36px;
+        height: 36px;
         border-radius: 8px;
+        border: 1px solid var(--border2);
         background: none;
         color: var(--muted);
+        font-size: 20px;
+        line-height: 1;
+        cursor: pointer;
+      }
+      .gear-btn:hover,
+      .gear-btn[aria-expanded='true'] {
+        color: var(--text);
+        border-color: var(--muted);
+      }
+      .gear-pop {
+        position: absolute;
+        top: calc(100% + 6px);
+        right: 0;
+        z-index: 400;
+        min-width: 150px;
+        padding: 4px;
+        background: var(--s2);
+        border: 1px solid var(--border2);
+        border-radius: 8px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+      }
+      .gear-pop[hidden] {
+        display: none;
+      }
+      .gear-pop button {
+        display: block;
+        width: 100%;
+        padding: 9px 12px;
+        border: none;
+        border-radius: 5px;
+        background: none;
+        color: var(--text);
+        font: inherit;
         font-size: 14px;
-        font-family: var(--body);
         text-align: left;
         cursor: pointer;
       }
-      .sb-settings:hover {
-        background: var(--s2);
-        color: var(--text);
+      .gear-pop button:hover,
+      .gear-pop button:focus-visible {
+        background: var(--s3);
       }
-      .set-card {
-        margin-top: 14px;
-        padding: 14px;
-        border: 1px solid var(--border2);
-        border-radius: 8px;
+      .gear-pop button:disabled {
+        color: var(--muted);
+        cursor: default;
       }
-      .set-card h3 {
-        font-size: 15px;
-        font-weight: 600;
-        color: var(--text);
+      .race-title a {
+        color: inherit;
+        text-decoration: none;
       }
-      .set-card p {
-        margin: 4px 0 12px;
-        font-size: 13px;
-        line-height: 1.5;
+      .race-title a:hover {
+        text-decoration: underline;
+        text-underline-offset: 3px;
+      }
+      .race-title .ext {
+        font-size: 0.6em;
+        vertical-align: super;
         color: var(--muted);
       }
-      .set-card strong,
       .shell-msg strong {
         color: var(--text);
       }
@@ -333,6 +376,21 @@
         font-size: 13px;
         color: var(--muted);
         line-height: 1.5;
+      }
+      .shell-toast {
+        position: fixed;
+        left: 50%;
+        bottom: 24px;
+        transform: translateX(-50%);
+        z-index: 2000;
+        max-width: calc(100vw - 32px);
+        padding: 10px 16px;
+        border-radius: 8px;
+        border: 1px solid rgba(47, 200, 122, 0.4);
+        background: var(--s2);
+        color: var(--text);
+        font-size: 14px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
       }
       .shell-err {
         color: var(--run);
@@ -2235,6 +2293,8 @@
         }
         .race-countdown {
           font-size: 20px;
+        }
+        .race-actions {
           margin-left: auto;
         }
         .proj-bar {
@@ -2386,7 +2446,6 @@
       </div>
       <div class="sb-list" id="sb-list"></div>
       <button class="sb-add" onclick="openEventModal()">+ New event</button>
-      <button class="sb-settings" onclick="openSettings()">&#x2699; Settings</button>
       <div class="sb-foot">
         <div class="sb-sync" id="sb-sync"></div>
         <button class="proj-update-btn" id="sb-lock-btn" onclick="toggleLock()"></button>
@@ -2508,7 +2567,26 @@
               <div class="race-sub" id="race-sub"></div>
             </div>
           </div>
-          <div class="race-countdown" id="countdown">&#8212; days</div>
+          <div class="race-actions">
+            <div class="race-countdown" id="countdown">&#8212; days</div>
+            <div class="gear-menu" id="gear-menu">
+              <button
+                class="gear-btn"
+                id="gear-btn"
+                onclick="toggleGearMenu()"
+                aria-haspopup="menu"
+                aria-expanded="false"
+                aria-label="Data options"
+                title="Export / Import"
+              >
+                &#x2699;
+              </button>
+              <div class="gear-pop" id="gear-pop" role="menu" hidden>
+                <button role="menuitem" id="export-btn" onclick="gearPick(exportTrainingData)">Export</button>
+                <button role="menuitem" onclick="gearPick(openUploadModal)">Import</button>
+              </div>
+            </div>
+          </div>
         </div>
         <!-- Race Projections — compact, above the table -->
         <div class="proj-bar">
@@ -2565,13 +2643,6 @@
               </div>
               <button class="proj-update-btn" onclick="openChartModal()">
                 View Data
-              </button>
-              <button
-                class="proj-update-btn"
-                onclick="openSettings()"
-                title="Export, back up or upload your training data"
-              >
-                &#x2699; Settings
               </button>
             </div>
           </div>
@@ -3008,6 +3079,16 @@
       ['swim', 'bike', 'run'].forEach((d) => {
         if (!eventHas(d)) document.body.classList.add('no-' + d);
       });
+      // Totals table: a row per discipline the event has, plus Total when there's more than one
+      (() => {
+        const discs = ['swim', 'bike', 'run'].filter(eventHas);
+        const keep = discs.length > 1 ? [...discs, 'tot'] : discs;
+        const cells = [...document.querySelectorAll('.stat-grid > *')];
+        ['swim', 'bike', 'run', 'tot'].forEach((row, i) => {
+          if (!keep.includes(row))
+            cells.slice(9 * (i + 1), 9 * (i + 2)).forEach((c) => (c.style.display = 'none'));
+        });
+      })();
       function fmtEventDate(str, opts) {
         return new Date(str + 'T12:00:00').toLocaleDateString('en-US', opts);
       }
@@ -3046,11 +3127,23 @@
         if (days > 0) return days + ' days';
         return days === 0 ? 'Race day' : 'Complete';
       }
+      // Race website link: only http(s), returns '' for anything else
+      function safeUrl(url) {
+        try {
+          const u = new URL(url);
+          return u.protocol === 'http:' || u.protocol === 'https:' ? u.href : '';
+        } catch (e) {
+          return '';
+        }
+      }
       function renderEventHeader() {
         const full = fmtEventDate(EVENT.raceDate, { month: 'long', day: 'numeric', year: 'numeric' });
         const short = fmtEventDate(EVENT.raceDate, { month: 'short', day: 'numeric', year: 'numeric' });
         document.title = EVENT.name + ' · Training Calendar';
-        document.getElementById('race-title').textContent = EVENT.name.toUpperCase();
+        const site = safeUrl(EVENT.url);
+        document.getElementById('race-title').innerHTML = site
+          ? `<a href="${esc(site)}" target="_blank" rel="noopener noreferrer" title="Open the race website">${esc(EVENT.name.toUpperCase())}<span class="ext"> &#x2197;</span></a>`
+          : esc(EVENT.name.toUpperCase());
         document.getElementById('race-sub').innerHTML = [EVENT.location, full].filter(Boolean).map(esc).join(' &middot; ');
         document.getElementById('sn-brand-title').textContent = EVENT.name.toUpperCase();
         document.getElementById('sn-brand-meta').innerHTML = [short, EVENT.location].filter(Boolean).map(esc).join(' &middot; ');
@@ -6389,7 +6482,7 @@
         const pick = (d) => {
           const all = sorted.filter((s) => effectiveDate(s) === d);
           return (
-            all.find((s) => s.type !== 'ar' && s.type !== 'cf') ||
+            all.find((s) => !TIME_ONLY.includes(s.type)) ||
             all[0] ||
             null
           );
@@ -6448,7 +6541,7 @@
             runMi += c.distance || 0;
             runMin += dur;
             runCount++;
-          } else if (s.type === 'cf' || s.type === 'ar') {
+          } else if (TIME_ONLY.includes(s.type)) {
             cfMin += dur;
           }
         });
@@ -6476,7 +6569,7 @@
               runMi += w.distance || 0;
               runMin += dur;
               runCount++;
-            } else if (w.type === 'cf' || w.type === 'ar') {
+            } else if (TIME_ONLY.includes(w.type)) {
               cfMin += dur;
             }
           }
@@ -6770,9 +6863,14 @@
         cf: { color: '#4ADE80', label: 'CF', unit: '' },
         brick: { color: '#C084FC', label: 'BRICK', unit: 'mi' },
         ar: { color: '#9CA3AF', label: 'RECOVERY', unit: '' },
+        str: { color: '#FB923C', label: 'STRENGTH', unit: '' },
+        mob: { color: '#2DD4BF', label: 'MOBILITY', unit: '' },
+        pt: { color: '#F472B6', label: 'PT', unit: '' },
         swimrun: { color: '#38BDF8', label: 'SWIM+RUN', unit: 'yds' },
         race: { color: '#E8002D', label: 'RACE', unit: '' },
       };
+      // Sessions logged by time only (no distance)
+      const TIME_ONLY = ['cf', 'ar', 'str', 'mob', 'pt'];
       function typeMeta(t) {
         return TYPE[t] || { color: '#888', label: '?', unit: '' };
       }
@@ -6808,7 +6906,7 @@
         const c = completions[s.id];
         const done = !!c;
         let subHTML = '';
-        if (s.type !== 'cf' && s.type !== 'ar') {
+        if (!TIME_ONLY.includes(s.type)) {
           if (done) {
             let resultText;
             if (s.type === 'brick') {
@@ -6845,7 +6943,9 @@
           : w.done
             ? w.type === 'brick'
               ? `Bike ${w.bikeDist || 0} mi &middot; ${w.bikeDur || 0} min &nbsp;| Run ${w.runDist || 0} mi &middot; ${w.runDur || 0} min`
-              : `${esc(String(w.distance))} ${m.unit} &middot; ${esc(String(w.duration))} min`
+              : m.unit
+                ? `${esc(String(w.distance))} ${m.unit} &middot; ${esc(String(w.duration))} min`
+                : `${esc(String(w.duration || 0))} min`
             : '<span style="color:var(--dim)">Not logged &mdash; click to log</span>';
         return `
     <div class="custom-card${w.done ? ' done' : ''}" onclick="openCustomModal('${w.id}')">
@@ -7221,6 +7321,9 @@
         { type: 'brick', label: 'Brick' },
         { type: 'bike', label: 'Bike' },
         { type: 'ar', label: 'Recovery' },
+        { type: 'str', label: 'Strength' },
+        { type: 'mob', label: 'Mobility' },
+        { type: 'pt', label: 'PT' },
       ];
       let _addDate = '',
         _addType = 'run';
@@ -7331,7 +7434,7 @@
             id,
             date: _addDate,
             type: _addType,
-            title: m.label,
+            title: (ADD_TYPES.find((t) => t.type === _addType) || m).label,
             unit: isSwimAdd ? 'yds' : m.unit,
             distance: dist,
             duration: dur,
@@ -7952,7 +8055,7 @@
           { color: '#38BDF8', val: st.swimMinRaw, label: 'Swim' },
           { color: '#FCD34D', val: st.bikeMinRaw, label: 'Bike' },
           { color: '#F87171', val: st.runMinRaw,  label: 'Run'  },
-          { color: '#4ADE80', val: st.cfMinRaw,   label: 'CF'   },
+          { color: '#9CA3AF', val: st.cfMinRaw,   label: 'Other' },
         ] : [
           { color: '#38BDF8', val: st.swimMiRaw, label: 'Swim' },
           { color: '#FCD34D', val: st.bikeMiRaw, label: 'Bike' },
