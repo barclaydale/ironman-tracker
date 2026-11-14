@@ -91,12 +91,73 @@ async function pushState() {
     localStorage.removeItem(DIRTY_KEY);
     shell.savedAt = new Date();
     shell.error = '';
+    pushCalendar();
   } catch (e) {
     shell.error = e.message;
   } finally {
     shell.saving = false;
     renderSyncStatus();
   }
+}
+// ── Calendar feed ──
+// The schedule copy is stored apart from the event state (it carries the workout
+// text, ~70 KB) and only uploaded when it actually changes.
+const CAL_SENT_KEY = LS + 'cal-sent';
+function hashStr(str) {
+  let h = 5381;
+  for (let i = 0; i < str.length; i++) h = ((h << 5) + h + str.charCodeAt(i)) | 0;
+  return String(h >>> 0);
+}
+async function pushCalendar() {
+  if (shell.mode !== 'cloud' || shell.locked) return;
+  const sessions = calendarSnapshot();
+  const hash = hashStr(EVENT.id + JSON.stringify(sessions));
+  if (localStorage.getItem(CAL_SENT_KEY) === hash) return;
+  try {
+    await api('calendar?event=' + encodeURIComponent(EVENT.id), { method: 'PUT', body: JSON.stringify({ sessions }) });
+    localStorage.setItem(CAL_SENT_KEY, hash);
+  } catch (e) {} // the next save tries again
+}
+function calendarUrl() {
+  return location.origin + '/api/calendar?event=' + encodeURIComponent(EVENT.id);
+}
+function openCalendarModal() {
+  if (shell.mode !== 'cloud') {
+    const m = shellModal('Calendar link', `<p class="shell-msg">The calendar link needs the online (Vercel) version of the site.</p>`, [
+      { label: 'OK', primary: true, onClick: () => m.close() },
+    ]);
+    return;
+  }
+  pushCalendar();
+  const url = calendarUrl();
+  const m = shellModal(
+    'Calendar link',
+    `<p class="shell-msg">Subscribe to this link to see ${esc(EVENT.name)} in your calendar. It always reflects the latest plan, moved sessions and logged workouts.</p>
+     <input class="proj-inp" id="cal-url" readonly value="${esc(url)}" style="margin-top:12px" />
+     <ol class="shell-msg cal-steps">
+       <li><b>Google Calendar</b> (on a computer): Other calendars <b>+</b> → From URL → paste. Google checks for changes every several hours to a day.</li>
+       <li><b>Apple Calendar</b>: File → New Calendar Subscription (Mac), or Settings → Calendar → Accounts → Add Subscribed Calendar (iPhone).</li>
+     </ol>`,
+    [
+      { label: 'Close', onClick: () => m.close() },
+      {
+        label: 'Copy link',
+        primary: true,
+        onClick: async () => {
+          try {
+            await navigator.clipboard.writeText(url);
+          } catch (e) {
+            const inp = document.getElementById('cal-url');
+            inp.select();
+            document.execCommand('copy');
+          }
+          m.close();
+          shellToast('Calendar link copied');
+        },
+      },
+    ],
+  );
+  document.getElementById('cal-url').addEventListener('focus', (e) => e.target.select());
 }
 async function pushEvents() {
   await api('state', { method: 'PUT', body: JSON.stringify({ events: EVENTS }) });
@@ -182,6 +243,8 @@ async function bootShell() {
       // Unsynced edits made on this device win over the cloud copy
       if (!shell.locked) await pushState();
     } else if (doc.state) applyEventState(doc.state);
+    // Date/type edits move sessions without a state save, so check the feed copy too
+    pushCalendar();
   } catch (e) {
     shell.error = e.message;
   }
@@ -437,6 +500,7 @@ async function deleteEvent(ev, m) {
     if (shell.mode === 'cloud') {
       await pushEvents();
       await api('state?event=' + encodeURIComponent(ev.id), { method: 'DELETE' });
+      await api('calendar?event=' + encodeURIComponent(ev.id), { method: 'DELETE' }).catch(() => {});
     }
   } catch (e) {
     EVENTS = prevEvents;

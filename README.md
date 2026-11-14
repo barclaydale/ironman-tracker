@@ -37,6 +37,14 @@ Set **Goal time** on the event (✎ in the sidebar, or ✎ Edit on the Goal box)
 `hh:mm` for races of an hour or more and `mm:ss` for shorter ones (e.g. 5K, 1K swim);
 **Other** events pick the format. The goal shows in a box beside Race Projections.
 
+## Calendar feed
+
+**⚙ → Calendar link** copies a subscription URL (`/api/calendar?event=<id>`) for
+that event. Add it in Google Calendar (Other calendars **+** → From URL) or Apple
+Calendar. Each session is an all-day event with the workout text; logged ones get
+a ✓. Whenever you edit (while unlocked), the page uploads a copy of the schedule.
+Google picks up changes on its own schedule, usually within a day.
+
 ## Local development
 
 ```sh
@@ -53,3 +61,4 @@ saves to the browser only.
 - `app-shell.js` – event sidebar, cloud sync, passcode lock, ⚙ menu, import
 - `training-export.js` – Export button (JSON + PDF report + Excel)
 - `api/state.js`, `api/auth.js` – storage + passcode check
+- `api/calendar.js` – calendar feed (`.ics`)

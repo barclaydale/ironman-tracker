@@ -377,7 +377,17 @@
         color: var(--muted);
         line-height: 1.5;
       }
-      .shell-toast {
+      .cal-steps {
+        margin: 12px 0 0;
+        padding-left: 18px;
+        display: grid;
+        gap: 6px;
+      }
+      .cal-steps b {
+        color: var(--text);
+        font-weight: 600;
+      }
+            .shell-toast {
         position: fixed;
         left: 50%;
         bottom: 24px;
@@ -2621,13 +2631,14 @@
                 aria-haspopup="menu"
                 aria-expanded="false"
                 aria-label="Data options"
-                title="Export / Import"
+                title="Export / Import / Calendar"
               >
                 &#x2699;
               </button>
               <div class="gear-pop" id="gear-pop" role="menu" hidden>
                 <button role="menuitem" id="export-btn" onclick="gearPick(exportTrainingData)">Export</button>
                 <button role="menuitem" onclick="gearPick(openUploadModal)">Import</button>
+                <button role="menuitem" id="cal-btn" onclick="gearPick(openCalendarModal)">Calendar link</button>
               </div>
             </div>
           </div>
@@ -6566,6 +6577,44 @@
 
       function activePlan() {
         return PLAN.filter((s) => !deletedSessions.has(s.id));
+      }
+
+      // ── Calendar feed: a plain-text copy of the schedule for /api/calendar ──
+      function htmlToText(html) {
+        const d = document.createElement('div');
+        d.innerHTML = String(html || '')
+          .replace(/<span class="chip">.*?<\/span>/g, '') // chips repeat the summary lines
+          .replace(/<\/span>(?=<span)/g, ' · ')
+          .replace(/<\/span>/g, ' ')
+          .replace(/<\/(div|p)>|<br\s*\/?>/gi, '\n');
+        return d.textContent.replace(/[ \t]+\n/g, '\n').replace(/\n{2,}/g, '\n').trim();
+      }
+      function calendarSnapshot() {
+        const label = (t) => (ADD_TYPES.find((a) => a.type === t) || { label: typeMeta(t).label }).label;
+        const logged = (c, unit) =>
+          [c.distance ? c.distance.toLocaleString() + ' ' + unit : '', c.duration ? c.duration + ' min' : '']
+            .filter(Boolean)
+            .join(' · ');
+        const plan = activePlan().map((s) => {
+          const c = completions[s.id];
+          return {
+            id: s.id,
+            date: s.id === 'race-day' ? EVENT.raceDate : effectiveDate(s),
+            title: s.id === 'race-day' ? EVENT.name : label(s.type) + ': ' + s.title,
+            desc: [s.summary1, s.summary2, htmlToText(s.detail)].filter(Boolean).join('\n'),
+            done: !!c,
+            log: c ? logged(c, typeMeta(s.type).unit) : '',
+          };
+        });
+        const custom = Object.values(customWorkouts).map((w) => ({
+          id: w.id,
+          date: w.date,
+          title: w.title,
+          desc: w.note || '',
+          done: !!w.done,
+          log: w.done ? logged(w, w.unit) : '',
+        }));
+        return plan.concat(custom).sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
       }
 
       function sortedSessions() {
