@@ -770,6 +770,32 @@
         width: fit-content;
         margin: 0 auto 4px;
       }
+      .proj-row {
+        display: flex;
+        justify-content: center;
+        align-items: stretch;
+        flex-wrap: wrap;
+        gap: 6px 10px;
+        margin-bottom: 4px;
+      }
+      .proj-row .proj-bar {
+        margin: 0;
+      }
+      .goal-bar[hidden] {
+        display: none;
+      }
+      .goal-row {
+        display: flex;
+        gap: 8px;
+      }
+      .goal-row select.proj-inp {
+        width: auto;
+        font-family: var(--body);
+      }
+      .goal-row .proj-inp:first-child {
+        flex: 1;
+        font-family: var(--mono);
+      }
       .proj-bar-hdr {
         font-family: var(--oswald);
         font-size: 19px;
@@ -2303,6 +2329,10 @@
           align-items: flex-end;
           gap: 6px;
         }
+        .proj-row {
+          flex-direction: column;
+          gap: 6px;
+        }
         .proj-bar {
           width: auto;
           margin: 0 0 4px;
@@ -2389,8 +2419,16 @@
         }
         .chart-type-grp {
           width: 100%;
+          min-width: 0;
           overflow-x: auto;
           scrollbar-width: none;
+          -webkit-overflow-scrolling: touch;
+        }
+        .chart-type-grp::-webkit-scrollbar {
+          display: none;
+        }
+        .chart-type-btn {
+          flex-shrink: 0;
         }
         .chart-ctrl-sep {
           display: none;
@@ -2594,6 +2632,24 @@
             </div>
           </div>
         </div>
+        <div class="proj-row">
+        <!-- Goal — mirrors the projections box so the target stays in view -->
+        <div class="proj-bar goal-bar" id="goal-bar" hidden>
+          <span class="proj-bar-hdr">Goal</span>
+          <div class="proj-bar-items">
+            <div class="proj-bar-item tot">
+              <span class="proj-bar-lbl">Finish</span>
+              <div class="proj-val-row">
+                <div class="stat-val" id="goal-time"></div>
+                <span class="proj-pace" id="goal-pace"></span>
+                <span class="proj-conf" id="goal-unit"></span>
+              </div>
+            </div>
+          </div>
+          <button class="proj-update-btn" onclick="openEventModal(EVENT.id)">
+            &#x270E; Edit
+          </button>
+        </div>
         <!-- Race Projections — compact, above the table -->
         <div class="proj-bar">
           <span class="proj-bar-hdr">Race Projections</span>
@@ -2633,6 +2689,7 @@
           <button class="proj-update-btn" onclick="openProjModal()">
             &#x270E; Update
           </button>
+        </div>
         </div>
         <div>
           <div
@@ -3035,6 +3092,25 @@
         'ows-10k': { group: 'Open Water Swim', label: '10K Swim', distLabel: '10K swim', weeks: 20, dist: { swim: 10936 }, proj: { swim: '3:00', total: '3:00' } },
         other: { group: 'Other', label: 'Other', weeks: 12, dist: {}, proj: { total: '1:00' } },
       };
+      // Goal times: 'hm' (h:mm) for races that take an hour or more, 'ms' (m:ss) for
+      // shorter ones. 'Other' can't be inferred, so it stores its own goalFmt.
+      function goalFormat(type, otherFmt) {
+        if (!EVENT_TYPES[type] || type === 'other') return otherFmt === 'ms' ? 'ms' : 'hm';
+        return parseInt(EVENT_TYPES[type].proj.total, 10) >= 1 ? 'hm' : 'ms';
+      }
+      // Normalise typed or legacy goals ('12', '1200', 'Sub-12:00:00') to '12:00'; '' if unreadable
+      function normalizeGoal(str, fmt) {
+        const s = String(str || '');
+        const m = s.match(/(\d+):(\d{1,2})(?::\d{1,2})?/) || s.replace(/\D/g, '').match(/^(\d+?)(\d{2})?$/);
+        if (!m || !m[1]) return '';
+        const big = parseInt(m[1], 10), small = parseInt(m[2] || '0', 10);
+        if (small > 59 || (fmt === 'hm' && big > 99) || (!big && !small)) return '';
+        return big + ':' + String(small).padStart(2, '0');
+      }
+      function goalMinutes(goal, fmt) {
+        const [a, b] = goal.split(':').map(Number);
+        return fmt === 'hm' ? a * 60 + b : a + b / 60;
+      }
       const DEFAULT_EVENTS = [
         {
           id: 'imfl-2026',
@@ -3043,7 +3119,7 @@
           raceDate: '2026-11-07',
           startDate: '2026-05-23',
           location: 'Panama City Beach',
-          goal: 'Sub-12:00:00',
+          goal: '12:00',
         },
       ];
       function loadEvents() {
@@ -3062,6 +3138,9 @@
       localStorage.setItem('active-event', EVENT.id);
       const IS_IMFL = EVENT.id === 'imfl-2026';
       const EVENT_TYPE = EVENT_TYPES[EVENT.type] || EVENT_TYPES.other;
+      const GOAL_FMT = goalFormat(EVENT.type, EVENT.goalFmt);
+      const GOAL = normalizeGoal(EVENT.goal, GOAL_FMT);
+      const GOAL_TEXT = GOAL ? GOAL + (GOAL_FMT === 'hm' ? ' hrs' : ' min') : '';
       // IMFL keeps its original storage keys so existing browser data still loads
       function lsPrefixFor(id) {
         return id === 'imfl-2026' ? 'imfl-' : `ev-${id}-`;
@@ -3115,7 +3194,7 @@
             type: 'race',
             title: EVENT.name,
             summary1: [EVENT.location, fmtEventDate(EVENT.raceDate, { month: 'short', day: 'numeric', year: 'numeric' })].filter(Boolean).join(' · '),
-            summary2: EVENT.goal ? 'Goal: ' + EVENT.goal : '',
+            summary2: GOAL_TEXT ? 'Goal: ' + GOAL_TEXT : '',
             detail: '',
             targetDuration: null,
             targetDistance: raceTotalMiles() || null,
@@ -6326,7 +6405,9 @@
         return ss === 60 ? `${mm + 1}:00` : `${mm}:${String(ss).padStart(2, '0')}`;
       }
       function projPace(sport, timeStr) {
-        const mins = parseTimeToMins(timeStr);
+        return paceFor(sport, parseTimeToMins(timeStr));
+      }
+      function paceFor(sport, mins) {
         if (!mins) return '';
         if (sport === 'swim') return '(' + fmtMinSec(mins / ((EVENT_TYPE.dist.swim * 0.9144) / 100)) + '/100m)';
         if (sport === 'bike') return '(' + (EVENT_TYPE.dist.bike / (mins / 60)).toFixed(1) + ' mph)';
@@ -6346,6 +6427,18 @@
           const paceEl = document.getElementById('proj-' + k + '-pace');
           if (paceEl) paceEl.textContent = projPace(k, p.time);
         });
+      }
+
+      function renderGoal() {
+        const bar = document.getElementById('goal-bar');
+        bar.hidden = !GOAL;
+        if (!GOAL) return;
+        document.getElementById('goal-time').textContent = GOAL;
+        document.getElementById('goal-unit').textContent = GOAL_FMT === 'hm' ? 'h:mm' : 'm:ss';
+        // A pace only means something for single-sport races
+        const discs = ['swim', 'bike', 'run'].filter(eventHas);
+        document.getElementById('goal-pace').textContent =
+          discs.length === 1 ? paceFor(discs[0], goalMinutes(GOAL, GOAL_FMT)) : '';
       }
 
       function openProjModal() {
@@ -6903,7 +6996,7 @@
     <div class="race-day-card" onclick="openModal('race-day')">
       <div class="rdc-label">${esc(fmtEventDate(EVENT.raceDate, { month: 'long', day: 'numeric', year: 'numeric' }).toUpperCase())}</div>
       <div class="rdc-title">&#x1F3C1; ${esc(EVENT.name.toUpperCase())}</div>
-      <div class="rdc-sub">${[EVENT.location, EVENT_TYPE.distLabel || (raceTotalMiles() ? raceTotalMiles() + ' miles' : ''), EVENT.goal].filter(Boolean).map(esc).join(' &middot; ')}</div>
+      <div class="rdc-sub">${[EVENT.location, EVENT_TYPE.distLabel || (raceTotalMiles() ? raceTotalMiles() + ' miles' : ''), GOAL_TEXT && 'Goal ' + GOAL_TEXT].filter(Boolean).map(esc).join(' &middot; ')}</div>
     </div>`;
         if (deletedSessions.has(s.id)) {
           const m = typeMeta(s.type);
@@ -9014,6 +9107,7 @@
       renderTodayTomorrow();
       renderCalendar();
       renderProjections();
+      renderGoal();
       requestAnimationFrame(() => requestAnimationFrame(() => {
         updatePhaseOffset();
         const tp = document.getElementById('top-panel');

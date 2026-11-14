@@ -31,6 +31,12 @@ unlock).
 Edit an event (✎ in the sidebar) and fill in **Race website**; the event title
 in the top left then links to it in a new tab.
 
+## Goal time
+
+Set **Goal time** on the event (✎ in the sidebar, or ✎ Edit on the Goal box). It's
+`hh:mm` for races of an hour or more and `mm:ss` for shorter ones (e.g. 5K, 1K swim);
+**Other** events pick the format. The goal shows in a box beside Race Projections.
+
 ## Local development
 
 ```sh

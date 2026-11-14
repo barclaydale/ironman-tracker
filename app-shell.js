@@ -337,7 +337,7 @@ function openEventModal(id) {
       <label>Race date<input class="proj-inp" id="ev-race" type="date" value="${esc(v.raceDate)}"${fixed ? ' disabled' : ''} /></label>
       <label>Training starts<input class="proj-inp" id="ev-start" type="date" value="${esc(v.startDate)}"${fixed ? ' disabled' : ''} /></label>
       <label>Location<input class="proj-inp" id="ev-loc" value="${esc(v.location || '')}" placeholder="Geneva, NY" /></label>
-      <label class="wide">Goal<input class="proj-inp" id="ev-goal" value="${esc(v.goal || '')}" placeholder="Sub-12:00:00" /></label>
+      <label class="wide"><span id="ev-goal-lbl">Goal time</span><span class="goal-row"><input class="proj-inp" id="ev-goal" inputmode="numeric" autocomplete="off" /><select class="proj-inp" id="ev-goal-fmt" aria-label="Goal time format"><option value="hm">hh:mm</option><option value="ms">mm:ss</option></select></span></label>
       <label class="wide">Race website<input class="proj-inp" id="ev-url" type="url" inputmode="url" value="${esc(v.url || '')}" placeholder="https://www.ironman.com/races/…" /></label>
     </div>
     <div class="shell-err" id="ev-err"></div>`,
@@ -358,6 +358,27 @@ function openEventModal(id) {
   };
   document.getElementById('ev-race').addEventListener('input', suggest);
   document.getElementById('ev-type').addEventListener('change', suggest);
+  // Goal: h:mm or m:ss depending on the race; 'Other' picks its own format
+  const goalEl = document.getElementById('ev-goal');
+  const fmtEl = document.getElementById('ev-goal-fmt');
+  const typeEl = document.getElementById('ev-type');
+  const syncGoalFmt = () => {
+    const fmt = goalFormat(typeEl.value, fmtEl.value);
+    fmtEl.value = fmt;
+    fmtEl.hidden = typeEl.value !== 'other';
+    goalEl.placeholder = fmt === 'hm' ? 'hh:mm' : 'mm:ss';
+    document.getElementById('ev-goal-lbl').textContent = `Goal time (${goalEl.placeholder})`;
+  };
+  fmtEl.value = goalFormat(v.type, v.goalFmt);
+  goalEl.value = normalizeGoal(v.goal, fmtEl.value);
+  syncGoalFmt();
+  typeEl.addEventListener('change', syncGoalFmt);
+  fmtEl.addEventListener('change', syncGoalFmt);
+  // Digits only; the colon goes in before the last two (works on a phone's number pad)
+  goalEl.addEventListener('input', () => {
+    const d = goalEl.value.replace(/\D/g, '').replace(/^0+(?=\d{3})/, '').slice(0, 4);
+    goalEl.value = d.length > 2 ? d.slice(0, -2) + ':' + d.slice(-2) : d;
+  });
   document.getElementById('ev-name').focus();
 }
 async function saveEvent(ev, m) {
@@ -371,8 +392,15 @@ async function saveEvent(ev, m) {
     startDate: val('ev-start'),
     location: val('ev-loc'),
     goal: val('ev-goal'),
+    goalFmt: val('ev-goal-fmt'),
     url: val('ev-url'),
   };
+  const goal = normalizeGoal(next.goal, goalFormat(next.type, next.goalFmt));
+  if (next.goal && !goal)
+    return (err.textContent = `Goal time should look like ${document.getElementById('ev-goal').placeholder}`);
+  next.goal = goal;
+  if (!next.goal) delete next.goal;
+  if (next.type !== 'other' || !next.goal) delete next.goalFmt;
   if (next.url && !/^[a-z][a-z0-9+.-]*:/i.test(next.url)) next.url = 'https://' + next.url;
   if (next.url && !safeUrl(next.url)) return (err.textContent = "That race website doesn't look like a web address");
   if (!next.url) delete next.url;
