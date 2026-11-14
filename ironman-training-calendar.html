@@ -2281,9 +2281,13 @@
           position: static;
           padding: 8px 12px 10px;
         }
+        /* Countdown pinned top-right, gear tucked underneath it */
         .race-info-row {
-          flex-wrap: wrap;
-          gap: 4px 12px;
+          align-items: flex-start;
+          gap: 10px;
+        }
+        .race-id {
+          align-items: flex-start;
         }
         .race-title {
           font-size: 20px;
@@ -2295,7 +2299,9 @@
           font-size: 20px;
         }
         .race-actions {
-          margin-left: auto;
+          flex-direction: column;
+          align-items: flex-end;
+          gap: 6px;
         }
         .proj-bar {
           width: auto;
@@ -7987,7 +7993,10 @@
 
       // ── Chart Modal ──
       let chartType = 'volume';
-      let chartDiscs = { swim: true, bike: true, run: true, total: true };
+      // Only the event's disciplines, plus Total when there's more than one
+      const CHART_DISCS = ['swim', 'bike', 'run'].filter(eventHas);
+      if (CHART_DISCS.length > 1) CHART_DISCS.push('total');
+      let chartDiscs = Object.fromEntries(CHART_DISCS.map((d) => [d, true]));
       const CHART_COLORS = {
         swim: '#38BDF8',
         bike: '#FCD34D',
@@ -8009,6 +8018,14 @@
         if (ov && ov.style.display !== 'none') drawChart();
       }
       function openChartModal() {
+        ['swim', 'bike', 'run', 'total'].forEach((d) => {
+          if (!CHART_DISCS.includes(d)) document.getElementById('cdisc-' + d).style.display = 'none';
+        });
+        // a single discipline has nothing to toggle
+        if (CHART_DISCS.length === 1) {
+          document.querySelector('.chart-disc-grp').style.visibility = 'hidden';
+          document.querySelector('.chart-ctrl-sep').style.visibility = 'hidden';
+        }
         document.getElementById('chart-overlay').style.display = 'flex';
         requestAnimationFrame(drawChart);
       }
@@ -8037,7 +8054,7 @@
         const totBtn = document.getElementById('cdisc-total');
         if (totBtn)
           totBtn.style.display =
-            type === 'pacing' || type === 'speed' ? 'none' : '';
+            !CHART_DISCS.includes('total') || type === 'pacing' || type === 'speed' ? 'none' : '';
         chartMouseLeave();
         if (isBreakdown) renderDonutBreakdown(type);
         else drawChart();
@@ -8051,16 +8068,16 @@
           return;
         }
         const isTime = type === 'breakdown-time';
-        const segs = isTime ? [
-          { color: '#38BDF8', val: st.swimMinRaw, label: 'Swim' },
-          { color: '#FCD34D', val: st.bikeMinRaw, label: 'Bike' },
-          { color: '#F87171', val: st.runMinRaw,  label: 'Run'  },
+        const segs = (isTime ? [
+          { disc: 'swim', color: '#38BDF8', val: st.swimMinRaw, label: 'Swim' },
+          { disc: 'bike', color: '#FCD34D', val: st.bikeMinRaw, label: 'Bike' },
+          { disc: 'run',  color: '#F87171', val: st.runMinRaw,  label: 'Run'  },
           { color: '#9CA3AF', val: st.cfMinRaw,   label: 'Other' },
         ] : [
-          { color: '#38BDF8', val: st.swimMiRaw, label: 'Swim' },
-          { color: '#FCD34D', val: st.bikeMiRaw, label: 'Bike' },
-          { color: '#F87171', val: st.runMiRaw,  label: 'Run'  },
-        ];
+          { disc: 'swim', color: '#38BDF8', val: st.swimMiRaw, label: 'Swim' },
+          { disc: 'bike', color: '#FCD34D', val: st.bikeMiRaw, label: 'Bike' },
+          { disc: 'run',  color: '#F87171', val: st.runMiRaw,  label: 'Run'  },
+        ]).filter((x) => !x.disc || eventHas(x.disc));
         const tot = segs.reduce((s, x) => s + x.val, 0);
         const centerTop = isTime ? fmtTime(tot) : tot.toLocaleString('en-US', {minimumFractionDigits:1, maximumFractionDigits:1});
         const centerSub = isTime ? 'hr:min' : 'mi total';
