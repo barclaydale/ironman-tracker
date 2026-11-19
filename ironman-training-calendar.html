@@ -1013,6 +1013,10 @@
         border-color: var(--red);
         color: #fff;
       }
+      .chart-disc-grp[hidden],
+      .chart-ctrl-sep[hidden] {
+        display: none !important;
+      }
       .chart-ctrl-sep {
         width: 1px;
         height: 18px;
@@ -2442,6 +2446,35 @@
         }
         .chart-ctrl-sep {
           display: none;
+        }
+        /* Breakdown: ring on top, legend below */
+        #donut-body {
+          overflow-y: auto;
+          padding: 20px 16px;
+        }
+        .breakdown-card {
+          flex-direction: column;
+          gap: 24px;
+          height: auto;
+          width: 100%;
+          margin: auto 0;
+        }
+        .donut-svg-wrap {
+          height: auto;
+          width: min(100%, 300px);
+        }
+        .breakdown-legend {
+          gap: 12px;
+          align-self: stretch;
+          max-width: 320px;
+          margin: 0 auto;
+        }
+        .donut-leg-item {
+          font-size: 14px;
+        }
+        .donut-leg-item > span:nth-of-type(2) {
+          flex: 1;
+          text-align: right;
         }
       }
       @media (prefers-color-scheme: light) {
@@ -8165,8 +8198,8 @@
         });
         // a single discipline has nothing to toggle
         if (CHART_DISCS.length === 1) {
-          document.querySelector('.chart-disc-grp').style.visibility = 'hidden';
-          document.querySelector('.chart-ctrl-sep').style.visibility = 'hidden';
+          document.querySelector('.chart-disc-grp').hidden = true;
+          document.querySelector('.chart-ctrl-sep').hidden = true;
         }
         document.getElementById('chart-overlay').style.display = 'flex';
         requestAnimationFrame(drawChart);
@@ -8183,6 +8216,7 @@
           .querySelectorAll('.chart-type-btn')
           .forEach((b) => b.classList.remove('sel'));
         btn.classList.add('sel');
+        btn.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'smooth' });
 
         const isBreakdown = type === 'breakdown-dist' || type === 'breakdown-time';
         document.getElementById('chart-canvas').style.display = isBreakdown ? 'none' : '';
@@ -8381,8 +8415,8 @@
         const tt = document.getElementById('chart-tooltip');
         if (!canvas || !tt || !_scatterPts.length) return;
         const rect = canvas.getBoundingClientRect();
-        const mx = (e.clientX - rect.left) * (canvas.width / rect.width);
-        const my = (e.clientY - rect.top) * (canvas.height / rect.height);
+        const mx = e.clientX - rect.left;
+        const my = e.clientY - rect.top;
         const useXSnap =
           chartType === 'volume' ||
           chartType === 'cumulative' ||
@@ -8503,10 +8537,13 @@
           tt.innerHTML = html;
           const bw = tt.offsetWidth || 160,
             bh = tt.offsetHeight || 70;
-          let tx2 = e.clientX - rect.left + 12,
-            ty2 = e.clientY - rect.top - bh - 8;
-          if (tx2 + bw > rect.width) tx2 = e.clientX - rect.left - bw - 12;
-          if (ty2 < 0) ty2 = e.clientY - rect.top + 12;
+          // a finger covers the point, so touch tooltips sit further above it
+          const lift = e.isTouch ? 28 : 8;
+          let tx2 = mx + 12,
+            ty2 = my - bh - lift;
+          if (tx2 + bw > rect.width) tx2 = mx - bw - 12;
+          tx2 = Math.max(4, Math.min(tx2, rect.width - bw - 4));
+          if (ty2 < 0) ty2 = my + lift;
           tt.style.left = tx2 + 'px';
           tt.style.top = ty2 + 'px';
           tt.style.display = 'block';
@@ -8514,6 +8551,20 @@
           tt.style.display = 'none';
         }
       }
+      // Touch: tap a point or drag across the chart to read values
+      function chartTouch(e) {
+        const t = e.touches[0];
+        if (!t) return;
+        if (e.type === 'touchmove') e.preventDefault();
+        chartMouseMove({ clientX: t.clientX, clientY: t.clientY, isTouch: true });
+      }
+      window.addEventListener('resize', () => {
+        const ov = document.getElementById('chart-overlay');
+        if (!ov || ov.style.display !== 'flex') return;
+        if (chartType.startsWith('breakdown')) return;
+        chartMouseLeave();
+        drawChart();
+      });
       function chartMouseLeave() {
         const tt = document.getElementById('chart-tooltip');
         if (tt) tt.style.display = 'none';
@@ -8533,9 +8584,14 @@
         if (!canvas || !body) return;
         const W = body.clientWidth,
           H = body.clientHeight;
-        canvas.width = W;
-        canvas.height = H;
+        // Draw at the screen's pixel density so lines and text stay sharp on phones
+        const dpr = window.devicePixelRatio || 1;
+        canvas.width = Math.round(W * dpr);
+        canvas.height = Math.round(H * dpr);
+        canvas.style.width = W + 'px';
+        canvas.style.height = H + 'px';
         const ctx = canvas.getContext('2d');
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
         ctx.clearRect(0, 0, W, H);
 
         const isLight = window.matchMedia(
@@ -8555,11 +8611,23 @@
         };
 
         const pw = currentPaceWeek();
-        // shared layout — generous padding so labels never clip
-        const PL = 80,
-          PR = 24,
+        // shared layout — generous padding so labels never clip; tighter on phones
+        const narrow = W < 560;
+        const FN = narrow ? '12px monospace' : '15px monospace', // tick numbers
+          FL = narrow ? '13px monospace' : '16px monospace', // axis titles
+          FS = narrow ? '11px monospace' : '13px monospace', // notes
+          FH = narrow ? '11px monospace' : '12px monospace';
+        const PL = narrow ? 54 : 80,
+          PR = narrow ? 12 : 24,
           PT = 22,
-          PB = 62;
+          PB = narrow ? 56 : 62;
+        // Every nth week label, so labels keep ~44px apart at any width
+        function weekStep(xMax) {
+          const gap = CW / Math.max(xMax - 1, 1);
+          return [1, 2, 4, 8, 13].find((n) => gap * n >= (narrow ? 40 : 44)) || 13;
+        }
+        // y labels: whole numbers unless the gridline step is fractional
+        const yLbl = (v, max) => (Number.isInteger(Math.round((max / 5) * 1000) / 1000) ? Math.round(v).toString() : v.toFixed(1));
         const CW = W - PL - PR,
           CH = H - PT - PB;
 
@@ -8574,21 +8642,17 @@
             ctx.moveTo(PL, y);
             ctx.lineTo(PL + CW, y);
             ctx.stroke();
-            const lbl =
-              v >= 100
-                ? Math.round(v).toString()
-                : v < 10
-                  ? v.toFixed(1)
-                  : Math.round(v).toString();
             ctx.fillStyle = numC;
-            ctx.font = '15px monospace';
+            ctx.font = FN;
             ctx.textAlign = 'right';
-            ctx.fillText(lbl, PL - 10, y + 5);
+            ctx.fillText(yLbl(v, niceMax), PL - 8, y + 5);
           }
-          // x ticks + labels
-          const xStep = xMax <= 10 ? 1 : xMax <= 16 ? 2 : 4;
+          // x ticks + labels; the last week only gets a label if it has room
+          const xStep = weekStep(xMax);
+          const lastStep = Math.floor(xMax / xStep) * xStep;
           for (let wk = 1; wk <= xMax; wk++) {
-            if (wk === 1 || wk === xMax || wk % xStep === 0) {
+            const isLast = wk === xMax && wk !== lastStep && xMax - lastStep >= xStep * 0.75;
+            if (wk === 1 || isLast || (wk % xStep === 0 && wk > xStep * 0.75)) {
               const x = PL + ((wk - 1) / Math.max(xMax - 1, 1)) * CW;
               ctx.strokeStyle = tickC;
               ctx.lineWidth = 1;
@@ -8597,9 +8661,9 @@
               ctx.lineTo(x, PT + CH + 5);
               ctx.stroke();
               ctx.fillStyle = numC;
-              ctx.font = '15px monospace';
+              ctx.font = FN;
               ctx.textAlign = 'center';
-              ctx.fillText('W' + wk, x, PT + CH + 24);
+              ctx.fillText('W' + wk, x, PT + CH + (narrow ? 20 : 24));
             }
           }
           // axis lines
@@ -8612,11 +8676,11 @@
           ctx.stroke();
           // axis labels
           ctx.fillStyle = lblC;
-          ctx.font = '16px monospace';
+          ctx.font = FL;
           ctx.textAlign = 'center';
-          ctx.fillText(xLabel, PL + CW / 2, H - 14);
+          ctx.fillText(xLabel, PL + CW / 2, H - (narrow ? 10 : 14));
           ctx.save();
-          ctx.translate(20, PT + CH / 2);
+          ctx.translate(narrow ? 14 : 20, PT + CH / 2);
           ctx.rotate(-Math.PI / 2);
           ctx.fillText(yLabel, 0, 0);
           ctx.restore();
@@ -8658,19 +8722,13 @@
             ctx.moveTo(PL, y);
             ctx.lineTo(PL + CW, y);
             ctx.stroke();
-            const lbl =
-              v >= 100
-                ? Math.round(v).toString()
-                : v < 10
-                  ? v.toFixed(1)
-                  : Math.round(v).toString();
             ctx.fillStyle = numC;
-            ctx.font = '15px monospace';
+            ctx.font = FN;
             ctx.textAlign = 'right';
-            ctx.fillText(lbl, PL - 10, y + 5);
+            ctx.fillText(yLbl(v, yDistMax), PL - 8, y + 5);
           }
           // x ticks at 0.5 hr intervals
-          const xStep = xHrsMax <= 2 ? 0.5 : xHrsMax <= 4 ? 0.5 : 1;
+          const xStep = [0.5, 1, 2, 4].find((n) => (CW / xHrsMax) * n >= (narrow ? 40 : 44)) || 4;
           for (let h = 0; h <= xHrsMax + 0.01; h += xStep) {
             const x = tx(h);
             ctx.strokeStyle = tickC;
@@ -8680,9 +8738,9 @@
             ctx.lineTo(x, PT + CH + 5);
             ctx.stroke();
             ctx.fillStyle = numC;
-            ctx.font = '15px monospace';
+            ctx.font = FN;
             ctx.textAlign = 'center';
-            ctx.fillText(h.toFixed(1), x, PT + CH + 24);
+            ctx.fillText(h.toFixed(1), x, PT + CH + (narrow ? 20 : 24));
           }
           // axis lines
           ctx.strokeStyle = axisC;
@@ -8694,18 +8752,21 @@
           ctx.stroke();
           // axis labels
           ctx.fillStyle = lblC;
-          ctx.font = '16px monospace';
+          ctx.font = FL;
           ctx.textAlign = 'center';
-          ctx.fillText('Duration (hrs)', PL + CW / 2, H - 14);
+          ctx.fillText('Duration (hrs)', PL + CW / 2, H - (narrow ? 10 : 14));
           ctx.save();
-          ctx.translate(20, PT + CH / 2);
+          ctx.translate(narrow ? 14 : 20, PT + CH / 2);
           ctx.rotate(-Math.PI / 2);
           ctx.fillText('Distance (mi)', 0, 0);
           ctx.restore();
-          ctx.fillStyle = noteC;
-          ctx.font = '13px monospace';
-          ctx.textAlign = 'right';
-          ctx.fillText('dashed = best fit', W - PR, PT + 16);
+          const drawFitNote = (clearOf) => {
+            ctx.font = FS;
+            if (W - PR - ctx.measureText('dashed = best fit').width < clearOf + 10) return;
+            ctx.fillStyle = noteC;
+            ctx.textAlign = 'right';
+            ctx.fillText('dashed = best fit', W - PR, PT + 16);
+          };
 
           // compute regressions first so table can be drawn after dots
           const regs = {};
@@ -8795,7 +8856,7 @@
             const tblW =
               colW +
               rows.reduce((mx, r) => {
-                ctx.font = '13px monospace';
+                ctx.font = FS;
                 return Math.max(mx, ctx.measureText(r.val).width);
               }, 0) +
               pad * 2 +
@@ -8816,20 +8877,21 @@
             ctx.restore();
             // header
             ctx.fillStyle = lblC;
-            ctx.font = 'bold 12px monospace';
+            ctx.font = 'bold ' + FH;
             ctx.textAlign = 'left';
             ctx.fillText('BEST FIT', tblX + pad, tblY + pad + 10);
             // rows
             rows.forEach((r, i) => {
               const ry = tblY + hdrH + pad + i * rowH + rowH * 0.75;
               ctx.fillStyle = r.c;
-              ctx.font = 'bold 13px monospace';
+              ctx.font = 'bold ' + FS;
               ctx.fillText(r.d.toUpperCase(), tblX + pad, ry);
               ctx.fillStyle = numC;
-              ctx.font = '13px monospace';
+              ctx.font = FS;
               ctx.fillText(r.val, tblX + pad + colW, ry);
             });
-          }
+            drawFitNote(tblX + tblW);
+          } else drawFitNote(PL);
           return;
         }
 
@@ -8856,7 +8918,7 @@
           const ty = (v) => PT + CH * (1 - v / yMax);
           drawAxes(xMax, yMax, 'Training Week', 'Speed (mph)');
           ctx.fillStyle = noteC;
-          ctx.font = '13px monospace';
+          ctx.font = FS;
           ctx.textAlign = 'right';
           ctx.fillText('dashed = best fit', W - PR, PT + 16);
           discs.forEach((d) => {
@@ -9045,7 +9107,7 @@
         drawAxes(xMax, niceMax, 'Training Week', isVol ? 'Miles (this week)' : 'Cumulative miles');
 
         ctx.fillStyle = noteC;
-        ctx.font = '13px monospace';
+        ctx.font = FS;
         ctx.textAlign = 'left';
         ctx.fillText('solid = actual · dashed = plan', PL + 6, PT + 16);
 
@@ -9281,6 +9343,8 @@
             id="chart-canvas"
             onmousemove="chartMouseMove(event)"
             onmouseleave="chartMouseLeave()"
+            ontouchstart="chartTouch(event)"
+            ontouchmove="chartTouch(event)"
           ></canvas>
           <div class="chart-tooltip" id="chart-tooltip"></div>
           <div id="donut-body"></div>
