@@ -7984,8 +7984,10 @@
 
       document.addEventListener('touchcancel', tdCleanup);
 
+      // A week is complete once its last day has passed. (Not currentPaceWeek(),
+      // which stops at the final training week, so that week never finished.)
       function isWeekComplete(wk) {
-        return currentPaceWeek() > wk;
+        return localDate() >= addDays(EVENT.startDate, wk * 7);
       }
       function isPhaseComplete(ph) {
         const weeks = ph.weeks.filter((w) => w !== 'race');
